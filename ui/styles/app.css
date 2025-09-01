@@ -1,0 +1,12 @@
+/**
+ * Minimal app CSS that imports framework styles
+ * Apps should import this instead of duplicating CSS
+ */
+
+/* Import framework global styles */
+@import '@episensor/ui-framework/styles/globals.css';
+
+/* Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

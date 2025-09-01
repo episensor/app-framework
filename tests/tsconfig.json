@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "lib": ["ES2022"],
+    "types": ["jest", "node"],
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "allowJs": true
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.js",
+    "../src/**/*.ts"
+  ]
+}

@@ -1,0 +1,386 @@
+name: Framework CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  lint:
+    name: Code Quality & Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        npm ci --legacy-peer-deps --force
+        npm install @rollup/rollup-linux-x64-gnu --save-dev
+        npm rebuild
+      
+    - name: Run ESLint
+      run: npm run lint
+      
+    - name: Run Prettier check
+      run: npm run format:check
+      
+    - name: Check for security vulnerabilities
+      run: npm audit --audit-level moderate
+
+  test:
+    name: Test Suite
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [18, 20, 22]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci --legacy-peer-deps --force
+      
+    - name: Install Linux-specific binaries
+      if: matrix.os == 'ubuntu-latest'
+      run: npm install @rollup/rollup-linux-x64-gnu @tauri-apps/cli-linux-x64-gnu --save-dev
+      
+    - name: Install macOS-specific binaries
+      if: matrix.os == 'macos-latest'
+      run: npm install @rollup/rollup-darwin-arm64 @tauri-apps/cli-darwin-arm64 --save-dev
+      
+    - name: Install Windows-specific binaries
+      if: matrix.os == 'windows-latest'
+      run: npm install @rollup/rollup-win32-x64-msvc @tauri-apps/cli-win32-x64-msvc --save-dev
+      
+    - name: Rebuild native modules
+      run: npm rebuild
+      
+    - name: Run unit tests
+      run: npm run test:unit
+      
+    - name: Run integration tests
+      run: npm run test:integration
+      
+    - name: Generate coverage report
+      run: npm run test:coverage
+      
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: true
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        npm ci --legacy-peer-deps --force
+        npm install @rollup/rollup-linux-x64-gnu @tauri-apps/cli-linux-x64-gnu --save-dev
+        npm rebuild
+      
+    - name: Run security tests
+      run: npm run test:security
+      
+    - name: Run dependency check
+      run: npm run security:deps
+      
+    - name: Scan for secrets
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  performance:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        npm ci --legacy-peer-deps --force
+        npm install @rollup/rollup-linux-x64-gnu @tauri-apps/cli-linux-x64-gnu --save-dev
+        npm rebuild
+      
+    - name: Run performance benchmarks
+      run: npm run benchmark
+      
+    - name: Store benchmark result
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        tool: 'benchmarkjs'
+        output-file-path: benchmarks/results.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: true
+        comment-on-alert: true
+        alert-threshold: '150%'
+
+  documentation:
+    name: Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        npm ci --legacy-peer-deps --force
+        npm install @rollup/rollup-linux-x64-gnu @tauri-apps/cli-linux-x64-gnu --save-dev
+        npm rebuild
+      
+    - name: Generate API documentation
+      run: npm run docs:api
+      
+    - name: Build documentation site
+      run: npm run docs:build
+      
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs/dist
+
+  build:
+    name: Build & Package
+    runs-on: ${{ matrix.os }}
+    needs: [lint, test, security]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci --legacy-peer-deps --force
+      
+    - name: Install Linux-specific binaries
+      if: matrix.os == 'ubuntu-latest'
+      run: npm install @rollup/rollup-linux-x64-gnu @tauri-apps/cli-linux-x64-gnu --save-dev
+      
+    - name: Install macOS-specific binaries
+      if: matrix.os == 'macos-latest'
+      run: npm install @rollup/rollup-darwin-arm64 @tauri-apps/cli-darwin-arm64 --save-dev
+      
+    - name: Install Windows-specific binaries
+      if: matrix.os == 'windows-latest'
+      run: npm install @rollup/rollup-win32-x64-msvc @tauri-apps/cli-win32-x64-msvc --save-dev
+      
+    - name: Rebuild native modules
+      run: npm rebuild
+      
+    - name: Build package
+      run: npm run build
+      
+    - name: Package for distribution
+      run: npm pack
+      
+    - name: Upload package artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: package
+        path: '*.tgz'
+        retention-days: 30
+
+  integration-test:
+    name: Integration Test with Consumer Apps
+    runs-on: ${{ matrix.os }}
+    needs: [build]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        app: [modbus-simulator, bacnet-gateway]
+    
+    steps:
+    - name: Checkout framework
+      uses: actions/checkout@v4
+      with:
+        path: framework
+      
+    - name: Checkout consumer app
+      uses: actions/checkout@v4
+      with:
+        repository: episensor/${{ matrix.app }}
+        path: ${{ matrix.app }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install framework dependencies
+      run: |
+        cd framework
+        npm ci --legacy-peer-deps --force
+      
+    - name: Install Linux-specific binaries for framework
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cd framework
+        npm install @rollup/rollup-linux-x64-gnu @tauri-apps/cli-linux-x64-gnu --save-dev
+      
+    - name: Install macOS-specific binaries for framework
+      if: matrix.os == 'macos-latest'
+      run: |
+        cd framework
+        npm install @rollup/rollup-darwin-arm64 @tauri-apps/cli-darwin-arm64 --save-dev
+      
+    - name: Install Windows-specific binaries for framework
+      if: matrix.os == 'windows-latest'
+      run: |
+        cd framework
+        npm install @rollup/rollup-win32-x64-msvc @tauri-apps/cli-win32-x64-msvc --save-dev
+      
+    - name: Link framework to consumer app
+      run: |
+        cd framework
+        npm rebuild
+        npm link
+        cd ../${{ matrix.app }}
+        npm ci --legacy-peer-deps --force
+        npm rebuild
+        npm link @episensor/app-framework
+        
+    - name: Test consumer app with framework
+      run: |
+        cd ${{ matrix.app }}
+        npm test
+        npm run test:integration
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [build, integration-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        npm ci --legacy-peer-deps --force
+        npm install @rollup/rollup-linux-x64-gnu @tauri-apps/cli-linux-x64-gnu --save-dev
+        npm rebuild
+      
+    - name: Download package artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: package
+        
+    - name: Determine version bump
+      id: version
+      run: |
+        if [[ ${{ github.event.head_commit.message }} =~ ^BREAKING ]]; then
+          echo "bump=major" >> $GITHUB_OUTPUT
+        elif [[ ${{ github.event.head_commit.message }} =~ ^feat ]]; then
+          echo "bump=minor" >> $GITHUB_OUTPUT
+        else
+          echo "bump=patch" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Bump version
+      run: npm version ${{ steps.version.outputs.bump }} --no-git-tag-version
+      
+    - name: Create GitHub release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.version.outputs.version }}
+        release_name: Release v${{ steps.version.outputs.version }}
+        body: |
+          ## Changes
+          - Auto-generated release from CI/CD pipeline
+          - See commit messages for detailed changes
+          
+          ## Package
+          - Framework package: episensor-app-framework-${{ steps.version.outputs.version }}.tgz
+          
+        draft: false
+        prerelease: false
+
+  notify:
+    name: Notifications
+    runs-on: ubuntu-latest
+    needs: [release]
+    if: always()
+    
+    steps:
+    - name: Notify teams on success
+      if: needs.release.result == 'success'
+      run: |
+        echo "✅ Framework release completed successfully"
+        # Add Slack/Teams notification here
+        
+    - name: Notify teams on failure
+      if: needs.release.result == 'failure'
+      run: |
+        echo "❌ Framework release failed"
+        # Add Slack/Teams notification here
