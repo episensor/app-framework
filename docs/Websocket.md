@@ -292,7 +292,7 @@ class SubscriptionManager {
 ### useWebSocket Hook
 
 ```tsx
-import { useWebSocket } from '@episensor/ui-framework';
+import { useWebSocket } from '@episensor/app-framework/ui';
 
 function MyComponent() {
   const { 
@@ -332,7 +332,7 @@ function MyComponent() {
 ### useWebSocketSubscription Hook
 
 ```tsx
-import { useWebSocketSubscription } from '@episensor/ui-framework';
+import { useWebSocketSubscription } from '@episensor/app-framework/ui';
 
 function SimulatorDisplay({ simulatorId }) {
   const { data, loading, error } = useWebSocketSubscription(
@@ -362,7 +362,7 @@ function SimulatorDisplay({ simulatorId }) {
 ### Connection Status Component
 
 ```tsx
-import { ConnectionStatus } from '@episensor/ui-framework';
+import { ConnectionStatus } from '@episensor/app-framework/ui';
 
 function Header() {
   return (
@@ -608,7 +608,7 @@ setInterval(async () => {
 ```tsx
 // Client (React)
 import React, { useState, useEffect } from 'react';
-import { useWebSocket } from '@episensor/ui-framework';
+import { useWebSocket } from '@episensor/app-framework/ui';
 import { LineChart, Line, XAxis, YAxis } from 'recharts';
 
 function Dashboard() {

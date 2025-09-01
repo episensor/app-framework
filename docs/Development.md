@@ -29,8 +29,7 @@ cd my-episensor-app
 npm init -y
 
 # Install framework
-npm install @episensor/app-framework@file:../epi-app-framework
-npm install @episensor/ui-framework@file:../epi-app-framework/ui
+npm install @episensor/app-framework
 
 # Install common dependencies
 npm install express cors dotenv
@@ -312,7 +311,7 @@ export const realtime = new RealtimeService();
 // ui/src/App.tsx
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
-import { AppLayout } from '@episensor/ui-framework';
+import { AppLayout } from '@episensor/app-framework/ui';
 import { Dashboard } from './pages/Dashboard';
 import { Settings } from './pages/Settings';
 

@@ -1020,7 +1020,7 @@ displayStartupBanner({
 A comprehensive log viewer component with real-time updates, filtering, and file management.
 
 ```typescript
-import { LogViewer } from '@episensor/ui-framework';
+import { LogViewer } from '@episensor/app-framework/ui';
 
 <LogViewer
   apiUrl="/api/logs"
@@ -1052,7 +1052,7 @@ import { LogViewer } from '@episensor/ui-framework';
 A complete logs page with header and configured LogViewer.
 
 ```typescript
-import { LogsPage } from '@episensor/ui-framework';
+import { LogsPage } from '@episensor/app-framework/ui';
 
 <LogsPage
   apiUrl="/api/logs"
@@ -1409,7 +1409,7 @@ import type {
   AlertType,
   SettingCategory,
   LogEntry
-} from '@episensor/ui-framework';
+} from '@episensor/app-framework/ui';
 ```
 
 ---

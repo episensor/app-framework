@@ -531,12 +531,12 @@ app.use('/api', rateLimiter({
 
 ### UI Framework Usage
 
-All applications with frontend must use @episensor/ui-framework:
+All applications with frontend must use @episensor/app-framework/ui:
 
 ```json
 {
   "dependencies": {
-    "@episensor/ui-framework": "file:../../epi-app-framework/ui",
+    "@episensor/app-framework": "^1.0.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "@radix-ui/react-*": "^1.0.0"
@@ -548,7 +548,7 @@ All applications with frontend must use @episensor/ui-framework:
 
 ```tsx
 import React from 'react';
-import { Button, Card, Input } from '@episensor/ui-framework';
+import { Button, Card, Input } from '@episensor/app-framework/ui';
 
 interface ComponentProps {
   title: string;

@@ -59,12 +59,12 @@ npm run typecheck
 
 ```bash
 # Install framework
-npm install @episensor/app-framework@file:../epi-app-framework
+npm install @episensor/app-framework
 
 # Create your app
-npx create-episensor-app my-app
-cd my-app
-npm run dev
+mkdir my-app && cd my-app
+npm init -y
+npm install @episensor/app-framework
 ```
 
 ### Minimal Application
@@ -118,23 +118,23 @@ await server.start();
 - **File Security** - Safe file operations with validation
 - **CORS Configuration** - Cross-origin resource sharing
 
-### ⚙️ Configuration & Settings (Enhanced)
-- **ConfigManager** - 🆕 Advanced configuration with Zod validation
-- **Environment Merging** - 🆕 Automatic env variable merging
-- **File Watching** - 🆕 Auto-reload on config file changes
-- **Change Events** - 🆕 EventEmitter for config change tracking
-- **Common Schemas** - 🆕 Pre-built Zod schemas for common configs
+### ⚙️ Configuration & Settings
+- **ConfigManager** Advanced configuration with Zod validation
+- **Environment Merging** Automatic env variable merging
+- **File Watching** Auto-reload on config file changes
+- **Change Events** EventEmitter for config change tracking
+- **Common Schemas** Pre-built Zod schemas for common configs
 - **Settings Service** - Dynamic settings with UI generation
 
-### 📊 Health Monitoring (Standardized)
-- **HealthCheckService** - 🆕 Real system metrics collection
-- **CPU Metrics** - 🆕 Real CPU usage with history tracking
-- **Memory Metrics** - 🆕 Memory usage percentage and details
-- **Disk Metrics** - 🆕 Disk space monitoring (platform-aware)
-- **Process Metrics** - 🆕 Node.js process statistics
-- **Custom Health Checks** - 🆕 Extensible health check framework
-- **Dependency Checks** - 🆕 Monitor external service health
-- **Informational Only** - 🆕 Never interrupts service operation
+### 📊 Health Monitoring
+- **HealthCheckService** Real system metrics collection
+- **CPU Metrics** Real CPU usage with history tracking
+- **Memory Metrics** Memory usage percentage and details
+- **Disk Metrics** Disk space monitoring (platform-aware)
+- **Process Metrics** Node.js process statistics
+- **Custom Health Checks** Extensible health check framework
+- **Dependency Checks** Monitor external service health
+- **Informational Only** Never interrupts service operation
 
 ### 🔧 Services & Utilities
 - **Queue Service** - Background job processing with persistence
@@ -178,31 +178,18 @@ await server.start();
 ## 📦 Installation
 
 ### Full Framework (Backend + Frontend)
-```json
-{
-  "dependencies": {
-    "@episensor/app-framework": "file:../epi-app-framework",
-    "@episensor/ui-framework": "file:../epi-app-framework/ui"
-  }
-}
+```bash
+npm install @episensor/app-framework
 ```
 
-### Backend Only
-```json
-{
-  "dependencies": {
-    "@episensor/app-framework": "file:../epi-app-framework"
-  }
-}
-```
+### Import Examples
+```javascript
+// Backend
+import { StandardServer, createLogger } from '@episensor/app-framework';
 
-### Frontend Only
-```json
-{
-  "dependencies": {
-    "@episensor/ui-framework": "file:../epi-app-framework/ui"
-  }
-}
+// Frontend UI components
+import { Button, Card, useWebSocket } from '@episensor/app-framework/ui';
+```
 ```
 
 ## 💡 Usage Examples
@@ -258,7 +245,7 @@ const server = new StandardServer({
 ### React WebSocket Integration
 
 ```tsx
-import { useWebSocket } from '@episensor/ui-framework';
+import { useWebSocket } from '@episensor/app-framework/ui';
 
 function Dashboard() {
   const { connected, on, off } = useWebSocket('http://localhost:8080');
@@ -515,7 +502,7 @@ import type {
   TableColumn,
   SettingCategory,
   WebSocketHook
-} from '@episensor/ui-framework';
+} from '@episensor/app-framework/ui';
 ```
 
 ## 🧪 Testing
@@ -589,7 +576,7 @@ This framework is designed to be AI-friendly. When building applications:
 2. **Validate all inputs** - Use zod schemas for validation
 3. **Handle errors properly** - Use try-catch and error middleware
 4. **Use TypeScript** - Define interfaces for all data structures
-5. **Follow the patterns** - See [Development Guide](./docs/DEVELOPMENT_GUIDE.md)
+5. **Follow the patterns** - See [Development Guide](./docs/Development.md)
 
 ## 🔒 Security
 

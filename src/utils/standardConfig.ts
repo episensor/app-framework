@@ -144,7 +144,7 @@ export function loadStandardConfig(dirname: string): StandardAppConfig {
  * Get default ports for an application
  * Applications can override these by providing their own configuration
  */
-export function getDefaultPorts(appName: string): { api: number; web: number } {
+export function getDefaultPorts(_appName: string): { api: number; web: number } {
   // Return sensible defaults - applications should define their own ports
   return { api: 8080, web: 3000 };
 }
