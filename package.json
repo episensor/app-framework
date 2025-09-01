@@ -32,8 +32,9 @@
       "import": "./dist/desktop/index.js"
     },
     "./ui": {
-      "types": "./ui/src/index.d.ts",
-      "import": "./ui/src/index.js"
+      "types": "./ui/dist/index.d.ts",
+      "import": "./ui/dist/index.js",
+      "require": "./ui/dist/index.js"
     },
     "./ui/components": {
       "types": "./ui/src/components/index.ts",
