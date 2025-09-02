@@ -1,6 +1,6 @@
 {
   "name": "@episensor/app-framework",
-  "version": "3.7.4",
+  "version": "3.7.6",
   "description": "TypeScript framework for industrial IoT and device simulation applications",
   "type": "module",
   "main": "dist/index.js",
@@ -86,6 +86,7 @@
     "@types/express-session": "^1.18.2",
     "@types/multer": "^2.0.0",
     "archiver": "^7.0.1",
+    "boxen": "^8.0.1",
     "chalk": "^5.5.0",
     "dotenv": "^17.2.1",
     "esbuild": "^0.25.9",
@@ -118,7 +119,6 @@
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.18.2",
     "@typescript-eslint/parser": "^8.18.2",
-    "boxen": "^8.0.1",
     "eslint": "^9.32.0",
     "globals": "^16.3.0",
     "jest": "^30.0.5",
