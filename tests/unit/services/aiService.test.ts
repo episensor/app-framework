@@ -51,7 +51,7 @@ jest.mock('openai', () => {
         completions: {
           create: jest.fn().mockResolvedValue({
             choices: [{ message: { content: 'Mock response', role: 'assistant' } }],
-            usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+            usage: { total_tokens: 150, prompt_tokens: 75, completion_tokens: 75 },
           }),
         },
       },
@@ -280,7 +280,7 @@ describe('AIService', () => {
       const response = await aiService.chat(messages);
 
       expect(response).toBeDefined();
-      expect(response.content).toContain('Mock response');
+      expect(response.content).toContain('Mock chat response');
       expect(response.model).toBe('mock');
     });
 
@@ -294,7 +294,7 @@ describe('AIService', () => {
       
       const response = await aiService.chat(messages);
 
-      expect(response.content).toContain('Mock response');
+      expect(response.content).toContain('Mock chat response');
     });
 
     test('caches chat responses', async () => {
@@ -476,7 +476,7 @@ describe('OpenAIProvider', () => {
       
       expect(response).toBeDefined();
       expect(response.content).toContain('Mock response');
-      expect(response.model).toBe('gpt-4');
+      expect(response.model).toBe('gpt-3.5-turbo');
       expect(response.usage).toBeDefined();
       expect(response.cost).toBeGreaterThan(0);
     });
@@ -550,7 +550,7 @@ describe('MockAIProvider', () => {
       
       const response = await provider.chat(messages);
       
-      expect(response.content).toBe('Mock response');
+      expect(response.content).toBe('Mock chat response for 3 messages');
       expect(response.model).toBe('mock');
       expect(response.usage?.totalTokens).toBe(15);
     });

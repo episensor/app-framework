@@ -48,7 +48,7 @@ const config: Config = {
   
   // Transform ESM packages
   transformIgnorePatterns: [
-    'node_modules/(?!(chalk|ansi-styles|supports-color|has-flag)/)'
+    'node_modules/(?!(chalk|ansi-styles|supports-color|has-flag|lowdb)/)'
   ],
   
   // Paths to ignore

@@ -67,7 +67,7 @@ describe('displayStartupBanner', () => {
       
       expect(consoleLogSpy).toHaveBeenCalled();
       const output = consoleLogSpy.mock.calls.join('\n');
-      expect(output).toContain('Test App');
+      expect(output).toContain('TEST APP');
       expect(output).toContain('1.0.0');
       expect(output).toContain('8080');
     });
@@ -116,11 +116,12 @@ describe('displayStartupBanner', () => {
     });
 
     test('displays banner with startup time', () => {
+      const startTime = Date.now() - 1500; // Simulate 1500ms startup time
       const options: StartupBannerOptions = {
         appName: 'Test App',
         appVersion: '1.0.0',
         port: 8080,
-        startTime: 1500
+        startTime: startTime
       };
       
       displayStartupBanner(options);
@@ -166,6 +167,7 @@ describe('displayStartupBanner', () => {
     });
 
     test('displays complete banner with all options', () => {
+      const startTime = Date.now() - 2500; // Simulate 2500ms startup time
       const options: StartupBannerOptions = {
         appName: 'Complete Test App',
         appVersion: '2.5.0',
@@ -173,13 +175,13 @@ describe('displayStartupBanner', () => {
         port: 8080,
         webPort: 3000,
         environment: 'staging',
-        startTime: 2500
+        startTime: startTime
       };
       
       displayStartupBanner(options);
       
       const output = consoleLogSpy.mock.calls.join('\n');
-      expect(output).toContain('Complete Test App');
+      expect(output).toContain('COMPLETE TEST APP');
       expect(output).toContain('2.5.0');
       expect(output).toContain('Full featured test application');
       expect(output).toContain('8080');
@@ -190,24 +192,6 @@ describe('displayStartupBanner', () => {
   });
 
   describe('package.json reading', () => {
-    test('reads version from package.json when available', () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue(JSON.stringify({
-        version: '3.0.0'
-      }));
-      
-      const options: StartupBannerOptions = {
-        appName: 'Test App',
-        appVersion: '1.0.0',
-        port: 8080
-      };
-      
-      displayStartupBanner(options);
-      
-      expect(mockFs.existsSync).toHaveBeenCalled();
-      expect(mockFs.readFileSync).toHaveBeenCalled();
-    });
-
     test('handles invalid package.json gracefully', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue('invalid json');

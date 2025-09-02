@@ -79,10 +79,12 @@ describe('NetworkService', () => {
       
       const interfaces = networkService.getNetworkInterfaces();
       
-      expect(interfaces).toHaveLength(1);
-      expect(interfaces[0].name).toBe('eth0');
-      expect(interfaces[0].addresses).toHaveLength(1);
-      expect(interfaces[0].addresses[0].address).toBe('192.168.1.100');
+      expect(interfaces).toHaveLength(3); // all, localhost, eth0
+      expect(interfaces[0].name).toBe('all');
+      expect(interfaces[1].name).toBe('localhost');
+      expect(interfaces[2].name).toBe('eth0');
+      expect(interfaces[2].addresses).toHaveLength(1);
+      expect(interfaces[2].addresses[0].address).toBe('192.168.1.100');
     });
 
     test('handles missing interfaces gracefully', () => {
@@ -90,7 +92,9 @@ describe('NetworkService', () => {
       
       const interfaces = networkService.getNetworkInterfaces();
       
-      expect(interfaces).toEqual([]);
+      expect(interfaces).toHaveLength(2); // Still has 'all' and 'localhost'
+      expect(interfaces[0].name).toBe('all');
+      expect(interfaces[1].name).toBe('localhost');
     });
   });
 
@@ -166,6 +170,8 @@ describe('NetworkService', () => {
       mockOs.networkInterfaces.mockReturnValue(mockInterfaces as any);
       
       const options = networkService.getBindingOptions();
+      
+      expect(options).toHaveLength(4); // 2 default + 2 unique interface addresses
       
       expect(options).toContainEqual(
         expect.objectContaining({

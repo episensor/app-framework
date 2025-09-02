@@ -89,26 +89,33 @@ class NetworkService {
     const interfaces = this.getNetworkInterfaces();
     const options: BindingOption[] = [];
 
+    // Always add default binding options first
+    options.push({
+      value: '0.0.0.0',
+      label: 'All interfaces',
+      description: 'Listen on all available network interfaces',
+      interface: 'all'
+    });
+
+    options.push({
+      value: '127.0.0.1',
+      label: 'Localhost only',
+      description: 'Only accessible from this machine',
+      interface: 'localhost'
+    });
+
+    // Add specific interface options (excluding duplicates of the default options)
     for (const iface of interfaces) {
       for (const addr of iface.addresses) {
-        let label = '';
-        let description = '';
-
-        if (addr.address === '0.0.0.0') {
-          label = 'All interfaces (0.0.0.0)';
-          description = 'Accept connections from any network interface';
-        } else if (addr.address === '127.0.0.1') {
-          label = 'Localhost only (127.0.0.1)';
-          description = 'Only accept connections from this machine';
-        } else {
-          label = `${iface.name} (${addr.address})`;
-          description = `Accept connections on ${iface.name} network interface`;
+        // Skip if this address is already in our default options
+        if (addr.address === '0.0.0.0' || addr.address === '127.0.0.1') {
+          continue;
         }
-
+        
         options.push({
-          label,
+          label: `${iface.name} (${addr.address})`,
           value: addr.address,
-          description,
+          description: `Accept connections on ${iface.name} network interface`,
           interface: iface.name
         });
       }

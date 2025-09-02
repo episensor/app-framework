@@ -1,6 +1,6 @@
 {
   "name": "@episensor/app-framework",
-  "version": "3.7.1",
+  "version": "3.7.4",
   "description": "TypeScript framework for industrial IoT and device simulation applications",
   "type": "module",
   "main": "dist/index.js",
@@ -35,14 +35,11 @@
       "import": "./ui/dist/index.js",
       "require": "./ui/dist/index.js"
     },
-    "./ui/components": {
-      "types": "./ui/src/components/index.ts",
-      "import": "./ui/src/components/index.ts"
-    },
     "./ui/utils": {
       "types": "./dist/ui/utils/index.d.ts",
       "import": "./dist/ui/utils/index.js"
-    }
+    },
+    "./ui/styles/globals.css": "./ui/styles/globals.css"
   },
   "scripts": {
     "build": "tsc",
@@ -139,6 +136,7 @@
     "dist/",
     "src/",
     "ui/dist/",
+    "ui/styles/",
     "README.md",
     "LICENSE"
   ]

@@ -182,6 +182,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      await server.initialize();
       await server.start();
 
       expect(mockHttpServer.listen).toHaveBeenCalledWith(
@@ -201,6 +202,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      await server.initialize();
       await server.start();
 
       expect(createWebSocketServer).toHaveBeenCalledWith(mockHttpServer);
@@ -215,6 +217,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      await server.initialize();
       await server.start();
 
       expect(createWebSocketServer).not.toHaveBeenCalled();
@@ -234,6 +237,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      await server.initialize();
       await server.start();
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
@@ -250,6 +254,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      await server.initialize();
       await server.start();
 
       expect(mockLogger.info).toHaveBeenCalledWith(
@@ -268,6 +273,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      await server.initialize();
       
       await expect(server.start()).rejects.toThrow('Listen failed');
       expect(mockLogger.error).toHaveBeenCalled();
@@ -283,6 +289,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      await server.initialize();
       await server.start();
       await server.stop();
 
@@ -314,6 +321,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      await server.initialize();
       await server.start();
       
       await expect(server.stop()).rejects.toThrow('Close failed');
@@ -352,6 +360,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      await server.initialize();
       await server.start();
       
       expect(server['wsServer']).toBe(mockWsServer);
@@ -422,6 +431,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      await server.initialize();
       await server.start();
       
       expect(server['startTime']).toBeDefined();
