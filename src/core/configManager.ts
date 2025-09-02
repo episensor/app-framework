@@ -69,7 +69,7 @@ export class ConfigManager extends EventEmitter {
       await this.loadConfig();
 
       this.isInitialized = true;
-      logger.debug('Configuration initialized successfully');
+      logger.info('Configuration initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize configuration:', error);
       throw error;
@@ -86,7 +86,7 @@ export class ConfigManager extends EventEmitter {
       if (result.error) {
         logger.warn('Failed to load .env file:', result.error);
       } else {
-        logger.debug(`Loaded environment variables from ${this.envPath}`);
+        logger.info(`Loaded environment variables from ${this.envPath}`);
       }
     }
 
@@ -110,7 +110,7 @@ export class ConfigManager extends EventEmitter {
         const fileContent = await fs.readFile(this.configPath, 'utf-8');
         const fileConfig = JSON.parse(fileContent);
         config = this.deepMerge(config, fileConfig);
-        logger.debug(`Loaded configuration from ${this.configPath}`);
+        logger.info(`Loaded configuration from ${this.configPath}`);
       } else {
         logger.info(`Configuration file not found at ${this.configPath}, using defaults`);
         // Create the config directory if it doesn't exist
@@ -171,7 +171,7 @@ export class ConfigManager extends EventEmitter {
         'utf-8'
       );
 
-      logger.debug(`Configuration saved to ${this.configPath}`);
+      logger.info(`Configuration saved to ${this.configPath}`);
     } catch (error) {
       logger.error('Failed to save configuration:', error);
       throw error;
@@ -318,7 +318,7 @@ export class ConfigManager extends EventEmitter {
           }
 
           this.debounceTimer = setTimeout(async () => {
-            logger.debug('Configuration file changed, reloading...');
+            logger.info('Configuration file changed, reloading...');
             try {
               await this.reload();
             } catch (error) {

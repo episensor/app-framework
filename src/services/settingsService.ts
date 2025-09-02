@@ -90,7 +90,7 @@ export class SettingsService extends EventEmitter {
       }
     }
 
-    ensureLogger().debug(`Registered settings category: ${category.id}`);
+    ensureLogger().info(`Registered settings category: ${category.id}`);
   }
 
   /**
@@ -98,7 +98,7 @@ export class SettingsService extends EventEmitter {
    */
   async load(): Promise<void> {
     if (!this.storagePath) {
-      ensureLogger().debug('No storage path configured, using defaults');
+      ensureLogger().info('No storage path configured, using defaults');
       return;
     }
 
@@ -106,7 +106,7 @@ export class SettingsService extends EventEmitter {
       const fullPath = path.resolve(this.storagePath);
       
       if (!fs.existsSync(fullPath)) {
-        ensureLogger().debug('Settings file not found, using defaults');
+        ensureLogger().info('Settings file not found, using defaults');
         return;
       }
 
@@ -121,7 +121,7 @@ export class SettingsService extends EventEmitter {
         this.decryptSensitiveFields();
       }
 
-      ensureLogger().debug('Settings loaded successfully');
+      ensureLogger().info('Settings loaded successfully');
       this.emit('loaded', this.settings);
     } catch (error: any) {
       ensureLogger().error('Failed to load settings:', error);
@@ -134,7 +134,7 @@ export class SettingsService extends EventEmitter {
    */
   async save(): Promise<void> {
     if (!this.storagePath) {
-      ensureLogger().debug('No storage path configured, skipping save');
+      ensureLogger().info('No storage path configured, skipping save');
       return;
     }
 

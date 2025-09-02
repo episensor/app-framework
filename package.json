@@ -1,6 +1,6 @@
 {
   "name": "@episensor/app-framework",
-  "version": "3.7.6",
+  "version": "3.7.7",
   "description": "TypeScript framework for industrial IoT and device simulation applications",
   "type": "module",
   "main": "dist/index.js",
