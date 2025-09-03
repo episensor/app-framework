@@ -459,6 +459,27 @@ export function createHealthCheckRouter(options?: {
   router.get('/health', async (_req: Request, res: Response) => {
     try {
       const health = await healthService.getHealth(options?.version);
+      
+      // Run custom checks if provided
+      if (options?.customChecks && options.customChecks.length > 0) {
+        const customResults = await Promise.all(
+          options.customChecks.map(check => check.check())
+        );
+        
+        // Add custom check results to health object
+        (health as any).checks = customResults;
+        
+        // Update overall status based on custom checks
+        const hasUnhealthy = customResults.some(r => r.status === 'unhealthy');
+        const hasDegraded = customResults.some(r => r.status === 'degraded');
+        
+        if (hasUnhealthy || health.status === 'unhealthy') {
+          health.status = 'unhealthy';
+        } else if (hasDegraded || health.status === 'degraded') {
+          health.status = 'degraded';
+        }
+      }
+      
       const statusCode = health.status === 'healthy' ? 200 : 
                         health.status === 'degraded' ? 200 : 503;
       res.status(statusCode).json(health);
