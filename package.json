@@ -1,6 +1,6 @@
 {
   "name": "@episensor/app-framework",
-  "version": "3.10.1",
+  "version": "3.10.2",
   "description": "Opinionated TypeScript framework for structured vibecoding - building internal web and desktop apps with batteries included",
   "type": "module",
   "main": "dist/index.js",
