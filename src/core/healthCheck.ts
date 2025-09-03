@@ -113,15 +113,9 @@ class HealthCheckService {
    * Get basic system health status
    */
   async getHealth(appVersion?: string): Promise<SystemHealth> {
-    const metrics = await this.getMetrics();
-    
-    // Determine health status based on metrics (informational only)
-    let status: SystemHealth['status'] = 'healthy';
-    if (metrics.cpu.usage > 90 || metrics.memory.percentage > 90) {
-      status = 'unhealthy';
-    } else if (metrics.cpu.usage > 70 || metrics.memory.percentage > 70) {
-      status = 'degraded';
-    }
+    // Health status is 'healthy' by default - system metrics are informational only
+    // Actual health is determined by custom checks (database, websocket, etc.)
+    const status: SystemHealth['status'] = 'healthy';
 
     return {
       status,
@@ -469,15 +463,16 @@ export function createHealthCheckRouter(options?: {
         // Add custom check results to health object
         (health as any).checks = customResults;
         
-        // Update overall status based on custom checks
+        // Update overall status based ONLY on custom checks
         const hasUnhealthy = customResults.some(r => r.status === 'unhealthy');
         const hasDegraded = customResults.some(r => r.status === 'degraded');
         
-        if (hasUnhealthy || health.status === 'unhealthy') {
+        if (hasUnhealthy) {
           health.status = 'unhealthy';
-        } else if (hasDegraded || health.status === 'degraded') {
+        } else if (hasDegraded) {
           health.status = 'degraded';
         }
+        // Otherwise keep default 'healthy' status
       }
       
       const statusCode = health.status === 'healthy' ? 200 : 
