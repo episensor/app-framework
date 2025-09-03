@@ -198,7 +198,24 @@ export class StandardServer {
 
     // CORS setup for non-desktop apps (desktop setup happens in setupDesktopIntegration)
     if (!this.config.enableDesktopIntegration) {
-      this.app.use(cors());
+      const corsOrigins = [...(this.config.corsOrigins || [])];
+      
+      // Add localhost origins based on webPort if specified
+      if (this.config.webPort) {
+        corsOrigins.push(
+          `http://localhost:${this.config.webPort}`,
+          `http://localhost:${this.config.webPort + 1}` // Common development pattern
+        );
+      }
+      
+      if (corsOrigins.length > 0) {
+        this.app.use(cors({
+          origin: corsOrigins,
+          credentials: true
+        }));
+      } else {
+        this.app.use(cors());
+      }
     }
   }
 
