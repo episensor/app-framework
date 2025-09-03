@@ -8,3 +8,4 @@ export { displayStartupBanner, displayMinimalStartup } from './startupBanner.js'
 export type { StartupBannerOptions } from './startupBanner.js';
 export { loadStandardConfig, getDefaultPorts } from './standardConfig.js';
 export type { StandardAppConfig } from './standardConfig.js';
+export * from './appPaths.js';

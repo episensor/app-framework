@@ -10,12 +10,20 @@ import path from 'path';
 chalk.level = 3; // Full color support
 
 // Get framework version dynamically
-let version = '3.6.0'; // Default version
+let version = 'unknown'; // Will be determined from package.json
 try {
-  const packageJsonPath = path.join(process.cwd(), 'package.json');
-  if (fs.existsSync(packageJsonPath)) {
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+  // First try to get framework version from its own package.json
+  const frameworkPackageJson = path.join(__dirname, '../../package.json');
+  if (fs.existsSync(frameworkPackageJson)) {
+    const packageJson = JSON.parse(fs.readFileSync(frameworkPackageJson, 'utf-8'));
     version = packageJson.version || version;
+  } else {
+    // Fallback: try to read from node_modules
+    const nodeModulesPath = path.join(process.cwd(), 'node_modules', '@episensor', 'app-framework', 'package.json');
+    if (fs.existsSync(nodeModulesPath)) {
+      const packageJson = JSON.parse(fs.readFileSync(nodeModulesPath, 'utf-8'));
+      version = packageJson.version || version;
+    }
   }
 } catch (error) {
   // Use default version if unable to read package.json

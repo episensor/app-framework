@@ -1,0 +1,27 @@
+[package]
+name = "my-desktop-app"
+version = "1.0.0"
+description = "My Desktop App built with Tauri"
+authors = ["Your Name <your.email@example.com>"]
+license = ""
+repository = ""
+edition = "2021"
+
+[lib]
+name = "my_desktop_app_lib"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "my-desktop-app"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["shell-open"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-shell = "2"

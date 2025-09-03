@@ -7,12 +7,14 @@
 import express, { Express } from 'express';
 import { createServer, Server as HttpServer } from 'http';
 import { Server as HttpsServer } from 'https';
+import cors from 'cors';
 import { createWebSocketServer } from '../services/websocketServer.js';
 import { displayStartupBanner } from '../utils/startupBanner.js';
 import { getProcessOnPort } from './portUtils.js';
 import { createLogger, getEnhancedLogger } from './index.js';
 import { aiErrorHandler } from '../middleware/aiErrorHandler.js';
 import { apiErrorHandler } from './apiResponse.js';
+import { getAppDataPath, getLogsPath, isDesktopApp } from '../utils/appPaths.js';
 
 let logger: any; // Will be initialized when needed
 
@@ -32,6 +34,11 @@ export interface StandardServerConfig {
   host?: string;
   environment?: string;
   enableWebSocket?: boolean;
+  // Desktop app specific
+  appId?: string;  // App identifier for desktop (e.g. 'com.episensor.appname')
+  enableDesktopIntegration?: boolean;  // Auto-configure for desktop apps
+  desktopDataPath?: string;  // Override desktop data path
+  corsOrigins?: string[];  // Additional CORS origins for desktop apps
   onInitialize?: (app: Express) => Promise<void>;
   onStart?: () => Promise<void>;
 }
@@ -53,11 +60,16 @@ export class StandardServer {
     // Default to localhost for development, 0.0.0.0 for production/containerized environments
     const defaultHost = environment === 'development' ? '127.0.0.1' : '0.0.0.0';
     
+    // Auto-enable desktop integration if running in Tauri or explicitly enabled
+    const enableDesktopIntegration = config.enableDesktopIntegration ?? isDesktopApp();
+    
     this.config = {
       port: 8080,
       host: process.env.HOST || config.host || defaultHost,
       environment,
       enableWebSocket: true,
+      enableDesktopIntegration,
+      appId: config.appId || `com.company.${config.appName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
       ...config
     };
     
@@ -85,15 +97,25 @@ export class StandardServer {
    */
   public async initialize(): Promise<void> {
     try {
+      // Setup desktop-specific paths, CORS, and logging if running as desktop app
+      if (this.config.enableDesktopIntegration) {
+        await this.setupDesktopIntegration();
+      }
+
       // Initialize the logger first to ensure file output works
       const enhancedLogger = getEnhancedLogger;
       if (!enhancedLogger.isInitialized()) {
+        // Use proper logs directory for desktop apps
+        const logsDir = this.config.enableDesktopIntegration 
+          ? getLogsPath(this.config.appId!, this.config.appName)
+          : './data/logs';
+          
         await enhancedLogger.initialize({
           appName: this.config.appName,
           logLevel: process.env.LOG_LEVEL || 'info',
           consoleOutput: true,
           fileOutput: true,
-          logsDir: './data/logs'
+          logsDir
         });
       }
 
@@ -121,12 +143,63 @@ export class StandardServer {
   }
 
   /**
+   * Setup desktop app integration (CORS, data paths, logging, etc.)
+   */
+  private async setupDesktopIntegration(): Promise<void> {
+    ensureLogger().info('Setting up desktop app integration', {
+      appId: this.config.appId,
+      isDesktopApp: isDesktopApp(),
+      dataPath: this.config.desktopDataPath || getAppDataPath(this.config.appId!, this.config.appName)
+    });
+
+    // Initialize enhanced logging for desktop apps
+    const enhancedLogger = getEnhancedLogger;
+    if (!enhancedLogger.isInitialized()) {
+      const logsDir = getLogsPath(this.config.appId!, this.config.appName);
+      await enhancedLogger.initialize({
+        appName: this.config.appName,
+        logLevel: process.env.LOG_LEVEL || 'info',
+        consoleOutput: true,
+        fileOutput: true,
+        logsDir
+      });
+      ensureLogger().info('Enhanced logging initialized for desktop app', { logsDir });
+    }
+
+    // Setup CORS for desktop apps
+    const corsOrigins: string[] = [...(this.config.corsOrigins || [])];
+    
+    // Add localhost origins based on webPort if specified
+    if (this.config.webPort) {
+      corsOrigins.push(
+        `http://localhost:${this.config.webPort}`,
+        `http://localhost:${this.config.webPort + 1}` // Common development pattern
+      );
+    }
+    
+    // Add Tauri origins when running in desktop mode
+    if (isDesktopApp()) {
+      corsOrigins.push('tauri://localhost', 'https://tauri.localhost');
+    }
+    
+    this.app.use(cors({
+      origin: corsOrigins,
+      credentials: true
+    }));
+  }
+
+  /**
    * Setup default middleware for all applications
    */
   private setupDefaultMiddleware(): void {
     // Basic middleware that should be present in all apps
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
+
+    // CORS setup for non-desktop apps (desktop setup happens in setupDesktopIntegration)
+    if (!this.config.enableDesktopIntegration) {
+      this.app.use(cors());
+    }
   }
 
   /**
@@ -206,6 +279,23 @@ export class StandardServer {
         resolve();
       });
     });
+  }
+
+  /**
+   * Get the data path for desktop apps (platform-specific)
+   */
+  public getDataPath(): string {
+    if (this.config.enableDesktopIntegration) {
+      return this.config.desktopDataPath || getAppDataPath(this.config.appId!, this.config.appName);
+    }
+    return './data';
+  }
+
+  /**
+   * Check if running as desktop app
+   */
+  public isDesktopApp(): boolean {
+    return this.config.enableDesktopIntegration || false;
   }
 
   /**
