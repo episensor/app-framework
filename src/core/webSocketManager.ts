@@ -8,7 +8,7 @@ import { Server as HttpsServer } from 'https';
 import { Server as SocketIOServer, Socket, Namespace } from 'socket.io';
 // Redis adapter imports (optional dependencies)
 import { EventEmitter } from 'events';
-import { createLogger } from './enhancedLogger';
+import { createLogger } from './enhancedLogger.js';
 
 const logger = createLogger('WebSocketManager');
 
