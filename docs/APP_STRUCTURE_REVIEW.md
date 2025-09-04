@@ -22,7 +22,7 @@
 - **Desktop**: Tauri support
 - **WebSocket**: Custom Socket.IO for simulator events
 
-### 3. epi-origami-simulator ✅
+### 3. epi-vpp-manager ✅
 - **Port Assignment**: 7015 (API), 7016 (Web)
 - **Startup**: Uses `episensor-dev` CLI
 - **Logging**: Standard `createLogger`
@@ -57,7 +57,7 @@
 |-----|----------|----------|---------|
 | epi-cpcodebase | 7000 | 7001 | Codebase management |
 | epi-modbus-simulator | 7010 | 7011 | Device simulation |
-| epi-origami-simulator | 7015 | 7016 | VPP management |
+| epi-vpp-manager | 7015 | 7016 | VPP management |
 | epi-node-programmer | 7020 | 7021 | Manufacturing tool |
 | epi-app-template | 8080 | 5173 | Template default |
 
@@ -98,7 +98,7 @@
 
 ## Framework Features Adoption
 
-| Feature | cpcodebase | modbus-sim | origami-sim | node-prog |
+| Feature | cpcodebase | modbus-sim | vpp-manager | node-prog |
 |---------|------------|------------|-------------|-----------|
 | StandardServer | ✅ | ✅ | ✅ | ✅ |
 | createLogger | ✅ | ✅ | ✅ | ✅ |
