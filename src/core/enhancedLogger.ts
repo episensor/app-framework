@@ -441,13 +441,29 @@ class EnhancedLogger {
     const logDir = this.logsDir;
     const level = options.level || process.env.LOG_LEVEL || 'info';
 
-    // Console format with colors
+    // Console format with colors - no JSON output
     const consoleFormat = format.combine(
       format.timestamp({ format: 'HH:mm:ss.SSS' }),
       format.colorize(),
-      format.printf(({ timestamp, level, message, ...meta }) => {
-        const metaStr = Object.keys(meta).length ? `\n${JSON.stringify(meta, null, 2)}` : '';
-        return `[${timestamp}] ${level}: ${message}${metaStr}`;
+      format.printf(({ timestamp, level, message, source, ...meta }) => {
+        // Extract commonly used metadata
+        const sourceStr = source ? ` [${source}]` : '';
+        
+        // For errors, show the error message inline
+        if (meta.error && typeof meta.error === 'string') {
+          return `[${timestamp}] ${level}:${sourceStr} ${message}: ${meta.error}`;
+        }
+        
+        // For other metadata, format key fields inline (no JSON)
+        const importantMeta = [];
+        if (meta.code) importantMeta.push(`code=${meta.code}`);
+        if (meta.status) importantMeta.push(`status=${meta.status}`);
+        if (meta.duration) importantMeta.push(`duration=${meta.duration}`);
+        if (meta.url) importantMeta.push(`url=${meta.url}`);
+        
+        const metaStr = importantMeta.length > 0 ? ` (${importantMeta.join(', ')})` : '';
+        
+        return `[${timestamp}] ${level}:${sourceStr} ${message}${metaStr}`;
       })
     );
 

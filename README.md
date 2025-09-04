@@ -599,4 +599,4 @@ MIT License - see [LICENSE](./LICENSE) for details
 
 ---
 
-Built with ❤️ for structured, opinionated desktop application development
+Built with ❤️ by EpiSensor
