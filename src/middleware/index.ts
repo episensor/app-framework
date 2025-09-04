@@ -16,6 +16,7 @@ export {
 } from './validation.js';
 
 export { aiErrorHandler } from './aiErrorHandler.js';
+export { errorHandler, notFoundHandler, asyncHandler, AppError } from './errorHandler.js';
 export { createFileUpload, parseFormData, sendFile, createTempCleaner } from './fileUpload.js';
 export type { FileUploadConfig } from './fileUpload.js';
 export { createHealthCheck, healthCheck } from './health.js';
