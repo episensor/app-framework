@@ -308,6 +308,11 @@ class DevServerOrchestrator {
     this.frontendProcess.stdout?.on('data', (data) => {
       const output = data.toString();
       
+      // Debug: Log all frontend output
+      if (process.env.DEBUG_DEV_SERVER) {
+        console.log(chalk.blue(`[Frontend stdout] ${output.trim()}`));
+      }
+      
       // Detect when frontend is ready
       if (!this.hasDetectedFrontendReady) {
         if (output.includes('ready in') || 
@@ -353,9 +358,35 @@ class DevServerOrchestrator {
     this.frontendProcess.stderr?.on('data', (data) => {
       const output = data.toString().trim();
       if (output) {
-        // Strip existing ANSI codes to prevent corruption
-        const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, '');
-        console.error(chalk.red(`[Frontend Error] ${cleanOutput}`));
+        // Debug: Log all frontend stderr
+        if (process.env.DEBUG_DEV_SERVER) {
+          console.log(chalk.yellow(`[Frontend stderr] ${output}`));
+        }
+        
+        // Check if Vite is outputting its ready message to stderr
+        if (!this.hasDetectedFrontendReady) {
+          if (output.includes('ready in') || 
+              output.includes('Local:') || 
+              output.includes('➜') ||
+              output.includes(`${this.config.frontendPort}`)) {
+            // Extract actual port if different
+            const portMatch = output.match(/localhost:(\d+)/);
+            if (portMatch) {
+              this.config.frontendPort = parseInt(portMatch[1]);
+            }
+            this.hasDetectedFrontendReady = true;
+            this.isFrontendReady = true;
+            this.printBanner();
+            return;
+          }
+        }
+        
+        // Only show as error if it's actually an error
+        if (output.toLowerCase().includes('error') || output.toLowerCase().includes('failed')) {
+          // Strip existing ANSI codes to prevent corruption
+          const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, '');
+          console.error(chalk.red(`[Frontend Error] ${cleanOutput}`));
+        }
       }
     });
 
