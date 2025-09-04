@@ -275,6 +275,7 @@ class DevServerOrchestrator {
       // Complex command like "cd web && npm run dev"
       cmd = 'sh';
       args = ['-c', this.config.frontendCommand!];
+      console.log(chalk.gray(`Frontend command: ${cmd} ${args.join(' ')}`));
     } else if (this.config.frontendCommand === 'vite') {
       // Direct vite command
       cmd = 'npx';
@@ -289,6 +290,7 @@ class DevServerOrchestrator {
     this.frontendProcess = spawn(cmd, args, {
       stdio: ['inherit', 'pipe', 'pipe'],
       shell: true,
+      cwd: process.cwd(), // Explicitly set working directory
       env: {
         ...process.env,
         NODE_ENV: 'development',
@@ -380,11 +382,16 @@ class DevServerOrchestrator {
 
     this.frontendProcess.on('error', (error) => {
       console.error(chalk.red(`[Frontend] Failed to start: ${error.message}`));
+      console.error(chalk.red(`[Frontend] Command was: ${cmd} ${args.join(' ')}`));
+      console.error(chalk.red(`[Frontend] Working directory: ${process.cwd()}`));
     });
 
     this.frontendProcess.on('exit', (code) => {
       if (code !== 0 && code !== null) {
         console.error(chalk.red(`[Frontend] Exited with code ${code}`));
+        if (!this.hasDetectedFrontendReady) {
+          console.error(chalk.red(`[Frontend] Failed to start properly. Check that 'cd web && npm run dev' works manually.`));
+        }
       }
     });
     
