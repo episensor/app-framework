@@ -120,68 +120,9 @@ describe('Enhanced Logger', () => {
     });
   });
   
-  describe('log stats', () => {
-    test('getLogStats returns statistics', async () => {
-      const enhancedLogger = getEnhancedLogger;
-      await enhancedLogger.initialize();
-      
-      (fs.readdir as jest.Mock).mockResolvedValue(['system', 'api']);
-      (fs.stat as jest.Mock).mockResolvedValue({
-        isDirectory: () => true,
-        isFile: () => false,
-        size: 1024,
-        mtime: new Date()
-      });
-      
-      const stats = await enhancedLogger.getLogStats();
-      
-      expect(stats).toHaveProperty('totalSize');
-      expect(stats).toHaveProperty('fileCount');
-      expect(stats).toHaveProperty('categories');
-    });
-  });
+  // Note: getLogStats and archiveLogs methods were removed from EnhancedLogger
   
-  describe('archiveLogs', () => {
-    test('archives old log files', async () => {
-      const enhancedLogger = getEnhancedLogger;
-      await enhancedLogger.initialize();
-      
-      // Mock all fs operations to prevent real file access
-      (fs.readdir as jest.Mock).mockResolvedValue([]);
-      
-      const archived = await enhancedLogger.archiveLogs(7);
-      
-      expect(archived).toBeInstanceOf(Array);
-      expect(archived).toEqual([]);
-    });
-  });
-  
-  describe('readLogFile', () => {
-    test('reads log file content', async () => {
-      const enhancedLogger = getEnhancedLogger;
-      await enhancedLogger.initialize();
-      
-      const mockContent = 'log line 1\nlog line 2\nlog line 3';
-      (fs.readFile as jest.Mock).mockResolvedValue(mockContent);
-      
-      const content = await enhancedLogger.readLogFile('system', 'test.log');
-      
-      expect(fs.readFile).toHaveBeenCalled();
-      expect(content).toBeDefined();
-    });
-    
-    test('applies tail option', async () => {
-      const enhancedLogger = getEnhancedLogger;
-      await enhancedLogger.initialize();
-      
-      const mockContent = 'line1\nline2\nline3\nline4\nline5';
-      (fs.readFile as jest.Mock).mockResolvedValue(mockContent);
-      
-      const content = await enhancedLogger.readLogFile('system', 'test.log', { tail: 2 });
-      
-      expect(content).toBeDefined();
-    });
-  });
+  // Note: readLogFile method was removed from EnhancedLogger
   
   describe('error handling', () => {
     test('handles directory creation errors gracefully', async () => {
@@ -191,15 +132,5 @@ describe('Enhanced Logger', () => {
       await expect(initializeLogger()).resolves.toBeUndefined();
     });
     
-    test('handles missing log files gracefully', async () => {
-      const enhancedLogger = getEnhancedLogger;
-      await enhancedLogger.initialize();
-      
-      (fs.readFile as jest.Mock).mockRejectedValue(new Error('File not found'));
-      
-      await expect(
-        enhancedLogger.readLogFile('system', 'missing.log')
-      ).rejects.toThrow('Failed to read log file');
-    });
   });
 });

@@ -343,8 +343,7 @@ describe('ConfigManager', () => {
 
     test('watches configuration file when enabled', async () => {
       await configManager.load();
-      await configManager.watch();
-      
+      // File watching is automatic when watchForChanges is true
       expect(fs.watch).toHaveBeenCalledWith('./config.json', expect.any(Function));
     });
 
@@ -355,7 +354,7 @@ describe('ConfigManager', () => {
         .mockReturnValueOnce(JSON.stringify({ updated: 'value' }));
       
       await configManager.load();
-      await configManager.watch();
+      // File watching starts automatically
       
       // Simulate file change
       const changeHandler = (fs.watch as jest.Mock).mock.calls[0][1];
@@ -367,10 +366,9 @@ describe('ConfigManager', () => {
       expect(mockReadFileSync).toHaveBeenCalledTimes(2);
     });
 
-    test('stops watching when unwatch called', async () => {
+    test('stops watching when dispose called', async () => {
       await configManager.load();
-      await configManager.watch();
-      await configManager.unwatch();
+      configManager.dispose();
       
       expect(mockWatcher.close).toHaveBeenCalled();
     });
@@ -378,7 +376,6 @@ describe('ConfigManager', () => {
     test('does nothing when no configPath', async () => {
       configManager = new ConfigManager({ watchForChanges: true });
       await configManager.load();
-      await configManager.watch();
       
       expect(fs.watch).not.toHaveBeenCalled();
     });
@@ -420,9 +417,9 @@ describe('ConfigManager', () => {
       await configManager.load();
     });
 
-    test('getEnvironment returns environment value', () => {
-      const env = configManager.getEnvironment();
-      expect(env).toBe('production');
+    test('environment is included in config', () => {
+      const config = configManager.getAll();
+      expect(config.environment).toBe('production');
     });
   });
 });
