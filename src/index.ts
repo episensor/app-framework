@@ -95,3 +95,10 @@ export {
   type ConfigManagerOptions,
   type ConfigChangeEvent
 } from './core/configManager.js';
+
+// Tauri build utilities
+export {
+  buildTauriSidecar,
+  generateBuildSidecarScript,
+  type TauriBundleOptions
+} from './build/tauriBundler.js';

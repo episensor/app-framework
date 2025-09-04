@@ -109,7 +109,7 @@ export function createTypedWebSocketHook<
 >() {
   return function useTypedWebSocket<T extends { socket: Socket<ServerToClientEvents, ClientToServerEvents> | null; connected?: boolean }>(
     SocketContext: React.Context<T>
-  ) {
+  ): WebSocketHook<ServerToClientEvents> {
     const context = useContext(SocketContext);
     const socket = context?.socket;
     const [connected, setConnected] = useState(context?.connected || false);

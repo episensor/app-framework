@@ -70,7 +70,7 @@ describe('Enhanced Logger', () => {
       await initializeLogger();
       
       // The logger should be initialized without errors
-      const logger = getEnhancedLogger();
+      const logger = getEnhancedLogger;
       expect(logger).toBeDefined();
     });
     
@@ -83,7 +83,7 @@ describe('Enhanced Logger', () => {
   describe('getEnhancedLogger', () => {
     test('returns the logger instance', async () => {
       await initializeLogger();
-      const logger = getEnhancedLogger();
+      const logger = getEnhancedLogger;
       
       expect(logger).toBeDefined();
       expect(logger).toHaveProperty('initialize');
@@ -91,8 +91,8 @@ describe('Enhanced Logger', () => {
     });
     
     test('returns singleton instance', () => {
-      const logger1 = getEnhancedLogger();
-      const logger2 = getEnhancedLogger();
+      const logger1 = getEnhancedLogger;
+      const logger2 = getEnhancedLogger;
       
       expect(logger1).toBe(logger2);
     });
@@ -100,7 +100,7 @@ describe('Enhanced Logger', () => {
   
   describe('createLogger', () => {
     test('creates a logger with specified category', async () => {
-      const enhancedLogger = getEnhancedLogger();
+      const enhancedLogger = getEnhancedLogger;
       await enhancedLogger.initialize();
       
       const logger = enhancedLogger.createLogger('test-category');
@@ -110,7 +110,7 @@ describe('Enhanced Logger', () => {
     });
     
     test('returns cached logger for same category', async () => {
-      const enhancedLogger = getEnhancedLogger();
+      const enhancedLogger = getEnhancedLogger;
       await enhancedLogger.initialize();
       
       const logger1 = enhancedLogger.createLogger('test');
@@ -122,7 +122,7 @@ describe('Enhanced Logger', () => {
   
   describe('log stats', () => {
     test('getLogStats returns statistics', async () => {
-      const enhancedLogger = getEnhancedLogger();
+      const enhancedLogger = getEnhancedLogger;
       await enhancedLogger.initialize();
       
       (fs.readdir as jest.Mock).mockResolvedValue(['system', 'api']);
@@ -143,7 +143,7 @@ describe('Enhanced Logger', () => {
   
   describe('archiveLogs', () => {
     test('archives old log files', async () => {
-      const enhancedLogger = getEnhancedLogger();
+      const enhancedLogger = getEnhancedLogger;
       await enhancedLogger.initialize();
       
       // Mock all fs operations to prevent real file access
@@ -158,7 +158,7 @@ describe('Enhanced Logger', () => {
   
   describe('readLogFile', () => {
     test('reads log file content', async () => {
-      const enhancedLogger = getEnhancedLogger();
+      const enhancedLogger = getEnhancedLogger;
       await enhancedLogger.initialize();
       
       const mockContent = 'log line 1\nlog line 2\nlog line 3';
@@ -171,7 +171,7 @@ describe('Enhanced Logger', () => {
     });
     
     test('applies tail option', async () => {
-      const enhancedLogger = getEnhancedLogger();
+      const enhancedLogger = getEnhancedLogger;
       await enhancedLogger.initialize();
       
       const mockContent = 'line1\nline2\nline3\nline4\nline5';
@@ -192,7 +192,7 @@ describe('Enhanced Logger', () => {
     });
     
     test('handles missing log files gracefully', async () => {
-      const enhancedLogger = getEnhancedLogger();
+      const enhancedLogger = getEnhancedLogger;
       await enhancedLogger.initialize();
       
       (fs.readFile as jest.Mock).mockRejectedValue(new Error('File not found'));

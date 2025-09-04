@@ -37,6 +37,7 @@ export type { SettingsPageProps, SettingsCategory, SettingDefinition } from './p
 
 // Status components
 export { ConnectionStatus } from './components/ConnectionStatus';
+export { ConnectionLostOverlay } from './components/ConnectionLostOverlay';
 export { RestartBanner } from './components/RestartBanner';
 export { TestModeIndicator } from './components/TestModeIndicator';
 

@@ -1,12 +1,15 @@
 {
   "name": "@episensor/app-framework",
-  "version": "3.10.4",
+  "version": "3.10.7",
   "description": "Opinionated TypeScript framework for structured vibecoding - building internal web and desktop apps with batteries included",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "episensor-build-sidecar": "./dist/cli/build-sidecar.js"
+    "episensor": "./dist/cli/index.js",
+    "app-framework": "./dist/cli/index.js",
+    "episensor-build-sidecar": "./dist/cli/build-sidecar.js",
+    "episensor-dev": "./dist/cli/dev-server.js"
   },
   "exports": {
     ".": {
@@ -80,7 +83,7 @@
     "websockets"
   ],
   "author": "EpiSensor",
-  "license": "PROPRIETARY",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/brendan-carroll/epi-app-framework.git"
@@ -91,6 +94,7 @@
     "archiver": "^7.0.1",
     "boxen": "^8.0.1",
     "chalk": "^5.5.0",
+    "commander": "^12.1.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "esbuild": "^0.25.9",

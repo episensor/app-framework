@@ -2,7 +2,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  roots: ['<rootDir>/tests', '<rootDir>/components'],
+  roots: ['<rootDir>/tests', '<rootDir>/components', '<rootDir>/src'],
   collectCoverageFrom: [
     'components/**/*.{ts,tsx}',
     'hooks/**/*.{ts,tsx}',

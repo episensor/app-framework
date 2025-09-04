@@ -6,12 +6,12 @@
 
 export const theme = {
   colors: {
-    // Primary brand colors
+    // Primary brand colors (customizable)
     primary: {
-      DEFAULT: '#E21350', // EpiSensor pink
-      hover: '#c01144',
-      light: '#ff4d7d',
-      dark: '#a00e3a',
+      DEFAULT: '#3b82f6', // Blue
+      hover: '#2563eb',
+      light: '#60a5fa',
+      dark: '#1d4ed8',
     },
     
     // Dark theme colors (oxide-inspired)

@@ -10,24 +10,54 @@ import path from 'path';
 chalk.level = 3; // Full color support
 
 // Get framework version dynamically
-let version = 'unknown'; // Will be determined from package.json
-try {
-  // First try to get framework version from its own package.json
-  const frameworkPackageJson = path.join(__dirname, '../../package.json');
-  if (fs.existsSync(frameworkPackageJson)) {
-    const packageJson = JSON.parse(fs.readFileSync(frameworkPackageJson, 'utf-8'));
-    version = packageJson.version || version;
-  } else {
-    // Fallback: try to read from node_modules
-    const nodeModulesPath = path.join(process.cwd(), 'node_modules', '@episensor', 'app-framework', 'package.json');
-    if (fs.existsSync(nodeModulesPath)) {
-      const packageJson = JSON.parse(fs.readFileSync(nodeModulesPath, 'utf-8'));
-      version = packageJson.version || version;
+function getFrameworkVersion(): string {
+  // Try multiple strategies to find the framework version
+  const strategies = [
+    // Strategy 1: Check if we're in the framework itself (during development)
+    () => {
+      const localPkg = path.join(__dirname, '../../package.json');
+      if (fs.existsSync(localPkg)) {
+        const pkg = JSON.parse(fs.readFileSync(localPkg, 'utf-8'));
+        if (pkg.name === '@episensor/app-framework') {
+          return pkg.version;
+        }
+      }
+      return null;
+    },
+    // Strategy 2: Check node_modules in current working directory
+    () => {
+      const nodeModulesPath = path.join(process.cwd(), 'node_modules', '@episensor', 'app-framework', 'package.json');
+      if (fs.existsSync(nodeModulesPath)) {
+        const pkg = JSON.parse(fs.readFileSync(nodeModulesPath, 'utf-8'));
+        return pkg.version;
+      }
+      return null;
+    },
+    // Strategy 3: Try require.resolve to find the module
+    () => {
+      try {
+        const pkgPath = require.resolve('@episensor/app-framework/package.json', { paths: [process.cwd()] });
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+        return pkg.version;
+      } catch {
+        return null;
+      }
+    }
+  ];
+
+  for (const strategy of strategies) {
+    try {
+      const version = strategy();
+      if (version) return version;
+    } catch {
+      // Try next strategy
     }
   }
-} catch (error) {
-  // Use default version if unable to read package.json
+  
+  return 'unknown';
 }
+
+const version = getFrameworkVersion();
 
 export interface BannerOptions {
   appName: string;

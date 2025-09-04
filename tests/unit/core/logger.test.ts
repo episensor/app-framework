@@ -44,8 +44,8 @@ describe('Enhanced Logger', () => {
 
   describe('getEnhancedLogger', () => {
     test('returns singleton instance', () => {
-      const logger1 = getEnhancedLogger();
-      const logger2 = getEnhancedLogger();
+      const logger1 = getEnhancedLogger;
+      const logger2 = getEnhancedLogger;
       expect(logger1).toBe(logger2);
     });
   });

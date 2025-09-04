@@ -54,7 +54,7 @@ export function AppShell({
   showConnectionStatus = true,
   connectionStatusUrl = '',
   testModeComponent,
-  primaryColor = '#E21350',
+  primaryColor = '#3b82f6', // Neutral blue default
   className,
   headerClassName,
   navClassName,

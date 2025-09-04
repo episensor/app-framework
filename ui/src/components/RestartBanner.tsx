@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '../../components/base/alert';
 import { Button } from '../../components/base/button';
 import { AlertCircle, RefreshCw, X } from 'lucide-react';

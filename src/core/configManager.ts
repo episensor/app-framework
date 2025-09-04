@@ -69,7 +69,7 @@ export class ConfigManager extends EventEmitter {
       await this.loadConfig();
 
       this.isInitialized = true;
-      logger.info('Configuration initialized successfully');
+      logger.debug('Configuration initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize configuration:', error);
       throw error;
@@ -110,9 +110,9 @@ export class ConfigManager extends EventEmitter {
         const fileContent = await fs.readFile(this.configPath, 'utf-8');
         const fileConfig = JSON.parse(fileContent);
         config = this.deepMerge(config, fileConfig);
-        logger.info(`Loaded configuration from ${this.configPath}`);
+        logger.debug(`Loaded configuration from ${this.configPath}`);
       } else {
-        logger.info(`Configuration file not found at ${this.configPath}, using defaults`);
+        logger.debug(`Configuration file not found at ${this.configPath}, using defaults`);
         // Create the config directory if it doesn't exist
         const configDir = path.dirname(this.configPath);
         if (!existsSync(configDir)) {

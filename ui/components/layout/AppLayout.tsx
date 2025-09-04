@@ -21,10 +21,11 @@ export interface AppLayoutProps {
   authenticated?: boolean;
   connectionStatusUrl?: string;
   className?: string;
+  primaryColor?: string;
 }
 
 /**
- * Standardized application layout for all EpiSensor web apps
+ * Standardized application layout for web apps
  * Provides consistent header, navigation, and connection status
  */
 export function AppLayout({
@@ -37,7 +38,8 @@ export function AppLayout({
   onLogout,
   authenticated = true,
   connectionStatusUrl,
-  className
+  className,
+  primaryColor = '#3b82f6'
 }: AppLayoutProps) {
   // Safe useLocation - returns a default if not in Router context
   let location = { pathname: '/' };
@@ -135,9 +137,10 @@ export function AppLayout({
                   className={cn(
                     "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors",
                     isActive 
-                      ? "bg-[#E21350] text-white" 
+                      ? "text-white" 
                       : "text-gray-300 hover:bg-[#555555] hover:text-white"
                   )}
+                  style={isActive ? { backgroundColor: primaryColor } : undefined}
                 >
                   {item.icon}
                   {item.name}
@@ -161,9 +164,10 @@ export function AppLayout({
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded text-sm font-medium",
                       isActive 
-                        ? "bg-[#E21350] text-white" 
+                        ? "text-white" 
                         : "text-gray-300 hover:text-white hover:bg-[#555555]"
                     )}
+                    style={isActive ? { backgroundColor: primaryColor } : undefined}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {item.icon}
