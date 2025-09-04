@@ -77,15 +77,6 @@ export {
 } from './core/healthCheck.js';
 
 // WebSocket Manager exports
-export {
-  WebSocketManager,
-  getWebSocketManager,
-  createWebSocketHandlers,
-  type WebSocketManagerOptions,
-  type WebSocketNamespaceOptions,
-  type ClientInfo as WebSocketClientInfo,
-  type BroadcastOptions as WebSocketBroadcastOptions
-} from './core/webSocketManager.js';
 
 // Configuration management exports
 export {

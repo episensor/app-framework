@@ -40,14 +40,17 @@ export { ConnectionStatus } from './components/ConnectionStatus';
 export { ConnectionLostOverlay } from './components/ConnectionLostOverlay';
 export { RestartBanner } from './components/RestartBanner';
 export { TestModeIndicator } from './components/TestModeIndicator';
+export { ConnectionIndicator } from './components/ConnectionIndicator';
 
 // UI components
 export { DeviceIcon } from './components/DeviceIcon';
 export { DogEarBadge } from './components/DogEarBadge';
 export { EmptyState } from './components/EmptyState';
+export { EmptyStates } from './components/EmptyStates';
 export { LoadingState, CardSkeleton, TableSkeleton } from './components/LoadingState';
 export { HelpTooltip } from './components/HelpTooltip';
 export { NetworkInterfaceSelect } from './components/NetworkInterfaceSelect';
+export { MarkdownViewer, MarkdownCard, MarkdownScrollArea } from './components/MarkdownViewer';
 
 // Utilities
 export * from './utils/dateFormat';
