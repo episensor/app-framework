@@ -236,7 +236,9 @@ class DevServerOrchestrator {
       if (output.trim() && !output.includes('ExperimentalWarning')) {
         // Check if it's actually an error worth showing
         if (output.includes('Error') || output.includes('error')) {
-          console.error(chalk.red(`[Backend Error] ${output.trim()}`));
+          // Strip existing ANSI codes to prevent corruption
+          const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, '').trim();
+          console.error(chalk.red(`[Backend Error] ${cleanOutput}`));
           
           // If we get a real error early, prevent showing success banner
           if (!this.hasDetectedBackendReady) {
@@ -335,7 +337,9 @@ class DevServerOrchestrator {
         const lines = output.trim().split('\n');
         lines.forEach((line: string) => {
           if (line.trim() && !line.includes('➜')) {
-            const msg = chalk.red(`[Frontend] ${line.trim()}`);
+            // Strip existing ANSI codes to prevent corruption
+            const cleanLine = line.replace(/\x1b\[[0-9;]*m/g, '').trim();
+            const msg = chalk.red(`[Frontend] ${cleanLine}`);
             if (this.hasShownBanner) {
               console.log(msg);
             } else {
@@ -349,7 +353,9 @@ class DevServerOrchestrator {
     this.frontendProcess.stderr?.on('data', (data) => {
       const output = data.toString().trim();
       if (output) {
-        console.error(chalk.red(`[Frontend Error] ${output}`));
+        // Strip existing ANSI codes to prevent corruption
+        const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, '');
+        console.error(chalk.red(`[Frontend Error] ${cleanOutput}`));
       }
     });
 
