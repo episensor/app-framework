@@ -142,7 +142,7 @@ export function ConnectionIndicator({
                 <span>Backend API</span>
               </div>
               <span className="font-mono text-xs">
-                {connected ? (import.meta.env.VITE_WS_URL || 'ws://localhost:5174') : 'Not connected'}
+                {connected ? (typeof window !== 'undefined' && (window as any).VITE_WS_URL || 'ws://localhost:5174') : 'Not connected'}
               </span>
             </div>
             

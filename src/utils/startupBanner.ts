@@ -125,50 +125,54 @@ export function displayStartupBanner(options: StartupBannerOptions): void {
   console.log(chalk.cyan('╔' + border + '╗'));
   console.log(emptyLine);
   
-  // App name (title)
-  console.log(makeLine(chalk.bold.white(appName)));
+  // App name (title) - extract display name from package name
+  const displayName = appName.includes('/') ? 
+    appName.split('/')[1].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) :
+    appName;
+  console.log(makeLine(chalk.bold.white(displayName)));
   console.log(emptyLine);
   
   // Description (if provided)
   if (description) {
-    console.log(makeLine(chalk.gray(description)));
-    console.log(emptyLine);
+    console.log(makeLine(chalk.white(description)));
   }
   
-  // Package name and version
+  // Package name 
   if (packageName) {
     console.log(makeLine(chalk.gray(packageName)));
   }
+  
+  // Version
   console.log(makeLine(chalk.gray(`v${appVersion}`)));
   
   console.log(emptyLine);
   console.log(separator);
   console.log(emptyLine);
   
-  // URLs - intelligently show what's actually running
+  // URLs - keys dark gray, values light gray
   if (webPort && webPort !== port) {
     // Both web UI and API are configured on different ports
-    console.log(makeLine(`  ${chalk.gray('🌐 Web UI')}    ${chalk.gray(':')} ${chalk.gray(`http://localhost:${webPort}`)}`, 'left'));
-    console.log(makeLine(`  ${chalk.gray('📊 API')}       ${chalk.gray(':')} ${chalk.gray(`http://localhost:${port}/api`)}`, 'left'));
+    console.log(makeLine(`  ${chalk.gray('🌐 Web UI')}    ${chalk.gray(':')} ${chalk.white(`http://localhost:${webPort}`)}`, 'left'));
+    console.log(makeLine(`  ${chalk.gray('📊 API')}       ${chalk.gray(':')} ${chalk.white(`http://localhost:${port}/api`)}`, 'left'));
   } else if (webPort === port) {
     // Web UI and API share the same port (production mode)
-    console.log(makeLine(`  ${chalk.gray('🌐 Web UI')}     ${chalk.gray(':')} ${chalk.gray(`http://localhost:${port}`)}`, 'left'));
-    console.log(makeLine(`  ${chalk.gray('📊 API')}        ${chalk.gray(':')} ${chalk.gray(`http://localhost:${port}/api`)}`, 'left'));
+    console.log(makeLine(`  ${chalk.gray('🌐 Web UI')}     ${chalk.gray(':')} ${chalk.white(`http://localhost:${port}`)}`, 'left'));
+    console.log(makeLine(`  ${chalk.gray('📊 API')}        ${chalk.gray(':')} ${chalk.white(`http://localhost:${port}/api`)}`, 'left'));
   } else {
     // API-only mode
-    console.log(makeLine(`  ${chalk.gray('📊 API Server')} ${chalk.gray(':')} ${chalk.gray(`http://localhost:${port}`)}`, 'left'));
-    console.log(makeLine(`  ${chalk.gray('📍 Endpoints')}  ${chalk.gray(':')} ${chalk.gray(`http://localhost:${port}/api/*`)}`, 'left'));
+    console.log(makeLine(`  ${chalk.gray('📊 API Server')} ${chalk.gray(':')} ${chalk.white(`http://localhost:${port}`)}`, 'left'));
+    console.log(makeLine(`  ${chalk.gray('📍 Endpoints')}  ${chalk.gray(':')} ${chalk.white(`http://localhost:${port}/api/*`)}`, 'left'));
   }
-  console.log(makeLine(`  ${chalk.gray('🔌 WebSocket')}  ${chalk.gray(':')} ${chalk.gray(`ws://localhost:${port}`)}`, 'left'));
+  console.log(makeLine(`  ${chalk.gray('🔌 WebSocket')}  ${chalk.gray(':')} ${chalk.white(`ws://localhost:${port}`)}`, 'left'));
   
   console.log(emptyLine);
   console.log(separator);
   console.log(emptyLine);
   
-  // Status line - consistent format for all apps
+  // Status line - keys dark gray, values light gray (except ready time in green)
   console.log(makeLine(`  ${chalk.gray('Ready in')} ${chalk.green(startupTime)}`, 'left'));
-  console.log(makeLine(`  ${chalk.gray('Environment:')} ${chalk.gray(environment)}`, 'left'));
-  console.log(makeLine(`  ${chalk.gray('Framework:')} ${chalk.gray(`@episensor/app-framework v${version}`)}`, 'left'));
+  console.log(makeLine(`  ${chalk.gray('Environment:')} ${chalk.white(environment)}`, 'left'));
+  console.log(makeLine(`  ${chalk.gray('Framework:')} ${chalk.white(`@episensor/app-framework v${version}`)}`, 'left'));
   
   console.log(emptyLine);
   console.log(separator);

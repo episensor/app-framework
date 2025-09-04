@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Development server orchestrator for EpiSensor apps
+ * Development server orchestrator for framework apps
  * Manages both backend and frontend processes with unified output
  */
 
@@ -34,6 +34,7 @@ class DevServerOrchestrator {
   private hasDetectedBackendReady = false;
   private hasDetectedFrontendReady = false;
   private hasShownBanner = false;
+  private retryCount = 0;
   private outputBuffer: string[] = [];
 
   constructor() {
@@ -65,6 +66,9 @@ class DevServerOrchestrator {
       backendCommand: packageJson.devServer?.backendCommand || defaultBackendCommand,
       frontendCommand: packageJson.devServer?.frontendCommand || defaultFrontendCommand,
     };
+
+    // Set process title for easier identification
+    process.title = `dev-server:${this.config.appName}:${this.config.backendPort}`;
 
     this.startTime = Date.now();
   }
@@ -161,7 +165,9 @@ class DevServerOrchestrator {
         LOG_LEVEL: 'warn', // Only show warnings and errors
         NODE_ENV: 'development',
         FORCE_COLOR: '3',
-        PORT: this.config.backendPort.toString()
+        PORT: this.config.backendPort.toString(),
+        APP_NAME: this.config.appName,
+        APP_PORT: this.config.backendPort.toString()
       }
     });
 
@@ -380,10 +386,21 @@ class DevServerOrchestrator {
       }
     });
 
-    this.frontendProcess.on('error', (error) => {
-      console.error(chalk.red(`[Frontend] Failed to start: ${error.message}`));
-      console.error(chalk.red(`[Frontend] Command was: ${cmd} ${args.join(' ')}`));
-      console.error(chalk.red(`[Frontend] Working directory: ${process.cwd()}`));
+    this.frontendProcess.on('error', (error: any) => {
+      // EAGAIN errors are temporary resource issues, retry
+      if (error.code === 'EAGAIN' && this.retryCount < 3) {
+        this.retryCount++;
+        console.log(chalk.yellow(`[Frontend] Resource temporarily unavailable, retrying (${this.retryCount}/3)...`));
+        setTimeout(() => this.startFrontend(), 1000 * this.retryCount);
+        return;
+      }
+      
+      // For other errors, show in yellow (warning) not red (error) since it might still work
+      console.log(chalk.yellow(`[Frontend] Process spawn warning: ${error.message}`));
+      if (process.env.DEBUG_DEV_SERVER) {
+        console.log(chalk.gray(`[Frontend] Command: ${cmd} ${args.join(' ')}`));
+        console.log(chalk.gray(`[Frontend] Directory: ${process.cwd()}`));
+      }
     });
 
     this.frontendProcess.on('exit', (code) => {

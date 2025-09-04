@@ -1,13 +1,16 @@
 {
   "name": "@episensor/app-framework",
-  "version": "3.11.3",
+  "version": "3.12.0",
   "description": "Opinionated TypeScript framework for structured vibecoding - building internal web and desktop apps with batteries included",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "episensor": "./dist/cli/index.js",
     "app-framework": "./dist/cli/index.js",
+    "framework": "./dist/cli/index.js",
+    "build-sidecar": "./dist/cli/build-sidecar.js",
+    "dev-server": "./dist/cli/dev-server.js",
+    "episensor": "./dist/cli/index.js",
     "episensor-build-sidecar": "./dist/cli/build-sidecar.js",
     "episensor-dev": "./dist/cli/dev-server.js"
   },
