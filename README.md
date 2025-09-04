@@ -5,25 +5,25 @@ A comprehensive, production-ready framework for building enterprise internal too
 ## 📋 Documentation
 
 ### Core Guides
-- **[Api](./docs/Api.md)** - Complete API documentation with best practices
-- **[Development](./docs/Development.md)** - How to build applications with the framework
-- **[Architecture](./docs/Architecture.md)** - System design and structure
-- **[Standards](./docs/Standards.md)** - Coding standards and best practices
-- **[Structure](./docs/Structure.md)** - Application directory structure standard
+- **[API](./docs/API.md)** - Complete API documentation with best practices
+- **[Development](./docs/DEVELOPMENT.md)** - How to build applications with the framework
+- **[Architecture](./docs/ARCHITECTURE.md)** - System design and structure
+- **[Standards](./docs/STANDARDS.md)** - Coding standards and best practices
+- **[Structure](./docs/STRUCTURE.md)** - Application directory structure standard
 
 ### Features
-- **[Websocket](./docs/Websocket.md)** - Real-time communication implementation
-- **[Desktop](./docs/Desktop.md)** - Desktop application support with Tauri
-- **[Bundling](./docs/Bundling.md)** - Desktop bundling guide
-- **[Ai](./docs/Ai.md)** - AI service integration
-- **[Patterns](./docs/Patterns.md)** - Proven architectural patterns
+- **[WebSocket](./docs/WEBSOCKET.md)** - Real-time communication implementation
+- **[Desktop](./docs/DESKTOP.md)** - Desktop application support with Tauri
+- **[Bundling](./docs/BUNDLING.md)** - Desktop bundling guide
+- **[AI](./docs/AI.md)** - AI service integration
+- **[Patterns](./docs/PATTERNS.md)** - Proven architectural patterns
 
 ### Configuration & Testing
-- **[Testing](./docs/Testing.md)** - Testing guidelines and patterns
-- **[Logging](./docs/Logging.md)** - Logging system documentation
-- **[Theme](./docs/Theme.md)** - Theme system and customization
-- **[Ports](./docs/Ports.md)** - Port configuration standards
-- **[Cors](./docs/Cors.md)** - Dynamic CORS middleware
+- **[Testing](./docs/TESTING.md)** - Testing guidelines and patterns
+- **[Logging](./docs/LOGGING.md)** - Logging system documentation
+- **[Theme](./docs/THEME.md)** - Theme system and customization
+- **[Ports](./docs/PORTS.md)** - Port configuration standards
+- **[CORS](./docs/CORS.md)** - Dynamic CORS middleware
 
 #### Test Suite Overview
 The framework includes extensive test coverage:
@@ -576,7 +576,7 @@ This framework is designed to be AI-friendly. When building applications:
 2. **Validate all inputs** - Use zod schemas for validation
 3. **Handle errors properly** - Use try-catch and error middleware
 4. **Use TypeScript** - Define interfaces for all data structures
-5. **Follow the patterns** - See [Development Guide](./docs/Development.md)
+5. **Follow the patterns** - See [Development Guide](./docs/DEVELOPMENT.md)
 
 ## 🔒 Security
 
