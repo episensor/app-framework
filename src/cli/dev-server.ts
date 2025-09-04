@@ -232,19 +232,10 @@ class DevServerOrchestrator {
         process.exit(1);
       }
       
-      // Log other errors but don't fail on ExperimentalWarnings
+      // For backend stderr, just pass it through as-is to preserve formatting
+      // The backend logger already handles coloring appropriately
       if (output.trim() && !output.includes('ExperimentalWarning')) {
-        // Check if it's actually an error worth showing
-        if (output.includes('Error') || output.includes('error')) {
-          // Strip existing ANSI codes to prevent corruption
-          const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, '').trim();
-          console.error(chalk.red(`[Backend Error] ${cleanOutput}`));
-          
-          // If we get a real error early, prevent showing success banner
-          if (!this.hasDetectedBackendReady) {
-            this.isBackendReady = false;
-          }
-        }
+        process.stderr.write(output);
       }
     });
 
@@ -381,12 +372,9 @@ class DevServerOrchestrator {
           }
         }
         
-        // Only show as error if it's actually an error
-        if (output.toLowerCase().includes('error') || output.toLowerCase().includes('failed')) {
-          // Strip existing ANSI codes to prevent corruption
-          const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, '');
-          console.error(chalk.red(`[Frontend Error] ${cleanOutput}`));
-        }
+        // For Vite, most stderr output is normal (like the startup messages)
+        // Just pass it through as-is to preserve formatting
+        process.stderr.write(output);
       }
     });
 
