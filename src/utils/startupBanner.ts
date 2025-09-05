@@ -97,8 +97,8 @@ export function displayStartupBanner(options: StartupBannerOptions): void {
     startTime
   } = options;
 
-  const width = 60;
-  const border = '═'.repeat(width);
+  const width = 50;  // Reduced width to match horizontal dividers
+  const border = '─'.repeat(width);
   
   // Calculate startup time if provided
   const startupTime = startTime ? `${((Date.now() - startTime) / 1000).toFixed(1)}s` : '0.0s';
@@ -110,78 +110,93 @@ export function displayStartupBanner(options: StartupBannerOptions): void {
     if (align === 'center') {
       const leftPad = Math.max(0, Math.floor((width - visibleLength) / 2));
       const rightPad = Math.max(0, width - visibleLength - leftPad);
-      return chalk.cyan('║') + ' '.repeat(leftPad) + content + ' '.repeat(rightPad) + chalk.cyan('║');
+      return '│' + ' '.repeat(leftPad) + content + ' '.repeat(rightPad) + '│';
     } else {
       const padding = Math.max(0, width - visibleLength);
-      return chalk.cyan('║') + content + ' '.repeat(padding) + chalk.cyan('║');
+      return '│' + content + ' '.repeat(padding) + '│';
     }
   };
 
-  const emptyLine = chalk.cyan('║') + ' '.repeat(width) + chalk.cyan('║');
-  const separator = chalk.cyan('║') + ' '.repeat(10) + chalk.gray('─'.repeat(40)) + ' '.repeat(10) + chalk.cyan('║');
+  // Helper to wrap text
+  const wrapText = (text: string, maxWidth: number): string[] => {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+    
+    for (const word of words) {
+      if ((currentLine + ' ' + word).trim().length <= maxWidth) {
+        currentLine = currentLine ? `${currentLine} ${word}` : word;
+      } else {
+        if (currentLine) lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+    
+    return lines;
+  };
+
+  const emptyLine = '│' + ' '.repeat(width) + '│';
+  const separator = '│' + ' ' + border + ' ' + '│';
 
   // Build the banner
   console.log('');
-  console.log(chalk.cyan('╔' + border + '╗'));
+  console.log('╭' + border + '╮');
   console.log(emptyLine);
   
-  // App name (title) - extract display name from package name
-  const displayName = appName.includes('/') ? 
-    appName.split('/')[1].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) :
-    appName;
-  console.log(makeLine(chalk.bold.white(displayName)));
+  // App name in light gray
+  console.log(makeLine(chalk.gray(appName)));
   console.log(emptyLine);
-  
-  // Description (if provided)
-  if (description) {
-    console.log(makeLine(chalk.white(description)));
-  }
-  
-  // Package name 
-  if (packageName) {
-    console.log(makeLine(chalk.gray(packageName)));
-  }
   
   // Version
-  console.log(makeLine(chalk.gray(`v${appVersion}`)));
-  
+  console.log(makeLine(`v${appVersion}`));
   console.log(emptyLine);
+  
+  // Description (wrapped if needed)
+  if (description) {
+    const wrappedLines = wrapText(description, width - 4);
+    for (const line of wrappedLines) {
+      console.log(makeLine(line));
+    }
+    console.log(emptyLine);
+  }
+  
   console.log(separator);
   console.log(emptyLine);
   
-  // URLs - keys dark gray, values light gray
+  // URLs - no emojis, keys dark gray, values light gray
   if (webPort && webPort !== port) {
     // Both web UI and API are configured on different ports
-    console.log(makeLine(`  ${chalk.gray('🌐 Web UI')}    ${chalk.gray(':')} ${chalk.white(`http://localhost:${webPort}`)}`, 'left'));
-    console.log(makeLine(`  ${chalk.gray('📊 API')}       ${chalk.gray(':')} ${chalk.white(`http://localhost:${port}/api`)}`, 'left'));
+    console.log(makeLine(` Web UI     : ${chalk.gray(`http://localhost:${webPort}`)}`, 'left'));
+    console.log(makeLine(` API        : ${chalk.gray(`http://localhost:${port}/api`)}`, 'left'));
   } else if (webPort === port) {
     // Web UI and API share the same port (production mode)
-    console.log(makeLine(`  ${chalk.gray('🌐 Web UI')}     ${chalk.gray(':')} ${chalk.white(`http://localhost:${port}`)}`, 'left'));
-    console.log(makeLine(`  ${chalk.gray('📊 API')}        ${chalk.gray(':')} ${chalk.white(`http://localhost:${port}/api`)}`, 'left'));
+    console.log(makeLine(` Web UI     : ${chalk.gray(`http://localhost:${port}`)}`, 'left'));
+    console.log(makeLine(` API        : ${chalk.gray(`http://localhost:${port}/api`)}`, 'left'));
   } else {
     // API-only mode
-    console.log(makeLine(`  ${chalk.gray('📊 API Server')} ${chalk.gray(':')} ${chalk.white(`http://localhost:${port}`)}`, 'left'));
-    console.log(makeLine(`  ${chalk.gray('📍 Endpoints')}  ${chalk.gray(':')} ${chalk.white(`http://localhost:${port}/api/*`)}`, 'left'));
+    console.log(makeLine(` API Server : ${chalk.gray(`http://localhost:${port}`)}`, 'left'));
+    console.log(makeLine(` Endpoints  : ${chalk.gray(`http://localhost:${port}/api/*`)}`, 'left'));
   }
-  console.log(makeLine(`  ${chalk.gray('🔌 WebSocket')}  ${chalk.gray(':')} ${chalk.white(`ws://localhost:${port}`)}`, 'left'));
+  console.log(makeLine(` WebSocket  : ${chalk.gray(`ws://localhost:${port}`)}`, 'left'));
   
   console.log(emptyLine);
   console.log(separator);
   console.log(emptyLine);
   
-  // Status line - keys dark gray, values light gray (except ready time in green)
-  console.log(makeLine(`  ${chalk.gray('Ready in')} ${chalk.green(startupTime)}`, 'left'));
-  console.log(makeLine(`  ${chalk.gray('Environment:')} ${chalk.white(environment)}`, 'left'));
-  console.log(makeLine(`  ${chalk.gray('Framework:')} ${chalk.white(`@episensor/app-framework v${version}`)}`, 'left'));
+  // Status lines
+  console.log(makeLine(` Ready in ${chalk.green(startupTime)}`, 'left'));
+  console.log(makeLine(` Environment: ${environment}`, 'left'));
+  console.log(makeLine(` Framework: @episensor/app-framework v${version}`, 'left'));
   
   console.log(emptyLine);
   console.log(separator);
   console.log(emptyLine);
   
-  console.log(makeLine(`  ${chalk.gray('Press')} ${chalk.yellow('Ctrl+C')} ${chalk.gray('to stop')}`, 'left'));
+  console.log(makeLine(` Press ${chalk.yellow('Ctrl+C')} to stop`, 'left'));
   
   console.log(emptyLine);
-  console.log(chalk.cyan('╚' + border + '╝'));
+  console.log('╰' + border + '╯');
   console.log('');
 }
 

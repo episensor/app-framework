@@ -456,10 +456,17 @@ class EnhancedLogger {
         
         // For other metadata, format key fields inline (no JSON)
         const importantMeta = [];
-        if (meta.code) importantMeta.push(`code=${meta.code}`);
-        if (meta.status) importantMeta.push(`status=${meta.status}`);
-        if (meta.duration) importantMeta.push(`duration=${meta.duration}`);
-        if (meta.url) importantMeta.push(`url=${meta.url}`);
+        
+        // Handle all common metadata fields
+        for (const [key, value] of Object.entries(meta)) {
+          // Skip internal winston fields and stack traces
+          if (key === 'stack' || key === 'timestamp' || key === 'level' || key === 'message') continue;
+          
+          // Format the value appropriately
+          if (value !== undefined && value !== null) {
+            importantMeta.push(`${key}=${value}`);
+          }
+        }
         
         const metaStr = importantMeta.length > 0 ? ` (${importantMeta.join(', ')})` : '';
         
