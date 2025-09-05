@@ -587,6 +587,27 @@ This framework is designed to be AI-friendly. When building applications:
 - CORS configuration
 - Environment variable secrets
 
+## 🛠️ Development Tools
+
+### Node Process Monitor
+
+Monitor and manage all your running framework apps from the macOS menu bar.
+
+- **Real-time monitoring** of all processes started with `dev-server`
+- **Grouped by app** with hierarchical view of backend/frontend/websocket processes
+- **Resource tracking** - CPU, memory, uptime for each process
+- **Easy management** - Kill individual processes or entire apps
+- **Lightweight** - Built in Rust for minimal overhead
+
+#### Installation
+
+```bash
+# Quick install (macOS)
+curl -sSL https://raw.githubusercontent.com/EPISENSOR/epi-node-process-monitor/main/install.sh | bash
+```
+
+Learn more: [github.com/EPISENSOR/epi-node-process-monitor](https://github.com/EPISENSOR/epi-node-process-monitor)
+
 ## 📄 License
 
 MIT License - see [LICENSE](./LICENSE) for details
