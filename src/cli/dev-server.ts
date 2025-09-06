@@ -160,6 +160,7 @@ class DevServerOrchestrator {
     this.backendProcess = spawn(cmd, args, {
       stdio: ['inherit', 'pipe', 'pipe'],
       shell: true,
+      detached: true, // Create a new process group
       env: {
         ...process.env,
         LOG_LEVEL: 'warn', // Only show warnings and errors
@@ -296,6 +297,7 @@ class DevServerOrchestrator {
     this.frontendProcess = spawn(cmd, args, {
       stdio: ['inherit', 'pipe', 'pipe'],
       shell: true,
+      detached: true, // Create a new process group
       cwd: process.cwd(), // Explicitly set working directory
       env: {
         ...process.env,
@@ -424,12 +426,34 @@ class DevServerOrchestrator {
   }
 
   private cleanup() {
-    if (this.backendProcess) {
-      this.backendProcess.kill('SIGTERM');
+    // Kill process groups to ensure all child processes are terminated
+    if (this.backendProcess && this.backendProcess.pid) {
+      try {
+        // Kill the entire process group (negative PID)
+        process.kill(-this.backendProcess.pid, 'SIGTERM');
+      } catch (e) {
+        // Fallback to regular kill
+        try {
+          this.backendProcess.kill('SIGTERM');
+        } catch (err) {
+          // Process might already be dead
+        }
+      }
       this.backendProcess = null;
     }
-    if (this.frontendProcess) {
-      this.frontendProcess.kill('SIGTERM');
+    
+    if (this.frontendProcess && this.frontendProcess.pid) {
+      try {
+        // Kill the entire process group (negative PID)
+        process.kill(-this.frontendProcess.pid, 'SIGTERM');
+      } catch (e) {
+        // Fallback to regular kill
+        try {
+          this.frontendProcess.kill('SIGTERM');
+        } catch (err) {
+          // Process might already be dead
+        }
+      }
       this.frontendProcess = null;
     }
   }

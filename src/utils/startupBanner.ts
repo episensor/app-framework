@@ -89,7 +89,6 @@ export function displayStartupBanner(options: StartupBannerOptions): void {
   const {
     appName,
     appVersion,
-    packageName,
     description,
     port,
     webPort,  // Use separate web port if provided
