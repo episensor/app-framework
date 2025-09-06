@@ -147,7 +147,7 @@ class DevServerOrchestrator {
             output.includes('✓')) {
           this.hasDetectedBackendReady = true;
           this.isBackendReady = true;
-          this.printBanner();
+          this.showStartupBanner();
           return;
         }
       }
@@ -223,7 +223,7 @@ class DevServerOrchestrator {
         console.log(chalk.yellow('Backend ready detection timeout - assuming ready'));
         this.hasDetectedBackendReady = true;
         this.isBackendReady = true;
-        this.printBanner();
+        this.showStartupBanner();
       } else if (this.isBackendReady === false) {
         console.error(chalk.red('\nBackend failed to start. Check the error messages above.'));
         this.cleanup();
@@ -288,7 +288,7 @@ class DevServerOrchestrator {
           }
           this.hasDetectedFrontendReady = true;
           this.isFrontendReady = true;
-          this.printBanner();
+          this.showStartupBanner();
           return;
         }
       }
@@ -381,7 +381,7 @@ class DevServerOrchestrator {
         console.log(chalk.yellow('Frontend ready detection timeout - assuming ready'));
         this.hasDetectedFrontendReady = true;
         this.isFrontendReady = true;
-        this.printBanner();
+        this.showStartupBanner();
       }
     }, 5000);
   }
