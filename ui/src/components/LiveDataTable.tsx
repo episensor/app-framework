@@ -3,7 +3,7 @@
  * Displays real-time data in a table format with activity indicators
  */
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card } from './Card';
 import { ActivityLED, type LEDStatus } from './ActivityLED';
 import { SparklineChart } from './SparklineChart';

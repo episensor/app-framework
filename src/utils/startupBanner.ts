@@ -97,7 +97,7 @@ export function displayStartupBanner(options: StartupBannerOptions): void {
   } = options;
 
   const width = 50;  // Reduced width to match horizontal dividers
-  const border = '─'.repeat(width);
+  const border = '─'.repeat(width - 2);  // Account for box borders
   
   // Calculate startup time if provided
   const startupTime = startTime ? `${((Date.now() - startTime) / 1000).toFixed(1)}s` : '0.0s';
@@ -136,7 +136,7 @@ export function displayStartupBanner(options: StartupBannerOptions): void {
   };
 
   const emptyLine = '│' + ' '.repeat(width) + '│';
-  const separator = '│' + ' ' + border + ' ' + '│';
+  const separator = '│ ' + chalk.gray(border) + ' │';
 
   // Build the banner
   console.log('');

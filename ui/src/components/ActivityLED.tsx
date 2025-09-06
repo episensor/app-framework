@@ -3,7 +3,7 @@
  * Shows a status indicator with optional animation
  */
 
-import React from 'react';
+
 import { cn } from '../utils/cn';
 
 export type LEDStatus = 'active' | 'inactive' | 'warning' | 'error' | 'success';

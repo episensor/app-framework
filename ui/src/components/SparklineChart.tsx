@@ -3,7 +3,7 @@
  * Displays a minimal line chart for showing data trends
  */
 
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { cn } from '../utils/cn';
 
 export interface SparklineChartProps {

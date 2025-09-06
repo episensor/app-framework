@@ -112,5 +112,5 @@ export function formatTime(date: Date | string | number): string {
  */
 export function formatDateOnly(date: Date | string | number): string {
   const d = new Date(date);
-  return d.toISOString().split('T')[0];
+  return d.toISOString().split('T')[0] || '';
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Card } from '../../components/base/card';
 import { cn } from '../../lib/utils';
 

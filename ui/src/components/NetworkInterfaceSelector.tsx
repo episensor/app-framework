@@ -3,7 +3,7 @@
  * Simplified network interface selection UI
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './Card';
 
 export interface NetworkInterface {

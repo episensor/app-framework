@@ -3,7 +3,7 @@
  * Displays a metric with optional sparkline and status indicator
  */
 
-import React from 'react';
+
 import { Card } from './Card';
 import { SparklineChart } from './SparklineChart';
 import { ActivityLED, type LEDStatus } from './ActivityLED';

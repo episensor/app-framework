@@ -30,7 +30,7 @@ export async function checkApiReadiness(apiUrl = '', timeout = 5000): Promise<Ap
         clearTimeout(timeoutId);
         
         if (response.ok) {
-            const healthData = await response.json();
+            await response.json(); // Consume the response
             // API is ready as long as it responds, regardless of health status
             return {
                 ready: true

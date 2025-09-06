@@ -3,7 +3,7 @@
  * Simplified system health visualization
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './Card';
 import { SparklineChart } from './SparklineChart';
 import { ActivityLED } from './ActivityLED';

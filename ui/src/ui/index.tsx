@@ -3,7 +3,7 @@
  * Minimal implementations for framework components
  */
 
-import React from 'react';
+
 import { cn } from '../utils/cn';
 
 // Button Component

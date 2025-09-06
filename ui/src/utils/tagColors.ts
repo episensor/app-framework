@@ -30,5 +30,8 @@ export function getTagColor(tag: string) {
 
 export function getTagClassName(tag: string) {
   const color = getTagColor(tag);
+  if (!color) {
+    return 'bg-gray-100 text-gray-700 border-gray-300 border';
+  }
   return `${color.bg} ${color.text} ${color.border} border`;
 }

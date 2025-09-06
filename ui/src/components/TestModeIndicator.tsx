@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '../../components/base/card';
 import { Badge } from '../../components/base/badge';
 import { Button } from '../../components/base/button';
@@ -14,17 +14,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from '../../components/base/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/base/select';
 
 import { 
   AlertTriangle, Settings, Zap, Clock, WifiOff, 
-  Activity, X, Play, Pause, RotateCcw 
+  Activity, X, RotateCcw 
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 // Note: Apps using this component need to provide their own config store
@@ -112,22 +105,19 @@ interface TestModeIndicatorProps {
   className?: string;
 }
 
-export function TestModeIndicator({ config, className }: TestModeIndicatorProps = {}) {
+export function TestModeIndicator({ config }: TestModeIndicatorProps = {}) {
   // const { config } = useConfigStore();
   const [showSettings, setShowSettings] = useState(false);
   const [testModeEnabled, setTestModeEnabled] = useState(false);
   const [activeScenarios, setActiveScenarios] = useState<string[]>([]);
-  const [scenarioParams, setScenarioParams] = useState<Record<string, Record<string, unknown>>>({});
 
   useEffect(() => {
     // Load test mode state from config
     const testMode = config?.testMode?.enabled;
     const scenarios = config?.testMode?.scenarios || [];
-    const params = config?.testMode?.params || {};
     
     setTestModeEnabled(testMode === true);
     setActiveScenarios(scenarios);
-    setScenarioParams(params);
   }, [config]);
 
   const handleTestModeToggle = async (enabled: boolean) => {
@@ -154,15 +144,6 @@ export function TestModeIndicator({ config, className }: TestModeIndicatorProps 
     }
   };
 
-  const handleParamChange = (scenarioId: string, param: string, value: unknown) => {
-    setScenarioParams({
-      ...scenarioParams,
-      [scenarioId]: {
-        ...scenarioParams[scenarioId],
-        [param]: value
-      }
-    });
-  };
 
   const saveSettings = async () => {
     // TODO: Implement backend API for test mode settings
@@ -174,7 +155,6 @@ export function TestModeIndicator({ config, className }: TestModeIndicatorProps 
 
   const resetSettings = () => {
     setActiveScenarios([]);
-    setScenarioParams({});
     toast.info('Test scenarios reset');
   };
 
@@ -283,7 +263,6 @@ export function TestModeIndicator({ config, className }: TestModeIndicatorProps 
                   {TEST_SCENARIOS.map(scenario => {
                     const Icon = scenario.icon;
                     const isActive = activeScenarios.includes(scenario.id);
-                    const params = scenarioParams[scenario.id] || scenario.params;
                     
                     return (
                       <Card key={scenario.id} className="p-4">

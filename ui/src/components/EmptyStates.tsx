@@ -1,4 +1,3 @@
-import React from 'react';
 import { EmptyState } from './EmptyState';
 import { FileText, Search, Server, Plus } from 'lucide-react';
 
@@ -61,6 +60,6 @@ export function NoSimulatorsRunning({ onNavigateToTemplates }: NoSimulatorsRunni
 // Export all empty states as a collection
 export const EmptyStates = {
   NoTemplatesFound,
-  NoTemplatesMatchSearch,
+  NoTemplatesMatchSearch: NoSearchResults,
   NoSimulatorsRunning
 };
