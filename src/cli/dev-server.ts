@@ -76,7 +76,7 @@ class DevServerOrchestrator {
   }
 
 
-  private printBanner() {
+  private showStartupBanner() {
     // Only print once both services are ready
     if (!this.isBackendReady || !this.isFrontendReady || this.hasShownBanner) return;
 
@@ -90,6 +90,7 @@ class DevServerOrchestrator {
       description: this.config.description,
       port: this.config.backendPort,
       webPort: this.config.frontendPort,
+      webSocketPort: this.config.webSocketPort,
       environment: process.env.NODE_ENV || 'development',
       startTime: this.startTime
     });
@@ -337,7 +338,7 @@ class DevServerOrchestrator {
             }
             this.hasDetectedFrontendReady = true;
             this.isFrontendReady = true;
-            this.printBanner();
+            this.showStartupBanner();
             return;
           }
         }

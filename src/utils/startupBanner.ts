@@ -77,6 +77,7 @@ export interface StartupBannerOptions extends BannerOptions {
   description?: string;
   port: number;  // API port
   webPort?: number;  // Optional separate web UI port
+  webSocketPort?: number;  // Optional WebSocket port
   environment?: string;
   startTime?: number;
 }
@@ -92,12 +93,13 @@ export function displayStartupBanner(options: StartupBannerOptions): void {
     description,
     port,
     webPort,  // Use separate web port if provided
+    webSocketPort,  // WebSocket port
     environment = process.env.NODE_ENV || 'development',
     startTime
   } = options;
 
   const width = 50;  // Reduced width to match horizontal dividers
-  const border = '─'.repeat(width - 2);  // Account for box borders
+  const border = '─'.repeat(width);  // Full width for top/bottom borders
   
   // Calculate startup time if provided
   const startupTime = startTime ? `${((Date.now() - startTime) / 1000).toFixed(1)}s` : '0.0s';
@@ -109,10 +111,10 @@ export function displayStartupBanner(options: StartupBannerOptions): void {
     if (align === 'center') {
       const leftPad = Math.max(0, Math.floor((width - visibleLength) / 2));
       const rightPad = Math.max(0, width - visibleLength - leftPad);
-      return '│' + ' '.repeat(leftPad) + content + ' '.repeat(rightPad) + '│';
+      return chalk.gray('│') + ' '.repeat(leftPad) + content + ' '.repeat(rightPad) + chalk.gray('│');
     } else {
       const padding = Math.max(0, width - visibleLength);
-      return '│' + content + ' '.repeat(padding) + '│';
+      return chalk.gray('│') + content + ' '.repeat(padding) + chalk.gray('│');
     }
   };
 
@@ -135,20 +137,20 @@ export function displayStartupBanner(options: StartupBannerOptions): void {
     return lines;
   };
 
-  const emptyLine = '│' + ' '.repeat(width) + '│';
-  const separator = '│ ' + chalk.gray(border) + ' │';
+  const emptyLine = chalk.gray('│') + ' '.repeat(width) + chalk.gray('│');
+  const separator = chalk.gray('│ ') + chalk.gray('─'.repeat(width - 2)) + chalk.gray(' │');
 
   // Build the banner
   console.log('');
-  console.log('╭' + border + '╮');
-  console.log(emptyLine);
+  console.log(chalk.gray('╭' + border + '╮'));
+  console.log(chalk.gray(emptyLine));
   
   // App name in light gray
   console.log(makeLine(chalk.gray(appName)));
   console.log(emptyLine);
   
-  // Version
-  console.log(makeLine(`v${appVersion}`));
+  // Version in amber to match Ctrl+C
+  console.log(makeLine(chalk.yellow(`v${appVersion}`)));
   console.log(emptyLine);
   
   // Description (wrapped if needed)
@@ -166,36 +168,36 @@ export function displayStartupBanner(options: StartupBannerOptions): void {
   // URLs - no emojis, keys dark gray, values light gray
   if (webPort && webPort !== port) {
     // Both web UI and API are configured on different ports
-    console.log(makeLine(` Web UI     : ${chalk.gray(`http://localhost:${webPort}`)}`, 'left'));
-    console.log(makeLine(` API        : ${chalk.gray(`http://localhost:${port}/api`)}`, 'left'));
+    console.log(makeLine(`${chalk.gray(' Web UI     :')} ${chalk.gray(`http://localhost:${webPort}`)}`, 'left'));
+    console.log(makeLine(`${chalk.gray(' API        :')} ${chalk.gray(`http://localhost:${port}/api`)}`, 'left'));
   } else if (webPort === port) {
     // Web UI and API share the same port (production mode)
-    console.log(makeLine(` Web UI     : ${chalk.gray(`http://localhost:${port}`)}`, 'left'));
-    console.log(makeLine(` API        : ${chalk.gray(`http://localhost:${port}/api`)}`, 'left'));
+    console.log(makeLine(`${chalk.gray(' Web UI     :')} ${chalk.gray(`http://localhost:${port}`)}`, 'left'));
+    console.log(makeLine(`${chalk.gray(' API        :')} ${chalk.gray(`http://localhost:${port}/api`)}`, 'left'));
   } else {
     // API-only mode
-    console.log(makeLine(` API Server : ${chalk.gray(`http://localhost:${port}`)}`, 'left'));
-    console.log(makeLine(` Endpoints  : ${chalk.gray(`http://localhost:${port}/api/*`)}`, 'left'));
+    console.log(makeLine(`${chalk.gray(' API Server :')} ${chalk.gray(`http://localhost:${port}`)}`, 'left'));
+    console.log(makeLine(`${chalk.gray(' Endpoints  :')} ${chalk.gray(`http://localhost:${port}/api/*`)}`, 'left'));
   }
-  console.log(makeLine(` WebSocket  : ${chalk.gray(`ws://localhost:${port}`)}`, 'left'));
+  console.log(makeLine(`${chalk.gray(' WebSocket  :')} ${chalk.gray(`ws://localhost:${webSocketPort || port}`)}`, 'left'));
   
   console.log(emptyLine);
   console.log(separator);
   console.log(emptyLine);
   
   // Status lines
-  console.log(makeLine(` Ready in ${chalk.green(startupTime)}`, 'left'));
-  console.log(makeLine(` Environment: ${environment}`, 'left'));
-  console.log(makeLine(` Framework: @episensor/app-framework v${version}`, 'left'));
+  console.log(makeLine(`${chalk.gray(' Ready in')} ${chalk.green(startupTime)}`, 'left'));
+  console.log(makeLine(`${chalk.gray(' Environment:')} ${chalk.gray(environment)}`, 'left'));
+  console.log(makeLine(`${chalk.gray(' Framework:')} ${chalk.gray(`@episensor/app-framework v${version}`)}`, 'left'));
   
   console.log(emptyLine);
   console.log(separator);
   console.log(emptyLine);
   
-  console.log(makeLine(` Press ${chalk.yellow('Ctrl+C')} to stop`, 'left'));
+  console.log(makeLine(`${chalk.gray(' Press')} ${chalk.yellow('Ctrl+C')} ${chalk.gray('to stop')}`, 'left'));
   
-  console.log(emptyLine);
-  console.log('╰' + border + '╯');
+  console.log(chalk.gray(emptyLine));
+  console.log(chalk.gray('╰' + border + '╯'));
   console.log('');
 }
 
