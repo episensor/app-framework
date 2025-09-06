@@ -6,16 +6,17 @@
  */
 
 import { spawn, ChildProcess } from 'child_process';
-import path from 'path';
 import fs from 'fs';
 // @ts-ignore - chalk and boxen are CLI dependencies
 import chalk from 'chalk';
 // @ts-ignore
 import boxen from 'boxen';
+import { displayStartupBanner } from '../utils/startupBanner.js';
 
 interface DevServerConfig {
   appName: string;
   appVersion: string;
+  packageName?: string;
   description?: string;
   backendPort: number;
   frontendPort: number;
@@ -59,6 +60,7 @@ class DevServerOrchestrator {
     this.config = {
       appName: packageJson.name || 'EpiSensor App',
       appVersion: packageJson.version || '0.0.0',
+      packageName: packageJson.name,
       description: packageJson.description,
       backendPort: defaultBackendPort,
       frontendPort: packageJson.devServer?.frontendPort || 5173,
@@ -73,67 +75,25 @@ class DevServerOrchestrator {
     this.startTime = Date.now();
   }
 
-  private getFrameworkVersion(): string {
-    try {
-      const frameworkPath = path.join(process.cwd(), 'node_modules', '@episensor', 'app-framework', 'package.json');
-      const frameworkPackage = JSON.parse(fs.readFileSync(frameworkPath, 'utf8'));
-      return frameworkPackage.version;
-    } catch {
-      return 'unknown';
-    }
-  }
 
   private printBanner() {
     // Only print once both services are ready
     if (!this.isBackendReady || !this.isFrontendReady || this.hasShownBanner) return;
 
-    const elapsed = ((Date.now() - this.startTime) / 1000).toFixed(1);
-    const frameworkVersion = this.getFrameworkVersion();
-
-    // Build the banner content
-    const lines = [
-      '',
-      chalk.white(this.config.appName),
-      chalk.gray(`v${this.config.appVersion}`),
-    ];
-    
-    if (this.config.description) {
-      lines.push(chalk.gray(this.config.description));
-    }
-    
-    lines.push(
-      '',
-      chalk.gray('─'.repeat(48)),
-      '',
-      chalk.gray('  🌐 Web UI     : ') + chalk.gray(`http://localhost:${this.config.frontendPort}`),
-      chalk.gray('  📊 API        : ') + chalk.gray(`http://localhost:${this.config.backendPort}/api`),
-      chalk.gray('  🔌 WebSocket  : ') + chalk.gray(`ws://localhost:${this.config.webSocketPort}`),
-      '',
-      chalk.gray('─'.repeat(48)),
-      '',
-      chalk.gray('  Ready in ') + chalk.green(elapsed + 's'),
-      chalk.gray('  Environment: ') + chalk.gray(process.env.NODE_ENV || 'development'),
-      chalk.gray('  Framework: ') + chalk.gray(`@episensor/app-framework v${frameworkVersion}`),
-      '',
-      chalk.gray('─'.repeat(48)),
-      '',
-      chalk.gray('  Press ') + chalk.yellow('Ctrl+C') + chalk.gray(' to stop'),
-      ''
-    );
-
-    const banner = boxen(
-      lines.join('\n'),
-      {
-        padding: { top: 0, right: 1, bottom: 0, left: 1 },
-        margin: 1,
-        borderStyle: 'round',
-        borderColor: 'gray',
-        dimBorder: true
-      }
-    );
-
     console.clear();
-    console.log(banner);
+    
+    // Use the standardized banner from utils
+    displayStartupBanner({
+      appName: this.config.appName,
+      appVersion: this.config.appVersion,
+      packageName: this.config.packageName,
+      description: this.config.description,
+      port: this.config.backendPort,
+      webPort: this.config.frontendPort,
+      environment: process.env.NODE_ENV || 'development',
+      startTime: this.startTime
+    });
+    
     this.hasShownBanner = true;
 
     // Show any buffered important messages
