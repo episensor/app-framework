@@ -32,8 +32,17 @@ export { ProtectedRoute } from '../components/auth/ProtectedRoute';
 // Page components
 export { LogsPage } from './pages/LogsPage';
 export type { LogsPageProps } from './pages/LogsPage';
+export { EnhancedLogsPage } from './pages/EnhancedLogsPage';
+export type { EnhancedLogsPageProps, LogEntry, LogFile, LogCategory } from './pages/EnhancedLogsPage';
 export { SettingsPage } from './pages/SettingsPage';
 export type { SettingsPageProps, SettingsCategory, SettingDefinition } from './pages/SettingsPage';
+export { EnhancedSettingsPage } from './pages/EnhancedSettingsPage';
+export type { 
+  EnhancedSettingsPageProps, 
+  EnhancedSettingsCategory, 
+  EnhancedSettingDefinition,
+  SettingTransform 
+} from './pages/EnhancedSettingsPage';
 
 // Status components
 export { ConnectionStatus } from './components/ConnectionStatus';
