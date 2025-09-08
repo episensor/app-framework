@@ -476,13 +476,26 @@ class EnhancedLogger {
 
     // File format (plain text for readability and standard log tools)
     const fileFormat = format.combine(
-      format.timestamp(),
+      format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
       format.errors({ stack: true }),
       format.printf(({ timestamp, level, message, source, ...meta }) => {
         const sourceStr = source || category !== 'general' ? ` [${source || category}]` : '';
-        const metaStr = Object.keys(meta).length > 0 && !meta.stack ? ` ${JSON.stringify(meta)}` : '';
+        
+        // Format metadata in a human-readable way (not JSON)
+        const importantMeta = [];
+        for (const [key, value] of Object.entries(meta)) {
+          // Skip internal winston fields and stack traces
+          if (key === 'stack' || key === 'timestamp' || key === 'level' || key === 'message') continue;
+          
+          // Format the value appropriately
+          if (value !== undefined && value !== null) {
+            importantMeta.push(`${key}=${typeof value === 'object' ? JSON.stringify(value) : value}`);
+          }
+        }
+        const metaStr = importantMeta.length > 0 ? ` (${importantMeta.join(', ')})` : '';
         const stackStr = meta.stack ? `\n${meta.stack}` : '';
-        return `[${timestamp}] [${level.toUpperCase()}]${sourceStr} ${message}${metaStr}${stackStr}`;
+        
+        return `${timestamp} ${level.toUpperCase().padEnd(5)} ${sourceStr} ${message}${metaStr}${stackStr}`;
       })
     );
 
