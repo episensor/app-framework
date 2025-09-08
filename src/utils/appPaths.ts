@@ -21,7 +21,10 @@ export function getAppDataPath(appId: string, appName: string): string {
   // Check if running in a desktop app environment
   const isTauriProduction = process.env.TAURI === '1';
   const isElectron = process.versions?.electron;
-  const isDesktopApp = isTauriProduction || isElectron;
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  // In development mode, always use local paths unless explicitly forced
+  const isDesktopApp = !isDevelopment && (isTauriProduction || isElectron);
 
   if (isDesktopApp) {
     // Use platform-specific app data directories
@@ -109,7 +112,12 @@ export function getCachePath(appId: string, appName: string): string {
  * @returns True if running as a desktop app, false otherwise
  */
 export function isDesktopApp(): boolean {
-  return process.env.TAURI === '1' || !!process.versions?.electron;
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isTauriProduction = process.env.TAURI === '1';
+  const isElectron = !!process.versions?.electron;
+  
+  // In development mode, consider it a desktop app only if explicitly set
+  return !isDevelopment && (isTauriProduction || isElectron);
 }
 
 /**
