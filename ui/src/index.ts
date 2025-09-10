@@ -94,12 +94,16 @@ export { LogViewer } from '../components/logs/LogViewer';
 export type { LogEntry, LogFile, LogViewerProps } from '../components/logs/LogViewer';
 export { TerminalLogViewer } from './components/logs/TerminalLogViewer';
 export type { TerminalLogViewerProps } from './components/logs/TerminalLogViewer';
+export { EnhancedLogViewer } from './components/logs/EnhancedLogViewer';
+export type { EnhancedLogViewerProps } from './components/logs/EnhancedLogViewer';
 
 
 // Settings components
 export { SettingsFramework } from '../components/settings/SettingsFramework';
 export { ThemeToggle, CompactThemeToggle } from '../components/settings/ThemeToggle';
 export type { ThemeToggleProps } from '../components/settings/ThemeToggle';
+export { EnhancedSettings } from './components/settings/EnhancedSettings';
+export type { EnhancedSettingsProps } from './components/settings/EnhancedSettings';
 
 // Update components
 export { UpdateNotification } from '../components/updates/UpdateNotification';

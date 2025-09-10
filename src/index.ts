@@ -93,3 +93,32 @@ export {
   generateBuildSidecarScript,
   type TauriBundleOptions
 } from './build/tauriBundler.js';
+
+// Settings Schema exports
+export {
+  createSettingsSchema,
+  flattenSettings,
+  unflattenSettings,
+  getRestartRequiredSettings,
+  validateSettings,
+  Validators,
+  type SettingsSchema,
+  type SettingsCategory,
+  type SettingDefinition,
+  type SettingOption
+} from './settings/SettingsSchema.js';
+
+// Log Categories exports
+export {
+  LogLevels,
+  defaultLogViewerConfig,
+  parseLogEntry,
+  formatLogEntry,
+  calculateLogStats,
+  filterLogEntries,
+  type LogCategory,
+  type LogFilter,
+  type LogViewerConfig,
+  type LogEntry as EnhancedLogEntry,
+  type LogStats
+} from './logging/LogCategories.js';

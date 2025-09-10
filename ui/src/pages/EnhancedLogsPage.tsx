@@ -210,10 +210,8 @@ export function EnhancedLogsPage({
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
-    const dateStr = date.toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit'
-    });
+    // Use full ISO format for clarity: YYYY-MM-DD HH:mm:ss.SSS
+    const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
     const timeStr = date.toLocaleTimeString('en-US', { 
       hour12: false,
       hour: '2-digit',
