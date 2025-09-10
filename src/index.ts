@@ -55,7 +55,7 @@ export type { TestServerConfig } from './testing/TestServer.js';
 
 // Standardized API routers
 export { default as logsRouter } from './api/logsRouter.js';
-export type { LogEntry, LogFile } from './api/logsRouter.js';
+export type { LogEntry as RouterLogEntry, LogFile } from './api/logsRouter.js';
 
 // Desktop integration exports
 export * from './desktop/index.js';
