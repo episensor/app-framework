@@ -119,6 +119,6 @@ export {
   type LogCategory,
   type LogFilter,
   type LogViewerConfig,
-  type LogEntry as EnhancedLogEntry,
+  type LogEntry,
   type LogStats
 } from './logging/LogCategories.js';

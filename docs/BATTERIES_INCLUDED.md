@@ -140,12 +140,12 @@ export const appSettings = createSettingsSchema({
 ### Add Settings Page to Your App
 
 ```tsx
-import { EnhancedSettings } from '@episensor/app-framework/ui';
+import { Settings } from '@episensor/app-framework/ui';
 import { appSettings } from '@/config/settings';
 
 export function SettingsPage() {
   return (
-    <EnhancedSettings
+    <Settings
       schema={appSettings}
       onError={(error) => console.error('Settings error:', error)}
     />
@@ -231,12 +231,12 @@ export const logConfig: LogViewerConfig = {
 ### Add Log Viewer to Your App
 
 ```tsx
-import { EnhancedLogViewer } from '@episensor/app-framework/ui';
+import { LogViewer } from '@episensor/app-framework/ui';
 import { logConfig } from '@/config/logging';
 
 export function LogsPage() {
   return (
-    <EnhancedLogViewer
+    <LogViewer
       config={logConfig}
       onError={(error) => console.error('Log viewer error:', error)}
     />

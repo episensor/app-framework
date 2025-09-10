@@ -33,7 +33,7 @@ export { ProtectedRoute } from '../components/auth/ProtectedRoute';
 export { LogsPage } from './pages/LogsPage';
 export type { LogsPageProps } from './pages/LogsPage';
 export { EnhancedLogsPage } from './pages/EnhancedLogsPage';
-export type { EnhancedLogsPageProps, LogEntry, LogFile, LogCategory } from './pages/EnhancedLogsPage';
+export type { EnhancedLogsPageProps, LogEntry as PageLogEntry, LogFile as PageLogFile, LogCategory } from './pages/EnhancedLogsPage';
 export { SettingsPage } from './pages/SettingsPage';
 export type { SettingsPageProps, SettingsCategory, SettingDefinition } from './pages/SettingsPage';
 export { EnhancedSettingsPage } from './pages/EnhancedSettingsPage';
@@ -90,20 +90,18 @@ export { DashboardStats, CompactStat } from '../components/data/DashboardStats';
 export type { DashboardStatsProps, StatCard, CompactStatProps } from '../components/data/DashboardStats';
 
 // Log components
-export { LogViewer } from '../components/logs/LogViewer';
-export type { LogEntry, LogFile, LogViewerProps } from '../components/logs/LogViewer';
 export { TerminalLogViewer } from './components/logs/TerminalLogViewer';
 export type { TerminalLogViewerProps } from './components/logs/TerminalLogViewer';
-export { EnhancedLogViewer } from './components/logs/EnhancedLogViewer';
-export type { EnhancedLogViewerProps } from './components/logs/EnhancedLogViewer';
+export { LogViewer } from './components/logs/LogViewer';
+export type { LogViewerProps } from './components/logs/LogViewer';
 
 
 // Settings components
 export { SettingsFramework } from '../components/settings/SettingsFramework';
 export { ThemeToggle, CompactThemeToggle } from '../components/settings/ThemeToggle';
 export type { ThemeToggleProps } from '../components/settings/ThemeToggle';
-export { EnhancedSettings } from './components/settings/EnhancedSettings';
-export type { EnhancedSettingsProps } from './components/settings/EnhancedSettings';
+export { Settings } from './components/settings/Settings';
+export type { SettingsProps } from './components/settings/Settings';
 
 // Update components
 export { UpdateNotification } from '../components/updates/UpdateNotification';

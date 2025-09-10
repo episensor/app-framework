@@ -1,23 +1,13 @@
 import { useState, useEffect } from 'react';
-import { 
-  Card, 
-  Button, 
-  Input, 
-  Label, 
-  Switch, 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue,
-  Alert,
-  AlertDescription,
-  Textarea,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from '../base';
+import { Card } from '../../../components/base/card';
+import { Button } from '../../../components/base/button';
+import { Input } from '../../../components/base/input';
+import { Label } from '../../../components/base/label';
+import { Switch } from '../../../components/base/switch';
+import { Textarea } from '../../../components/base/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/base/select';
+import { Alert, AlertDescription } from '../../../components/base/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../components/base/tooltip';
 import { RestartBanner } from '../RestartBanner';
 import { NetworkInterfaceSelect } from '../NetworkInterfaceSelect';
 import { 
@@ -30,7 +20,7 @@ import {
   Check,
   AlertCircle
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn } from '../../../utils/cn';
 import { useFormState } from '../../hooks/useFormState';
 import { 
   SettingsSchema, 
@@ -39,9 +29,9 @@ import {
   unflattenSettings,
   validateSettings,
   getRestartRequiredSettings
-} from '../../../src/settings/SettingsSchema';
+} from '../../../../src/settings/SettingsSchema';
 
-interface EnhancedSettingsProps {
+export interface SettingsProps {
   schema: SettingsSchema;
   apiEndpoints?: {
     get?: string;
@@ -52,7 +42,7 @@ interface EnhancedSettingsProps {
   onSave?: (settings: Record<string, any>) => void | Promise<void>;
 }
 
-export function EnhancedSettings({
+export function Settings({
   schema,
   apiEndpoints = {
     get: '/api/settings',
@@ -61,7 +51,7 @@ export function EnhancedSettings({
   className,
   onError,
   onSave
-}: EnhancedSettingsProps) {
+}: SettingsProps) {
   const [initialSettings, setInitialSettings] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState(schema.categories[0]?.id || '');
@@ -350,8 +340,8 @@ export function EnhancedSettings({
     );
   };
 
-  const activeCategory = schema.categories.find(cat => cat.id === activeCategory);
-  const categorySettings = activeCategory?.settings || [];
+  const activeCategoryData = schema.categories.find(cat => cat.id === activeCategory);
+  const categorySettings = activeCategoryData?.settings || [];
   
   // Group by subcategory
   const grouped = categorySettings.reduce((acc, setting) => {
@@ -408,12 +398,12 @@ export function EnhancedSettings({
         
         {/* Content */}
         <div className="flex-1 p-6 overflow-y-auto">
-          {activeCategory && (
+              {activeCategoryData && (
             <>
               <div className="mb-6">
-                <h3 className="text-xl font-semibold">{activeCategory.label}</h3>
-                {activeCategory.description && (
-                  <p className="text-sm text-gray-500 mt-1">{activeCategory.description}</p>
+                <h3 className="text-xl font-semibold">{activeCategoryData.label}</h3>
+                {activeCategoryData.description && (
+                  <p className="text-sm text-gray-500 mt-1">{activeCategoryData.description}</p>
                 )}
               </div>
               

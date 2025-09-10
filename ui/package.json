@@ -53,6 +53,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "date-fns": "^4.1.0",
     "lucide-react": "^0.312.0",
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^15.6.6",
