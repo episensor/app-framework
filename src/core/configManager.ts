@@ -9,7 +9,7 @@ import path from 'path';
 import { z, ZodSchema } from 'zod';
 import dotenv from 'dotenv';
 import { EventEmitter } from 'events';
-import { createLogger } from './enhancedLogger';
+import { createLogger } from './logger.js';
 
 const logger = createLogger('ConfigManager');
 

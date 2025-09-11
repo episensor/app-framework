@@ -1,5 +1,5 @@
 /**
- * Enhanced Logger Service
+ * Logger Service
  * Provides centralized logging with rotation, compression, and management
  */
 
@@ -60,7 +60,7 @@ interface LogFileInfo {
   compressed: boolean;
 }
 
-interface EnhancedWinstonLogger extends WinstonLogger {
+interface ExtendedWinstonLogger extends WinstonLogger {
   logRequest?: (req: Request, res: Response, duration: number) => void;
   logSimulator?: (simulatorId: string, action: string, data?: any) => void;
   logError?: (error: Error, context?: any) => void;
@@ -91,10 +91,10 @@ const logLevels: LogLevels = {
 // Apply colors to winston
 winston.addColors(logLevels.colors);
 
-class EnhancedLogger {
+class Logger {
   private logsDir: string;
   private archiveDir: string;
-  private loggers: Map<string, EnhancedWinstonLogger>;
+  private loggers: Map<string, ExtendedWinstonLogger>;
   private initialized: boolean;
   private messageQueue: Array<{ name: string; level: string; args: any[] }>;
   private initPromise?: Promise<void>;
@@ -330,7 +330,7 @@ class EnhancedLogger {
               fileOutput: true,
               logsDir: path.join(process.cwd(), 'data', 'logs')
             }).catch(err => {
-              console.error('[EnhancedLogger] Failed to initialize:', err);
+              console.error('[Logger] Failed to initialize:', err);
             });
           }
         }
@@ -430,7 +430,7 @@ class EnhancedLogger {
     }
   }
 
-  createLogger(category: string = 'general', options: LoggerOptions = {}): EnhancedWinstonLogger {
+  createLogger(category: string = 'general', options: LoggerOptions = {}): ExtendedWinstonLogger {
     const loggerKey = `${category}-${JSON.stringify(options)}`;
     
     if (this.loggers.has(loggerKey)) {
@@ -474,29 +474,11 @@ class EnhancedLogger {
       })
     );
 
-    // File format (plain text for readability and standard log tools)
+    // File format (structured JSON for machine parsing)
     const fileFormat = format.combine(
       format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
       format.errors({ stack: true }),
-      format.printf(({ timestamp, level, message, source, ...meta }) => {
-        const sourceStr = source || category !== 'general' ? ` [${source || category}]` : '';
-        
-        // Format metadata in a human-readable way (not JSON)
-        const importantMeta = [];
-        for (const [key, value] of Object.entries(meta)) {
-          // Skip internal winston fields and stack traces
-          if (key === 'stack' || key === 'timestamp' || key === 'level' || key === 'message') continue;
-          
-          // Format the value appropriately
-          if (value !== undefined && value !== null) {
-            importantMeta.push(`${key}=${typeof value === 'object' ? JSON.stringify(value) : value}`);
-          }
-        }
-        const metaStr = importantMeta.length > 0 ? ` (${importantMeta.join(', ')})` : '';
-        const stackStr = meta.stack ? `\n${meta.stack}` : '';
-        
-        return `${timestamp} ${level.toUpperCase().padEnd(5)} ${sourceStr} ${message}${metaStr}${stackStr}`;
-      })
+      format.json()
     );
 
     // Create transports
@@ -549,7 +531,7 @@ class EnhancedLogger {
       transports: logTransports,
       exitOnError: false,
       defaultMeta: { source: category }
-    }) as EnhancedWinstonLogger;
+    }) as ExtendedWinstonLogger;
 
     // Add convenience methods
     logger.logRequest = (req: Request, res: Response, duration: number): void => {
@@ -692,10 +674,279 @@ class EnhancedLogger {
 
     return null;
   }
+
+  /**
+   * Compact logs by archiving old files
+   */
+  async compactLogs(daysToKeep: number = 7): Promise<LogStats> {
+    await this.ensureDirectories();
+    
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+    
+    let archivedCount = 0;
+    let totalSize = 0;
+    
+    try {
+      const files = await fs.readdir(this.logsDir);
+      
+      for (const file of files) {
+        if (!file.endsWith('.log')) continue;
+        
+        const filePath = path.join(this.logsDir, file);
+        const stats = await fs.stat(filePath);
+        
+        if (stats.mtime < cutoffDate) {
+          // Archive the file
+          const archivePath = path.join(this.archiveDir, `${file}.gz`);
+          
+          await pipeline(
+            createReadStream(filePath),
+            createGzip({ level: 9 }),
+            createWriteStream(archivePath)
+          );
+          
+          await fs.unlink(filePath);
+          archivedCount++;
+          totalSize += stats.size;
+        }
+      }
+      
+      // Get updated stats
+      const updatedStats = await this.getLogStats();
+      
+      const appLogger = this.createLogger('system');
+      appLogger.info(`Compacted ${archivedCount} log files (${totalSize} bytes)`);
+      
+      return updatedStats;
+    } catch (error) {
+      const appLogger = this.createLogger('system');
+      appLogger.error('Failed to compact logs:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Clean up zero-length files and corrupted archives
+   */
+  async cleanupZeroFiles(): Promise<{ removed: number }> {
+    await this.ensureDirectories();
+    
+    let removed = 0;
+    const directories = [this.logsDir, this.archiveDir];
+    
+    for (const dir of directories) {
+      try {
+        const files = await fs.readdir(dir);
+        
+        for (const file of files) {
+          if (file.endsWith('.gz') || file.endsWith('.log')) {
+            const filePath = path.join(dir, file);
+            const stats = await fs.stat(filePath);
+            
+            if (stats.size === 0) {
+              await fs.unlink(filePath);
+              removed++;
+            }
+          }
+        }
+      } catch (error) {
+        const appLogger = this.createLogger('system');
+        appLogger.warn(`Failed to clean directory ${dir}:`, error);
+      }
+    }
+    
+    const appLogger = this.createLogger('system');
+    appLogger.info(`Cleaned up ${removed} zero-length files`);
+    
+    return { removed };
+  }
+
+  /**
+   * Purge all logs (dangerous operation)
+   */
+  async purgeAllLogs(): Promise<void> {
+    const removeRecursive = async (dirPath: string) => {
+      if (!existsSync(dirPath)) return;
+      
+      const entries = await fs.readdir(dirPath);
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dirPath, entry);
+        const stats = await fs.stat(fullPath);
+        
+        if (stats.isDirectory()) {
+          await removeRecursive(fullPath);
+          await fs.rmdir(fullPath);
+        } else {
+          await fs.unlink(fullPath);
+        }
+      }
+    };
+    
+    await removeRecursive(this.logsDir);
+    
+    // Recreate directories
+    await this.ensureDirectories();
+    
+    const appLogger = this.createLogger('system');
+    appLogger.warn('All logs have been purged');
+  }
+
+  /**
+   * Export logs in various formats
+   */
+  async exportLogs(options: {
+    level?: string;
+    format?: 'txt' | 'json' | 'csv';
+    startDate?: Date;
+    endDate?: Date;
+  } = {}): Promise<string> {
+    const { 
+      level = 'all',
+      format = 'txt',
+      startDate,
+      endDate 
+    } = options;
+    
+    const currentLogFile = path.join(this.logsDir, `app-${new Date().toISOString().split('T')[0]}.log`);
+    
+    if (!existsSync(currentLogFile)) {
+      throw new Error('No logs found for export');
+    }
+    
+    const content = await fs.readFile(currentLogFile, 'utf8');
+    const lines = content.split('\n').filter(line => line.trim());
+    
+    // Filter by level if specified
+    let filteredLines = lines;
+    if (level !== 'all') {
+      const levelUpper = level.toUpperCase();
+      filteredLines = lines.filter(line => 
+        line.includes(`[${levelUpper}]`) || 
+        line.includes(` ${levelUpper} `)
+      );
+    }
+    
+    // Filter by date range if specified
+    if (startDate || endDate) {
+      filteredLines = filteredLines.filter(line => {
+        const timestampMatch = line.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+        if (!timestampMatch) return true;
+        
+        const lineDate = new Date(timestampMatch[0]);
+        if (startDate && lineDate < startDate) return false;
+        if (endDate && lineDate > endDate) return false;
+        
+        return true;
+      });
+    }
+    
+    // Format output based on requested format
+    switch (format) {
+      case 'json': {
+        const entries = filteredLines.map(line => {
+          try {
+            // Try to parse as JSON first
+            if (line.trim().startsWith('{')) {
+              return JSON.parse(line);
+            }
+            
+            // Parse text format
+            const match = line.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+\[(\w+)\]\s+(?:\[([^\]]+)\]\s+)?(.*)$/);
+            if (match) {
+              const [, timestamp, level, category, message] = match;
+              return {
+                timestamp,
+                level: level.toLowerCase(),
+                category: category || 'general',
+                message
+              };
+            }
+            
+            return { message: line };
+          } catch {
+            return { message: line };
+          }
+        });
+        
+        return JSON.stringify(entries, null, 2);
+      }
+      
+      case 'csv': {
+        const csv = ['Timestamp,Level,Category,Message'];
+        
+        filteredLines.forEach(line => {
+          const match = line.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+\[(\w+)\]\s+(?:\[([^\]]+)\]\s+)?(.*)$/);
+          if (match) {
+            const [, timestamp, level, category, message] = match;
+            csv.push(`"${timestamp}","${level}","${category || ''}","${message.replace(/"/g, '""')}"`);
+          }
+        });
+        
+        return csv.join('\n');
+      }
+      
+      case 'txt':
+      default:
+        return filteredLines.join('\n');
+    }
+  }
+
+  /**
+   * Get list of all log files including archives
+   */
+  async getAllLogFiles(): Promise<LogFileInfo[]> {
+    const files: LogFileInfo[] = [];
+    
+    // Get files from logs directory
+    if (existsSync(this.logsDir)) {
+      const logFiles = await fs.readdir(this.logsDir);
+      for (const file of logFiles) {
+        if (file.startsWith('app-') || file.startsWith('error-')) {
+          const fullPath = path.join(this.logsDir, file);
+          const stats = await fs.stat(fullPath);
+          files.push({
+            name: file,
+            size: stats.size,
+            modified: stats.mtime,
+            compressed: false
+          });
+        }
+      }
+    }
+    
+    // Get files from archive directory
+    if (existsSync(this.archiveDir)) {
+      const archiveFiles = await fs.readdir(this.archiveDir);
+      for (const file of archiveFiles) {
+        const fullPath = path.join(this.archiveDir, file);
+        const stats = await fs.stat(fullPath);
+        files.push({
+          name: `archive/${file}`,
+          size: stats.size,
+          modified: stats.mtime,
+          compressed: file.endsWith('.gz')
+        });
+      }
+    }
+    
+    // Sort by modified date (newest first)
+    files.sort((a, b) => b.modified.getTime() - a.modified.getTime());
+    
+    return files;
+  }
+
+  /**
+   * Get all logger instances (for rotation)
+   */
+  getLoggers(): Map<string, ExtendedWinstonLogger> {
+    return this.loggers;
+  }
 }
 
 // Export singleton instance and functions
-const logger = new EnhancedLogger();
+const logger = new Logger();
 
 export function createLogger(name?: string): any {
   if (!name) {
@@ -737,4 +988,4 @@ export async function clearLogs(): Promise<void> {
 
 // Export both as default and named export
 export default logger;
-export { logger as getEnhancedLogger };
+export { logger as getLogger };

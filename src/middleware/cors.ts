@@ -4,7 +4,7 @@
  */
 
 import cors from 'cors';
-import { createLogger } from '../core/enhancedLogger.js';
+import { createLogger } from '../core/logger.js';
 
 const logger = createLogger('CORS');
 

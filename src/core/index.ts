@@ -27,14 +27,14 @@ export {
   type PortStatusResult
 } from './portUtils.js';
 
-// Logging - EnhancedLogger is the only logger
+// Logging - Consolidated logger implementation
 export { 
-  getEnhancedLogger,
-  default as EnhancedLogger,
-  createLogger as createLoggerFromEnhanced
-} from './enhancedLogger.js';
+  getLogger,
+  default as Logger,
+  createLogger as createLoggerBase
+} from './logger.js';
 
-import { createLogger as createLoggerBase } from './enhancedLogger.js';
+import { createLogger as createLoggerImport } from './logger.js';
 
 /**
  * Create a logger instance with automatic file output
@@ -42,8 +42,8 @@ import { createLogger as createLoggerBase } from './enhancedLogger.js';
  * @returns A logger instance that writes to console and files
  */
 export function createLogger(name: string) {
-  // Use the createLogger function from enhancedLogger
-  return createLoggerBase(name);
+  // Use the createLogger function from logger
+  return createLoggerImport(name);
 }
 
 // Export types for backward compatibility
@@ -58,9 +58,11 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 // Security
 export { 
+  getStorageService,
+  StorageService,
   getSecureFileHandler,
   SecureFileHandler 
-} from './secureFileHandler.js';
+} from './storageService.js';
 
 /**
  * Usage Example:

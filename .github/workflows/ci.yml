@@ -26,7 +26,7 @@ jobs:
         
     - name: Install dependencies
       run: |
-        npm ci --legacy-peer-deps --force
+        npm ci
         npm install @rollup/rollup-linux-x64-gnu --save-dev
         npm rebuild
       
@@ -58,7 +58,7 @@ jobs:
         cache: 'npm'
         
     - name: Install dependencies
-      run: npm ci --legacy-peer-deps --force
+      run: npm ci
       
     - name: Install Linux-specific binaries
       if: matrix.os == 'ubuntu-latest'
@@ -108,7 +108,7 @@ jobs:
         
     - name: Install dependencies
       run: |
-        npm ci --legacy-peer-deps --force
+        npm ci
         npm install @rollup/rollup-linux-x64-gnu @tauri-apps/cli-linux-x64-gnu --save-dev
         npm rebuild
       
@@ -139,7 +139,7 @@ jobs:
         
     - name: Install dependencies
       run: |
-        npm ci --legacy-peer-deps --force
+        npm ci
         npm install @rollup/rollup-linux-x64-gnu @tauri-apps/cli-linux-x64-gnu --save-dev
         npm rebuild
       
@@ -172,7 +172,7 @@ jobs:
         
     - name: Install dependencies
       run: |
-        npm ci --legacy-peer-deps --force
+        npm ci
         npm install @rollup/rollup-linux-x64-gnu @tauri-apps/cli-linux-x64-gnu --save-dev
         npm rebuild
       
@@ -208,7 +208,7 @@ jobs:
         cache: 'npm'
         
     - name: Install dependencies
-      run: npm ci --legacy-peer-deps --force
+      run: npm ci
       
     - name: Install Linux-specific binaries
       if: matrix.os == 'ubuntu-latest'
@@ -269,7 +269,7 @@ jobs:
     - name: Install framework dependencies
       run: |
         cd framework
-        npm ci --legacy-peer-deps --force
+        npm ci
       
     - name: Install Linux-specific binaries for framework
       if: matrix.os == 'ubuntu-latest'
@@ -295,7 +295,7 @@ jobs:
         npm rebuild
         npm link
         cd ../${{ matrix.app }}
-        npm ci --legacy-peer-deps --force
+        npm ci
         npm rebuild
         npm link @episensor/app-framework
         
@@ -325,7 +325,7 @@ jobs:
         
     - name: Install dependencies
       run: |
-        npm ci --legacy-peer-deps --force
+        npm ci
         npm install @rollup/rollup-linux-x64-gnu @tauri-apps/cli-linux-x64-gnu --save-dev
         npm rebuild
       

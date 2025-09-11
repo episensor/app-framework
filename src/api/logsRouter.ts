@@ -4,7 +4,7 @@
  */
 
 import express, { Request, Response } from 'express';
-import { getEnhancedLogger } from '../core/enhancedLogger.js';
+import { getLogger } from '../core/logger.js';
 import path from 'path';
 import fs from 'fs/promises';
 import { existsSync, createReadStream } from 'fs';
@@ -35,7 +35,7 @@ router.get('/entries', async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 100;
     const level = req.query.level as string || 'all';
     
-    const logger = getEnhancedLogger;
+    const logger = getLogger;
     const logs = await logger.getRecentLogs(limit, level);
     
     res.json({
@@ -184,7 +184,7 @@ router.get('/stream/:filename', async (req: Request, res: Response) => {
  */
 router.post('/clear', async (_req: Request, res: Response) => {
   try {
-    const logger = getEnhancedLogger;
+    const logger = getLogger;
     await logger.clearLogs();
     
     res.json({
@@ -295,7 +295,7 @@ router.get('/export', async (req: Request, res: Response) => {
   try {
     const level = req.query.level as string || 'all';
     
-    const logger = getEnhancedLogger;
+    const logger = getLogger;
     const logs = await logger.getRecentLogs(10000, level); // Get up to 10k entries for export
     
     // Sort newest first
@@ -383,6 +383,177 @@ router.get('/stats', async (_req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Failed to get log statistics'
+    });
+  }
+});
+
+/**
+ * Compact logs - Archive old logs
+ * POST /api/logs/compact
+ */
+router.post('/compact', async (req: Request, res: Response) => {
+  try {
+    const { days = 7 } = req.body;
+    const logger = getLogger;
+    
+    const stats = await logger.compactLogs(days);
+    
+    res.json({ 
+      success: true, 
+      stats,
+      message: `Logs older than ${days} days have been archived`
+    });
+  } catch (error: any) {
+    res.status(500).json({ 
+      success: false, 
+      error: error?.message || 'Failed to compact logs' 
+    });
+  }
+});
+
+/**
+ * Clean up zero-length files
+ * POST /api/logs/cleanup-zero
+ */
+router.post('/cleanup-zero', async (_req: Request, res: Response) => {
+  try {
+    const logger = getLogger;
+    const result = await logger.cleanupZeroFiles();
+    
+    res.json({ 
+      success: true,
+      ...result,
+      message: `Removed ${result.removed} zero-length files`
+    });
+  } catch (error: any) {
+    res.status(500).json({ 
+      success: false, 
+      error: error?.message || 'Failed to cleanup logs' 
+    });
+  }
+});
+
+/**
+ * Purge all logs (dangerous)
+ * POST /api/logs/purge-all
+ */
+router.post('/purge-all', async (_req: Request, res: Response) => {
+  try {
+    const logger = getLogger;
+    await logger.purgeAllLogs();
+    
+    res.json({ 
+      success: true,
+      message: 'All logs have been purged'
+    });
+  } catch (error: any) {
+    res.status(500).json({ 
+      success: false, 
+      error: error?.message || 'Failed to purge logs' 
+    });
+  }
+});
+
+/**
+ * Get all log files including archives
+ * GET /api/logs/all-files
+ */
+router.get('/all-files', async (_req: Request, res: Response) => {
+  try {
+    const logger = getLogger;
+    const files = await logger.getAllLogFiles();
+    
+    res.json({ 
+      success: true, 
+      files,
+      count: files.length
+    });
+  } catch (error: any) {
+    res.status(500).json({ 
+      success: false, 
+      error: error?.message || 'Failed to list log files',
+      files: [] 
+    });
+  }
+});
+
+/**
+ * Download any log file (including archives)
+ * GET /api/logs/download-any/:filename
+ */
+router.get('/download-any/:filename(*)', async (req: Request, res: Response) => {
+  try {
+    const { filename } = req.params;
+    
+    // Security: prevent directory traversal
+    const safeName = path.basename(filename);
+    
+    // Check in logs directory first
+    const logsDir = path.join(process.cwd(), 'data', 'logs');
+    let filePath = path.join(logsDir, safeName);
+    
+    // If not found, check in archive directory
+    if (!existsSync(filePath)) {
+      filePath = path.join(logsDir, 'archive', safeName);
+    }
+    
+    // If still not found and filename includes 'archive/', handle that case
+    if (!existsSync(filePath) && filename.startsWith('archive/')) {
+      const archiveName = filename.replace('archive/', '');
+      filePath = path.join(logsDir, 'archive', archiveName);
+    }
+    
+    if (!existsSync(filePath)) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'File not found' 
+      });
+    }
+    
+    // Set appropriate headers for download
+    const isCompressed = filePath.endsWith('.gz');
+    if (isCompressed) {
+      res.setHeader('Content-Type', 'application/gzip');
+    } else {
+      res.setHeader('Content-Type', 'text/plain');
+    }
+    
+    return res.download(filePath, safeName);
+  } catch (error: any) {
+    return res.status(500).json({ 
+      success: false, 
+      error: error?.message || 'Failed to download file' 
+    });
+  }
+});
+
+/**
+ * Force log rotation
+ * POST /api/logs/rotate
+ */
+router.post('/rotate', async (_req: Request, res: Response) => {
+  try {
+    const logger = getLogger;
+    
+    // Get all logger instances and force rotation
+    const loggers = logger.getLoggers();
+    for (const [, winstonLogger] of loggers) {
+      // Find rotate transport and trigger rotation
+      winstonLogger.transports.forEach((transport: any) => {
+        if (transport.rotate && typeof transport.rotate === 'function') {
+          transport.rotate();
+        }
+      });
+    }
+    
+    res.json({ 
+      success: true,
+      message: 'Log rotation triggered'
+    });
+  } catch (error: any) {
+    res.status(500).json({ 
+      success: false, 
+      error: error?.message || 'Failed to rotate logs' 
     });
   }
 });

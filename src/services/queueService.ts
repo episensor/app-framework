@@ -5,7 +5,7 @@
 
 import { EventEmitter } from 'events';
 import { createLogger } from '../core/index.js';
-import { getSecureFileHandler } from '../core/secureFileHandler.js';
+import { getStorageService } from '../core/storageService.js';
 
 let logger: any; // Will be initialized when needed
 
@@ -46,7 +46,7 @@ export class QueueService extends EventEmitter {
   private activeJobs: number;
   private config: Required<QueueConfig>;
   private pollingTimer?: NodeJS.Timeout;
-  private fileHandler = getSecureFileHandler();
+  private fileHandler = getStorageService();
 
   constructor(config: QueueConfig = {}) {
     super();

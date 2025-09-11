@@ -4,7 +4,7 @@
  */
 
 import { Response } from 'express';
-import { createLogger } from '../core/enhancedLogger.js';
+import { createLogger } from '../core/logger.js';
 
 const logger = createLogger('api-error');
 

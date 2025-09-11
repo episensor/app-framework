@@ -39,7 +39,7 @@ export * from './utils/index.js';
 export { createLogger, type Logger, type LogLevel } from './core/index.js';
 export { StandardServer, createStandardServer } from './core/StandardServer.js';
 export type { StandardServerConfig } from './core/StandardServer.js';
-export { SecureFileHandler } from './core/secureFileHandler.js';
+export { StorageService, getStorageService, SecureFileHandler, getSecureFileHandler } from './core/storageService.js';
 export { createWebSocketServer, getWebSocketServer } from './services/websocketServer.js';
 export { validate, schemas } from './middleware/validation.js';
 
@@ -94,36 +94,32 @@ export {
   type TauriBundleOptions
 } from './build/tauriBundler.js';
 
-// Settings Schema exports
+// Settings Schema exports - Consolidated implementation
 export {
   createSettingsSchema,
   flattenSettings,
   unflattenSettings,
+  flattenSettingsValues,
+  unflattenSettingsValues,
   getRestartRequiredSettings,
   validateSettings,
+  validateSetting,
+  validateAllSettings,
+  getSettingByKey,
+  getDefaultSettingsValues,
+  evaluateFieldVisibility,
+  groupFields,
+  applyToStorageTransform,
+  applyFromStorageTransform,
+  createSettingsFormState,
   Validators,
   type SettingsSchema,
   type SettingsCategory,
   type SettingDefinition,
-  type SettingOption
-} from './settings/SettingsSchema.js';
-
-// Enhanced Settings Schema exports
-export {
-  type EnhancedSettingsSchema,
-  type SettingsCategory as EnhancedSettingsCategory,
-  type SettingDefinition as EnhancedSettingDefinition,
+  type SettingOption,
   type SettingsFormState,
-  type SettingsValidationResult,
-  getSettingByKey,
-  validateSetting,
-  validateAllSettings,
-  getRestartRequiredSettings as getEnhancedRestartRequiredSettings,
-  flattenSettingsValues,
-  unflattenSettingsValues,
-  getDefaultSettingsValues,
-  createSettingsFormState
-} from './settings/EnhancedSettingsSchema.js';
+  type SettingsValidationResult
+} from './settings/SettingsSchema.js';
 
 // Log Categories exports
 export {

@@ -11,7 +11,7 @@ import cors from 'cors';
 import { createWebSocketServer } from '../services/websocketServer.js';
 import { displayStartupBanner } from '../utils/startupBanner.js';
 import { getProcessOnPort } from './portUtils.js';
-import { createLogger, getEnhancedLogger } from './index.js';
+import { createLogger, getLogger } from './index.js';
 import { aiErrorHandler } from '../middleware/aiErrorHandler.js';
 import { apiErrorHandler } from './apiResponse.js';
 import { getAppDataPath, getLogsPath, isDesktopApp } from '../utils/appPaths.js';
@@ -103,14 +103,14 @@ export class StandardServer {
       }
 
       // Initialize the logger first to ensure file output works
-      const enhancedLogger = getEnhancedLogger;
-      if (!enhancedLogger.isInitialized()) {
+      const logger = getLogger;
+      if (!logger.isInitialized()) {
         // Use proper logs directory for desktop apps
         const logsDir = this.config.enableDesktopIntegration 
           ? getLogsPath(this.config.appId!, this.config.appName)
           : './data/logs';
           
-        await enhancedLogger.initialize({
+        await logger.initialize({
           appName: this.config.appName,
           logLevel: process.env.LOG_LEVEL || 'info',
           consoleOutput: true,
@@ -152,18 +152,18 @@ export class StandardServer {
       dataPath: this.config.desktopDataPath || getAppDataPath(this.config.appId!, this.config.appName)
     });
 
-    // Initialize enhanced logging for desktop apps
-    const enhancedLogger = getEnhancedLogger;
-    if (!enhancedLogger.isInitialized()) {
+    // Initialize logging for desktop apps
+    const logger = getLogger;
+    if (!logger.isInitialized()) {
       const logsDir = getLogsPath(this.config.appId!, this.config.appName);
-      await enhancedLogger.initialize({
+      await logger.initialize({
         appName: this.config.appName,
         logLevel: process.env.LOG_LEVEL || 'info',
         consoleOutput: true,
         fileOutput: true,
         logsDir
       });
-      ensureLogger().info('Enhanced logging initialized for desktop app', { logsDir });
+      ensureLogger().info('Logging initialized for desktop app', { logsDir });
     }
 
     // Setup CORS for desktop apps

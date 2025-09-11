@@ -1,5 +1,7 @@
 /**
  * File Handler Service
+ * @deprecated Use StorageService from core/storageService instead
+ * This service is deprecated and will be removed in a future version.
  * Simple, practical file handling for desktop applications
  */
 

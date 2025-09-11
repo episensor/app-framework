@@ -1,6 +1,7 @@
 /**
- * Secure File Handler Service
- * Provides secure file operations with path sanitization and validation
+ * Storage Service
+ * Unified service for secure file operations, user uploads, and internal data storage
+ * Provides path sanitization, validation, and consistent file handling
  */
 
 import path from 'path';
@@ -12,7 +13,7 @@ let logger: any; // Will be initialized when needed
 
 function ensureLogger() {
   if (!logger) {
-    logger = createLogger('SecureFileHandler');
+    logger = createLogger('StorageService');
   }
   return logger;
 }
@@ -51,7 +52,25 @@ export interface ReadOptions {
   maxSize?: number;
 }
 
-export class SecureFileHandler {
+export interface FileUploadOptions {
+  maxSize?: number; // bytes
+  allowedTypes?: string[]; // file extensions
+  destination?: string;
+  generateUniqueName?: boolean;
+  preserveExtension?: boolean;
+}
+
+export interface UploadedFile {
+  originalName: string;
+  filename: string;
+  path: string;
+  size: number;
+  mimetype?: string;
+  extension: string;
+  hash?: string;
+}
+
+export class StorageService {
   private initialized: boolean = false;
   private readonly maxFileSize: number = 100 * 1024 * 1024; // 100MB
 
@@ -70,9 +89,9 @@ export class SecureFileHandler {
       await fs.writeFile(path.join(BASE_DIRS.data, '.gitignore'), gitignoreContent);
 
       this.initialized = true;
-      // Secure file handler initialized
+      // Storage service initialized
     } catch (error) {
-      ensureLogger().error('Failed to initialize secure file handler:', error);
+      ensureLogger().error('Failed to initialize storage service:', error);
       throw error;
     }
   }
@@ -139,8 +158,8 @@ export class SecureFileHandler {
    * Save a file securely
    */
   async saveFile(
-    filename: string,
     content: string | Buffer,
+    filename: string,
     category: BaseDirectory = 'data',
     options: SaveOptions = {}
   ): Promise<FileInfo> {
@@ -338,16 +357,147 @@ export class SecureFileHandler {
   getBaseDirectories(): Record<BaseDirectory, string> {
     return { ...BASE_DIRS };
   }
+
+  /**
+   * Save a user upload with security checks
+   * @param file - File buffer or stream
+   * @param originalName - Original filename from user
+   * @param options - Upload options
+   * @returns Information about the uploaded file
+   */
+  async saveUserUpload(
+    file: Buffer | NodeJS.ReadableStream,
+    originalName: string,
+    options: FileUploadOptions = {}
+  ): Promise<UploadedFile> {
+    await this.initialize();
+
+    const {
+      maxSize = this.maxFileSize,
+      allowedTypes = [],
+      destination = 'uploads',
+      generateUniqueName = true,
+      preserveExtension = true
+    } = options;
+
+    // Sanitize the original filename
+    const sanitizedName = this.sanitizeFilename(originalName);
+    const ext = path.extname(sanitizedName).toLowerCase();
+    const nameWithoutExt = path.basename(sanitizedName, ext);
+
+    // Check file extension if restrictions are specified
+    if (allowedTypes.length > 0 && !allowedTypes.includes(ext)) {
+      throw new Error(`File type ${ext} is not allowed. Allowed types: ${allowedTypes.join(', ')}`);
+    }
+
+    // Generate filename
+    let filename: string;
+    if (generateUniqueName) {
+      const uniqueId = crypto.randomBytes(8).toString('hex');
+      filename = preserveExtension ? `${nameWithoutExt}_${uniqueId}${ext}` : `${uniqueId}`;
+    } else {
+      filename = sanitizedName;
+    }
+
+    // Determine the upload path
+    const uploadPath = this.getSafePath(filename, destination as BaseDirectory);
+
+    // Save the file
+    if (Buffer.isBuffer(file)) {
+      // Check size for buffer
+      if (file.length > maxSize) {
+        throw new Error(`File size exceeds maximum allowed size of ${maxSize} bytes`);
+      }
+      await fs.writeFile(uploadPath, file);
+    } else {
+      // For streams, we need to check size while writing
+      const writeStream = fs.createWriteStream(uploadPath);
+      let size = 0;
+
+      await new Promise((resolve, reject) => {
+        file.on('data', (chunk: Buffer) => {
+          size += chunk.length;
+          if (size > maxSize) {
+            writeStream.destroy();
+            fs.unlink(uploadPath).catch(() => {}); // Clean up partial file
+            reject(new Error(`File size exceeds maximum allowed size of ${maxSize} bytes`));
+          }
+        });
+
+        file.on('error', reject);
+        writeStream.on('error', reject);
+        writeStream.on('finish', () => resolve(undefined));
+
+        file.pipe(writeStream);
+      });
+    }
+
+    // Generate file hash
+    const fileBuffer = await fs.readFile(uploadPath);
+    const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+
+    // Get file stats
+    const stats = await fs.stat(uploadPath);
+
+    const uploadedFile: UploadedFile = {
+      originalName,
+      filename,
+      path: uploadPath,
+      size: stats.size,
+      extension: ext,
+      hash
+    };
+
+    ensureLogger().info('User file uploaded successfully', {
+      originalName,
+      filename,
+      size: stats.size,
+      hash
+    });
+
+    return uploadedFile;
+  }
+
+  /**
+   * Save internal application data
+   * @param data - Data to save
+   * @param filename - Filename for the data
+   * @param category - Category/directory for the data
+   * @param options - Save options
+   */
+  async saveInternalData(
+    data: string | Buffer | object,
+    filename: string,
+    category: BaseDirectory = 'data',
+    options: SaveOptions = {}
+  ): Promise<FileInfo> {
+    // If data is an object, stringify it
+    const finalData = typeof data === 'object' && !Buffer.isBuffer(data)
+      ? JSON.stringify(data, null, 2)
+      : data;
+
+    // Use the existing save method
+    return this.saveFile(finalData as string | Buffer, filename, category, options);
+  }
 }
 
 // Singleton instance
-let secureFileHandler: SecureFileHandler | null = null;
+let storageService: StorageService | null = null;
 
-export function getSecureFileHandler(): SecureFileHandler {
-  if (!secureFileHandler) {
-    secureFileHandler = new SecureFileHandler();
+export function getStorageService(): StorageService {
+  if (!storageService) {
+    storageService = new StorageService();
   }
-  return secureFileHandler;
+  return storageService;
 }
 
-export default SecureFileHandler;
+// Backward compatibility export (deprecated)
+export function getSecureFileHandler(): StorageService {
+  console.warn('getSecureFileHandler is deprecated. Use getStorageService instead.');
+  return getStorageService();
+}
+
+// Export for backward compatibility (deprecated)
+export { StorageService as SecureFileHandler };
+
+export default StorageService;

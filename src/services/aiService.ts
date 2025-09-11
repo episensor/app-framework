@@ -5,7 +5,7 @@
 
 import { EventEmitter } from 'events';
 import { createLogger } from '../core/index.js';
-import { getSecureFileHandler } from '../core/secureFileHandler.js';
+import { getStorageService } from '../core/storageService.js';
 import OpenAI from 'openai';
 import * as crypto from 'node:crypto';
 
@@ -361,7 +361,7 @@ export class MockAIProvider extends AIProvider {
 export class AIService extends EventEmitter {
   private providers: Map<string, AIProvider>;
   private cache: LRUCache<string, AIResponse>;
-  private fileHandler = getSecureFileHandler();
+  private fileHandler = getStorageService();
   private defaultProvider: string;
 
   constructor() {
