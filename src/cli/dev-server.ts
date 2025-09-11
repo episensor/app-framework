@@ -7,9 +7,9 @@
 
 import { spawn, ChildProcess } from 'child_process';
 import fs from 'fs';
-// @ts-ignore - chalk and boxen are CLI dependencies
+// @ts-expect-error - chalk and boxen are CLI dependencies
 import chalk from 'chalk';
-// @ts-ignore
+// @ts-expect-error - boxen is a CLI dependency without types
 import boxen from 'boxen';
 import { displayStartupBanner } from '../utils/startupBanner.js';
 
@@ -392,7 +392,7 @@ class DevServerOrchestrator {
       try {
         // Kill the entire process group (negative PID)
         process.kill(-this.backendProcess.pid, 'SIGTERM');
-      } catch (e) {
+      } catch (_e) {
         // Fallback to regular kill
         try {
           this.backendProcess.kill('SIGTERM');
@@ -407,7 +407,7 @@ class DevServerOrchestrator {
       try {
         // Kill the entire process group (negative PID)
         process.kill(-this.frontendProcess.pid, 'SIGTERM');
-      } catch (e) {
+      } catch (_e) {
         // Fallback to regular kill
         try {
           this.frontendProcess.kill('SIGTERM');

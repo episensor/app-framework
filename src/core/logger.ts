@@ -264,7 +264,7 @@ class Logger {
 
       // Return most recent entries, newest first
       return filtered.slice(-limit).reverse();
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to read logs:', error);
       return [];
     }
@@ -285,7 +285,7 @@ class Logger {
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to clear logs:', error);
       throw error;
     }
@@ -353,7 +353,7 @@ class Logger {
       // Create only the main logs directory and archive subdirectory
       await fs.mkdir(this.logsDir, { recursive: true });
       await fs.mkdir(this.archiveDir, { recursive: true });
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to create log directories:', error);
     }
   }
@@ -379,12 +379,12 @@ class Logger {
               await fs.rmdir(itemPath);
               console.log(`Removed empty log subdirectory: ${item}`);
             }
-          } catch (err) {
+          } catch (_err) {
             console.warn(`Could not clean up subdirectory ${item}:`, err);
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Ignore errors during cleanup
     }
   }
@@ -407,7 +407,7 @@ class Logger {
             try {
               await fs.rename(oldPath, newPath);
               console.log(`Moved log file from /logs to /data/logs: ${file}`);
-            } catch (err) {
+            } catch (_err) {
               // File might not exist or already moved
             }
           }
@@ -424,7 +424,7 @@ class Logger {
           await fs.rmdir(topLevelLogsDir);
           console.log('Removed empty top-level logs directory');
         }
-      } catch (error) {
+      } catch (_error) {
         // Directory might not exist or already cleaned
       }
     }
@@ -614,7 +614,7 @@ class Logger {
       
       // Sort files by date (newest first)
       stats.files.sort((a, b) => b.modified.getTime() - a.modified.getTime());
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to get log stats:', error);
     }
 
@@ -652,7 +652,7 @@ class Logger {
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to archive logs:', error);
     }
   }
@@ -719,7 +719,7 @@ class Logger {
       appLogger.info(`Compacted ${archivedCount} log files (${totalSize} bytes)`);
       
       return updatedStats;
-    } catch (error) {
+    } catch (_error) {
       const appLogger = this.createLogger('system');
       appLogger.error('Failed to compact logs:', error);
       throw error;
@@ -750,7 +750,7 @@ class Logger {
             }
           }
         }
-      } catch (error) {
+      } catch (_error) {
         const appLogger = this.createLogger('system');
         appLogger.warn(`Failed to clean directory ${dir}:`, error);
       }
