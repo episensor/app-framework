@@ -72,7 +72,7 @@ export class ConfigManager extends EventEmitter {
       logger.debug('Configuration initialized successfully');
     } catch (_error) {
       logger.error('Failed to initialize configuration:', _error);
-      throw error;
+      throw _error;
     }
   }
 
@@ -147,7 +147,7 @@ export class ConfigManager extends EventEmitter {
       }
     } catch (_error) {
       logger.error('Failed to load configuration:', _error);
-      throw error;
+      throw _error;
     }
   }
 
@@ -174,7 +174,7 @@ export class ConfigManager extends EventEmitter {
       logger.info(`Configuration saved to ${this.configPath}`);
     } catch (_error) {
       logger.error('Failed to save configuration:', _error);
-      throw error;
+      throw _error;
     }
   }
 

@@ -90,7 +90,7 @@ async function bundleWithEsbuild(config: Required<TauriBundleOptions>): Promise<
     console.log('✅ Bundle created successfully');
   } catch (_error) {
     console.error('❌ Failed to bundle with esbuild');
-    throw error;
+    throw _error;
   }
 }
 
@@ -122,7 +122,7 @@ async function compileWithPkg(config: Required<TauriBundleOptions>): Promise<voi
     console.log('✅ Binaries compiled successfully');
   } catch (_error) {
     console.error('❌ Failed to compile with pkg');
-    throw error;
+    throw _error;
   }
 }
 

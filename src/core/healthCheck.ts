@@ -358,7 +358,7 @@ class HealthCheckService {
           name: dep.name,
           status: 'error',
           responseTime: Date.now() - startTime,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: _error instanceof Error ? _error.message : 'Unknown error'
         });
       }
     }
@@ -380,7 +380,7 @@ class HealthCheckService {
         results.push({
           name: check.name,
           status: 'unhealthy',
-          message: error instanceof Error ? error.message : 'Check failed'
+          message: _error instanceof Error ? _error.message : 'Check failed'
         });
       }
     }
