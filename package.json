@@ -61,7 +61,7 @@
     "test:coverage:integration": "jest tests/integration/ --coverage",
     "test:security": "npm audit --audit-level moderate",
     "security:deps": "npm audit fix --audit-level moderate --dry-run",
-    "benchmark": "echo 'Benchmarks not yet implemented'",
+    "benchmark": "node benchmarks/index.js",
     "docs:api": "typedoc --out docs/api src/index.ts",
     "docs:build": "echo 'Documentation site build not yet configured'",
     "lint": "eslint src/ --ext .ts",
