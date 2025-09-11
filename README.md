@@ -190,7 +190,6 @@ import { StandardServer, createLogger } from '@episensor/app-framework';
 // Frontend UI components
 import { Button, Card, useWebSocket } from '@episensor/app-framework/ui';
 ```
-```
 
 ## 💡 Usage Examples
 
