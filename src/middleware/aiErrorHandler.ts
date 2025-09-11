@@ -210,14 +210,14 @@ export function wrapAIHandler(
       await handler(req, res, next);
     } catch (_error: any) {
       // Convert to AI error if needed
-      if (!error.userMessage && error.response?.data) {
+      if (!_error.userMessage && _error.response?.data) {
         // Handle API response errors
-        const apiError = error.response.data;
-        error.userMessage = apiError.error?.message || apiError.message || 'AI request failed';
-        error.status = error.response.status;
-        error.details = apiError.error?.details || [apiError.error?.type];
+        const apiError = _error.response.data;
+        _error.userMessage = apiError.error?.message || apiError.message || 'AI request failed';
+        _error.status = _error.response.status;
+        _error.details = apiError.error?.details || [apiError.error?.type];
       }
-      next(error);
+      next(_error);
     }
   };
 }

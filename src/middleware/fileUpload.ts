@@ -143,7 +143,7 @@ export function createFileUpload(config: FileUploadConfig = {}) {
         res.status(500).json({
           success: false,
           error: 'File processing failed',
-          message: error.message
+          message: _error.message
         });
       }
     });

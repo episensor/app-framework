@@ -235,8 +235,8 @@ export function validate<T extends ZodSchema>(schema: T, options?: ValidationOpt
       }
       next();
     } catch (_error) {
-      if (error instanceof ZodError) {
-        const errors = formatValidationErrors(error);
+      if (_error instanceof ZodError) {
+        const errors = formatValidationErrors(_error);
         const message = createErrorMessage(errors, 'Invalid request');
 
         return res.status(400).json({
@@ -247,7 +247,7 @@ export function validate<T extends ZodSchema>(schema: T, options?: ValidationOpt
           timestamp: new Date().toISOString()
         });
       }
-      next(error);
+      next(_error);
     }
   };
 }
@@ -267,8 +267,8 @@ export function validateParams<T extends ZodSchema>(schema: T, options?: Validat
       }
       next();
     } catch (_error) {
-      if (error instanceof ZodError) {
-        const errors = formatValidationErrors(error);
+      if (_error instanceof ZodError) {
+        const errors = formatValidationErrors(_error);
         const message = createErrorMessage(errors, 'Invalid parameters');
 
         return res.status(400).json({
@@ -279,7 +279,7 @@ export function validateParams<T extends ZodSchema>(schema: T, options?: Validat
           timestamp: new Date().toISOString()
         });
       }
-      next(error);
+      next(_error);
     }
   };
 }
@@ -299,8 +299,8 @@ export function validateQuery<T extends ZodSchema>(schema: T, options?: Validati
       }
       next();
     } catch (_error) {
-      if (error instanceof ZodError) {
-        const errors = formatValidationErrors(error);
+      if (_error instanceof ZodError) {
+        const errors = formatValidationErrors(_error);
         const message = createErrorMessage(errors, 'Invalid query');
 
         return res.status(400).json({
@@ -311,7 +311,7 @@ export function validateQuery<T extends ZodSchema>(schema: T, options?: Validati
           timestamp: new Date().toISOString()
         });
       }
-      next(error);
+      next(_error);
     }
   };
 }
@@ -337,8 +337,8 @@ export function validateRequest<T extends {
           req.body = value;
         }
       } catch (_error) {
-        if (error instanceof ZodError) {
-          errors.push(...formatValidationErrors(error));
+        if (_error instanceof ZodError) {
+          errors.push(...formatValidationErrors(_error));
         }
       }
     }
@@ -351,8 +351,8 @@ export function validateRequest<T extends {
           req.params = value;
         }
       } catch (_error) {
-        if (error instanceof ZodError) {
-          errors.push(...formatValidationErrors(error));
+        if (_error instanceof ZodError) {
+          errors.push(...formatValidationErrors(_error));
         }
       }
     }
@@ -365,8 +365,8 @@ export function validateRequest<T extends {
           req.query = value;
         }
       } catch (_error) {
-        if (error instanceof ZodError) {
-          errors.push(...formatValidationErrors(error));
+        if (_error instanceof ZodError) {
+          errors.push(...formatValidationErrors(_error));
         }
       }
     }
@@ -397,14 +397,14 @@ export function validateAsync(validationFn: (req: Request) => Promise<any>) {
       next();
     } catch (_error: any) {
       const validationError: FieldValidationError = {
-        field: error.field || 'unknown',
-        message: error.message || 'Validation failed'
+        field: _error.field || 'unknown',
+        message: _error.message || 'Validation failed'
       };
       
       res.status(400).json({
         success: false,
         error: 'Validation failed',
-        message: error.message,
+        message: _error.message,
         errors: [validationError],
         timestamp: new Date().toISOString()
       });

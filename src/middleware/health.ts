@@ -150,7 +150,7 @@ export function createHealthCheck(options: HealthCheckOptions = {}): Router {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
         version,
-        error: error.message
+        error: _error.message
       });
     }
   });

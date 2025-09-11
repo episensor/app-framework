@@ -153,7 +153,7 @@ export async function createRedisStore(redisUrl?: string) {
       prefix: 'session:'
     });
   } catch (_error: any) {
-    ensureLogger().error('Failed to create Redis store:', error.message);
+    ensureLogger().error('Failed to create Redis store:', _error.message);
     ensureLogger().warn('Falling back to memory store');
     return 'memory' as const;
   }

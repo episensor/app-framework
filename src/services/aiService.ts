@@ -214,8 +214,8 @@ export class OpenAIProvider extends AIProvider {
       ensureLogger().info('OpenAI client initialized');
     } catch (_error) {
       ensureLogger().error('Failed to initialize OpenAI client:', _error);
-      if (error instanceof AIError) {
-        throw error;
+      if (_error instanceof AIError) {
+        throw _error;
       }
       throw new AIError('Failed to initialize OpenAI client', 500, 'INIT_ERROR', 'openai');
     }
@@ -286,7 +286,7 @@ export class OpenAIProvider extends AIProvider {
       return response;
     } catch (_error: any) {
       ensureLogger().error('OpenAI API error', _error);
-      throw this.handleOpenAIError(error);
+      throw this.handleOpenAIError(_error);
     }
   }
 
@@ -454,8 +454,8 @@ export class AIService extends EventEmitter {
       
       return response;
     } catch (_error) {
-      this.emit('analysis:error', { error, provider: providerName });
-      throw error;
+      this.emit('analysis:error', { error: _error, provider: providerName });
+      throw _error;
     }
   }
 
@@ -498,8 +498,8 @@ export class AIService extends EventEmitter {
       
       return response;
     } catch (_error) {
-      this.emit('chat:error', { error, provider: providerName });
-      throw error;
+      this.emit('chat:error', { error: _error, provider: providerName });
+      throw _error;
     }
   }
 

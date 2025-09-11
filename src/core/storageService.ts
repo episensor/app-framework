@@ -92,7 +92,7 @@ export class StorageService {
       // Storage service initialized
     } catch (_error) {
       ensureLogger().error('Failed to initialize storage service:', _error);
-      throw error;
+      throw _error;
     }
   }
 

@@ -95,7 +95,7 @@ export async function rebuildNativeModules(
       );
     } catch (_error) {
       console.error('Failed to rebuild for Electron:', _error);
-      throw error;
+      throw _error;
     }
   } else {
     // Rebuild for Node.js
@@ -103,7 +103,7 @@ export async function rebuildNativeModules(
       execSync('npm rebuild', { cwd, stdio: 'inherit' });
     } catch (_error) {
       console.error('Failed to rebuild native modules:', _error);
-      throw error;
+      throw _error;
     }
   }
 }

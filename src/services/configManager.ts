@@ -99,7 +99,7 @@ export class ConfigManager<T = any> {
       return this.config;
     } catch (_error: any) {
       ensureLogger().error('Failed to load configuration:', _error);
-      throw error;
+      throw _error;
     }
   }
 
@@ -122,7 +122,7 @@ export class ConfigManager<T = any> {
       return this.deepMerge(this.defaults, config);
     } catch (_error: any) {
       ensureLogger().error(`Failed to load config file ${filePath}:`, _error);
-      throw new Error(`Failed to load configuration: ${error.message}`);
+      throw new Error(`Failed to load configuration: ${_error.message}`);
     }
   }
 
@@ -217,7 +217,7 @@ export class ConfigManager<T = any> {
         }
       });
     } catch (_error: any) {
-      ensureLogger().warn('Failed to setup config file watcher:', error.message);
+      ensureLogger().warn('Failed to setup config file watcher:', _error.message);
     }
   }
 
