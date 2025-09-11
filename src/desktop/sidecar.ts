@@ -133,7 +133,7 @@ export async function buildSidecar(options: SidecarBuildOptions): Promise<void> 
       
       console.log(`✅ Built ${outputName} (${targetKey})`);
     } catch (_error: any) {
-      console.error(`❌ Failed to build ${targetKey}: ${error.message}`);
+      console.error(`❌ Failed to build ${targetKey}: ${_error.message}`);
     }
   }
 }

@@ -76,7 +76,7 @@ class ConversationStorage {
       ensureLogger().info('Conversation storage initialized');
     } catch (_error) {
       ensureLogger().error('Failed to initialize conversation storage:', _error);
-      throw error;
+      throw _error;
     }
   }
 

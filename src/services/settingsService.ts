@@ -125,7 +125,7 @@ export class SettingsService extends EventEmitter {
       this.emit('loaded', this.settings);
     } catch (_error: any) {
       ensureLogger().error('Failed to load settings:', _error);
-      throw new Error(`Failed to load settings: ${error.message}`);
+      throw new Error(`Failed to load settings: ${_error.message}`);
     }
   }
 
@@ -163,7 +163,7 @@ export class SettingsService extends EventEmitter {
       this.emit('saved', this.settings);
     } catch (_error: any) {
       ensureLogger().error('Failed to save settings:', _error);
-      throw new Error(`Failed to save settings: ${error.message}`);
+      throw new Error(`Failed to save settings: ${_error.message}`);
     }
   }
 
@@ -345,7 +345,7 @@ export class SettingsService extends EventEmitter {
       ensureLogger().info('Settings imported successfully');
     } catch (_error: any) {
       ensureLogger().error('Failed to import settings:', _error);
-      throw new Error(`Failed to import settings: ${error.message}`);
+      throw new Error(`Failed to import settings: ${_error.message}`);
     }
   }
 

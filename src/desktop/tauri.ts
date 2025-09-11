@@ -93,7 +93,7 @@ export class BackendManager {
       // Handle process error
       this.process.on('error', (error) => {
         this.isRunning = false;
-        logger.error('Failed to start backend:', _error);
+        logger.error('Failed to start backend:', error);
         reject(error);
       });
 

@@ -148,7 +148,7 @@ class UpdateService {
       return this.getUpdateInfo();
     } catch (_error: any) {
       ensureLogger().error('Failed to check for updates:', _error);
-      throw error;
+      throw _error;
     }
   }
 
@@ -229,7 +229,7 @@ class UpdateService {
       return changelog;
     } catch (_error: any) {
       ensureLogger().error('Failed to fetch changelog:', _error);
-      throw error;
+      throw _error;
     }
   }
 

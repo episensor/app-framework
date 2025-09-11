@@ -263,7 +263,7 @@ export class QueueService extends EventEmitter {
     job.error = error.message;
     job.updatedAt = new Date();
 
-    ensureLogger().error(`Job ${job.id} failed: ${error.message}`, _error);
+    ensureLogger().error(`Job ${job.id} failed: ${error.message}`, error);
 
     if (job.retries < job.maxRetries) {
       job.status = 'pending'; // Retry

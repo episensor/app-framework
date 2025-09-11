@@ -286,7 +286,7 @@ export class ConfigManager<T = any> {
       ensureLogger().info(`Configuration saved to ${targetPath}`);
     } catch (_error: any) {
       ensureLogger().error(`Failed to save configuration:`, _error);
-      throw error;
+      throw _error;
     }
   }
 
