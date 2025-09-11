@@ -265,7 +265,7 @@ class Logger {
       // Return most recent entries, newest first
       return filtered.slice(-limit).reverse();
     } catch (_error) {
-      console.error('Failed to read logs:', error);
+      console.error('Failed to read logs:', _error);
       return [];
     }
   }
@@ -286,8 +286,8 @@ class Logger {
         }
       }
     } catch (_error) {
-      console.error('Failed to clear logs:', error);
-      throw error;
+      console.error('Failed to clear logs:', _error);
+      throw _error;
     }
   }
 
@@ -354,7 +354,7 @@ class Logger {
       await fs.mkdir(this.logsDir, { recursive: true });
       await fs.mkdir(this.archiveDir, { recursive: true });
     } catch (_error) {
-      console.error('Failed to create log directories:', error);
+      console.error('Failed to create log directories:', _error);
     }
   }
 
@@ -380,7 +380,7 @@ class Logger {
               console.log(`Removed empty log subdirectory: ${item}`);
             }
           } catch (_err) {
-            console.warn(`Could not clean up subdirectory ${item}:`, err);
+            console.warn(`Could not clean up subdirectory ${item}:`, _err);
           }
         }
       }
@@ -615,7 +615,7 @@ class Logger {
       // Sort files by date (newest first)
       stats.files.sort((a, b) => b.modified.getTime() - a.modified.getTime());
     } catch (_error) {
-      console.error('Failed to get log stats:', error);
+      console.error('Failed to get log stats:', _error);
     }
 
     return stats;
@@ -653,7 +653,7 @@ class Logger {
         }
       }
     } catch (_error) {
-      console.error('Failed to archive logs:', error);
+      console.error('Failed to archive logs:', _error);
     }
   }
 
@@ -721,8 +721,8 @@ class Logger {
       return updatedStats;
     } catch (_error) {
       const appLogger = this.createLogger('system');
-      appLogger.error('Failed to compact logs:', error);
-      throw error;
+      appLogger.error('Failed to compact logs:', _error);
+      throw _error;
     }
   }
 
@@ -752,7 +752,7 @@ class Logger {
         }
       } catch (_error) {
         const appLogger = this.createLogger('system');
-        appLogger.warn(`Failed to clean directory ${dir}:`, error);
+        appLogger.warn(`Failed to clean directory ${dir}:`, _error);
       }
     }
     

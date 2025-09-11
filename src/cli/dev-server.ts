@@ -7,9 +7,7 @@
 
 import { spawn, ChildProcess } from 'child_process';
 import fs from 'fs';
-// @ts-expect-error - chalk and boxen are CLI dependencies
 import chalk from 'chalk';
-// @ts-expect-error - boxen is a CLI dependency without types
 import boxen from 'boxen';
 import { displayStartupBanner } from '../utils/startupBanner.js';
 
