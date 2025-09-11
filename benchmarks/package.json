@@ -1,0 +1,9 @@
+{
+  "name": "@episensor/app-framework-benchmarks",
+  "version": "1.0.0",
+  "description": "Performance benchmarks for app-framework",
+  "main": "index.js",
+  "scripts": {
+    "run": "node index.js"
+  }
+}
