@@ -12,7 +12,7 @@ pnpm-debug.log*
 
 # Build outputs
 dist/
-build/
+/build/
 out/
 
 # Runtime data
