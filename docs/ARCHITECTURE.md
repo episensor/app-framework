@@ -52,7 +52,7 @@ epi-app-framework/
 │   │   ├── health.ts         # Health check endpoints
 │   │   ├── rateLimit.ts      # Rate limiting
 │   │   ├── session.ts        # Session management
-│   │   ├── validation.ts     # Request validation (Joi-based)
+│   │   ├── validation.ts     # Request validation (Zod-based)
 │   │   └── index.ts          # Middleware exports
 │   │
 │   ├── routes/               # API Routes

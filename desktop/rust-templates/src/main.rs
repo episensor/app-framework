@@ -5,7 +5,8 @@ use std::process::Command;
 use std::thread;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::Manager;
+use tauri::{Manager, AppHandle};
+use std::path::PathBuf;
 
 fn main() {
     // Flag to track if backend is ready
@@ -16,15 +17,22 @@ fn main() {
     thread::spawn(move || {
         println!("Starting backend server...");
         
-        // Check if we have a built backend
-        let backend_exists = std::path::Path::new("../dist/index.js").exists();
+        // Use resource directory for backend path
+        let resource_dir = std::env::current_exe()
+            .ok()
+            .and_then(|path| path.parent().map(|p| p.to_path_buf()))
+            .unwrap_or_else(|| PathBuf::from("."));
+        
+        let backend_path = resource_dir.join("backend").join("index.js");
+        let backend_exists = backend_path.exists();
         
         if !backend_exists {
+            println!("Backend not found at: {:?}", backend_path);
             println!("Building backend...");
             // Build the backend first if needed
             let build_output = Command::new("npm")
                 .args(&["run", "build"])
-                .current_dir("../")
+                .current_dir(resource_dir.parent().unwrap_or(&resource_dir))
                 .output();
                 
             match build_output {
@@ -41,8 +49,8 @@ fn main() {
 
         // Start the backend server
         let mut child = Command::new("node")
-            .args(&["dist/index.js"])
-            .current_dir("../")
+            .arg(backend_path.to_str().unwrap_or("backend/index.js"))
+            .current_dir(&resource_dir)
             .env("NODE_ENV", "production")
             .env("DESKTOP", "true")
             .spawn()
@@ -94,9 +102,11 @@ fn main() {
 
 // Command to get logs from the backend
 #[tauri::command]
-fn get_logs() -> Result<Vec<String>, String> {
-    // Read log files from the data/logs directory
-    let log_path = std::path::Path::new("../data/logs");
+fn get_logs(app: AppHandle) -> Result<Vec<String>, String> {
+    // Use Tauri's path resolver for logs directory
+    let log_path = app.path().app_log_dir()
+        .map_err(|e| e.to_string())?;
+    
     if !log_path.exists() {
         return Ok(vec![]);
     }
@@ -115,10 +125,12 @@ fn get_logs() -> Result<Vec<String>, String> {
 
 // Command to clear logs
 #[tauri::command]
-fn clear_logs() -> Result<(), String> {
-    let log_path = std::path::Path::new("../data/logs");
+fn clear_logs(app: AppHandle) -> Result<(), String> {
+    let log_path = app.path().app_log_dir()
+        .map_err(|e| e.to_string())?;
+    
     if log_path.exists() {
-        if let Ok(entries) = std::fs::read_dir(log_path) {
+        if let Ok(entries) = std::fs::read_dir(&log_path) {
             for entry in entries.flatten() {
                 let _ = std::fs::remove_file(entry.path());
             }
