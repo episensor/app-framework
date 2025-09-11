@@ -90,8 +90,8 @@ export class StorageService {
 
       this.initialized = true;
       // Storage service initialized
-    } catch (error) {
-      ensureLogger().error('Failed to initialize storage service:', error);
+    } catch (_error) {
+      ensureLogger().error('Failed to initialize storage service:', _error);
       throw error;
     }
   }
@@ -133,8 +133,8 @@ export class StorageService {
       const resolvedPath = path.resolve(filePath);
       const resolvedBase = path.resolve(baseDir);
       return resolvedPath.startsWith(resolvedBase);
-    } catch (error) {
-      ensureLogger().error('Error validating path safety:', error);
+    } catch (_error) {
+      ensureLogger().error('Error validating path safety:', _error);
       return false;
     }
   }
@@ -289,8 +289,8 @@ export class StorageService {
           });
         }
       }
-    } catch (error) {
-      ensureLogger().error(`Error listing files in ${category}:`, error);
+    } catch (_error) {
+      ensureLogger().error(`Error listing files in ${category}:`, _error);
     }
 
     return files;

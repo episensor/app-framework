@@ -88,7 +88,7 @@ async function bundleWithEsbuild(config: Required<TauriBundleOptions>): Promise<
   try {
     execSync(command, { stdio: 'inherit' });
     console.log('✅ Bundle created successfully');
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Failed to bundle with esbuild');
     throw error;
   }
@@ -120,7 +120,7 @@ async function compileWithPkg(config: Required<TauriBundleOptions>): Promise<voi
     
     execSync(command, { stdio: 'inherit' });
     console.log('✅ Binaries compiled successfully');
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Failed to compile with pkg');
     throw error;
   }

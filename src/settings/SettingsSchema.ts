@@ -486,8 +486,8 @@ export function evaluateFieldVisibility(
   
   try {
     return field.showIf(currentValues);
-  } catch (error) {
-    console.error(`Error evaluating showIf for field ${field.key}:`, error);
+  } catch (_error) {
+    console.error(`Error evaluating showIf for field ${field.key}:`, _error);
     return true; // Show field if evaluation fails
   }
 }

@@ -205,8 +205,8 @@ export class QueueService extends EventEmitter {
     try {
       await handler(job);
       await this.completeJob(job);
-    } catch (error: any) {
-      await this.handleJobError(job, error);
+    } catch (_error: any) {
+      await this.handleJobError(job, _error);
     } finally {
       this.activeJobs--;
       
@@ -263,7 +263,7 @@ export class QueueService extends EventEmitter {
     job.error = error.message;
     job.updatedAt = new Date();
 
-    ensureLogger().error(`Job ${job.id} failed: ${error.message}`, error);
+    ensureLogger().error(`Job ${job.id} failed: ${error.message}`, _error);
 
     if (job.retries < job.maxRetries) {
       job.status = 'pending'; // Retry
@@ -315,8 +315,8 @@ export class QueueService extends EventEmitter {
       );
       
       ensureLogger().info(`Moved failed job ${job.id} to dead-letter queue`);
-    } catch (error) {
-      ensureLogger().error('Failed to move job to dead-letter queue:', error);
+    } catch (_error) {
+      ensureLogger().error('Failed to move job to dead-letter queue:', _error);
     }
   }
 
@@ -343,8 +343,8 @@ export class QueueService extends EventEmitter {
         'data',
         { overwrite: true }
       );
-    } catch (error) {
-      ensureLogger().error('Failed to persist job', error);
+    } catch (_error) {
+      ensureLogger().error('Failed to persist job', _error);
     }
   }
 
@@ -373,14 +373,14 @@ export class QueueService extends EventEmitter {
           }
 
           this.jobs.set(job.id, job);
-        } catch (error) {
-          ensureLogger().error(`Failed to load job from ${file.name}`, error);
+        } catch (_error) {
+          ensureLogger().error(`Failed to load job from ${file.name}`, _error);
         }
       }
 
       ensureLogger().debug(`Loaded ${this.jobs.size} persisted jobs`);
-    } catch (error) {
-      ensureLogger().error('Failed to load persisted jobs', error);
+    } catch (_error) {
+      ensureLogger().error('Failed to load persisted jobs', _error);
     }
   }
 

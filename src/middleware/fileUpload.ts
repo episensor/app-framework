@@ -138,8 +138,8 @@ export function createFileUpload(config: FileUploadConfig = {}) {
         }
         
         next();
-      } catch (error: any) {
-        ensureLogger().error('File processing error:', error);
+      } catch (_error: any) {
+        ensureLogger().error('File processing error:', _error);
         res.status(500).json({
           success: false,
           error: 'File processing failed',
@@ -197,8 +197,8 @@ export function createTempCleaner(
       if (deleted > 0) {
         ensureLogger().info(`Cleaned ${deleted} old temporary files`);
       }
-    } catch (error: any) {
-      ensureLogger().error('Temp file cleanup error:', error);
+    } catch (_error: any) {
+      ensureLogger().error('Temp file cleanup error:', _error);
     }
   }, interval);
 

@@ -208,7 +208,7 @@ export function wrapAIHandler(
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       await handler(req, res, next);
-    } catch (error: any) {
+    } catch (_error: any) {
       // Convert to AI error if needed
       if (!error.userMessage && error.response?.data) {
         // Handle API response errors

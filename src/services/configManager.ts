@@ -97,8 +97,8 @@ export class ConfigManager<T = any> {
 
       ensureLogger().debug('Configuration loaded successfully');
       return this.config;
-    } catch (error: any) {
-      ensureLogger().error('Failed to load configuration:', error);
+    } catch (_error: any) {
+      ensureLogger().error('Failed to load configuration:', _error);
       throw error;
     }
   }
@@ -120,8 +120,8 @@ export class ConfigManager<T = any> {
       
       // Merge with defaults
       return this.deepMerge(this.defaults, config);
-    } catch (error: any) {
-      ensureLogger().error(`Failed to load config file ${filePath}:`, error);
+    } catch (_error: any) {
+      ensureLogger().error(`Failed to load config file ${filePath}:`, _error);
       throw new Error(`Failed to load configuration: ${error.message}`);
     }
   }
@@ -211,12 +211,12 @@ export class ConfigManager<T = any> {
           try {
             await this.load();
             this.notifyWatchers();
-          } catch (error: any) {
-            ensureLogger().error('Failed to reload configuration:', error);
+          } catch (_error: any) {
+            ensureLogger().error('Failed to reload configuration:', _error);
           }
         }
       });
-    } catch (error: any) {
+    } catch (_error: any) {
       ensureLogger().warn('Failed to setup config file watcher:', error.message);
     }
   }
@@ -284,8 +284,8 @@ export class ConfigManager<T = any> {
       const content = JSON.stringify(this.config, null, 2);
       await fs.promises.writeFile(targetPath, content, 'utf-8');
       ensureLogger().info(`Configuration saved to ${targetPath}`);
-    } catch (error: any) {
-      ensureLogger().error(`Failed to save configuration:`, error);
+    } catch (_error: any) {
+      ensureLogger().error(`Failed to save configuration:`, _error);
       throw error;
     }
   }

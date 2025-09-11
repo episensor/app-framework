@@ -146,8 +146,8 @@ class UpdateService {
       }
 
       return this.getUpdateInfo();
-    } catch (error: any) {
-      ensureLogger().error('Failed to check for updates:', error);
+    } catch (_error: any) {
+      ensureLogger().error('Failed to check for updates:', _error);
       throw error;
     }
   }
@@ -227,8 +227,8 @@ class UpdateService {
       }
 
       return changelog;
-    } catch (error: any) {
-      ensureLogger().error('Failed to fetch changelog:', error);
+    } catch (_error: any) {
+      ensureLogger().error('Failed to fetch changelog:', _error);
       throw error;
     }
   }

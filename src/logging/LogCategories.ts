@@ -178,8 +178,8 @@ export function parseLogEntry(raw: string | object): LogEntry | null {
     } else if (typeof raw === 'object') {
       return raw as LogEntry;
     }
-  } catch (error) {
-    console.error('Failed to parse log entry:', error);
+  } catch (_error) {
+    console.error('Failed to parse log entry:', _error);
   }
   
   return null;

@@ -182,7 +182,7 @@ export function getRestartRequiredSettings(
   
   for (const category of schema.categories) {
     for (const setting of category.settings) {
-      if (setting.requiresRestart && changedSettings.hasOwnProperty(setting.key)) {
+      if (setting.requiresRestart && Object.prototype.hasOwnProperty.call(changedSettings, setting.key)) {
         restartRequired.push(setting.key);
       }
     }

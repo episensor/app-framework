@@ -93,7 +93,7 @@ export class BackendManager {
       // Handle process error
       this.process.on('error', (error) => {
         this.isRunning = false;
-        logger.error('Failed to start backend:', error);
+        logger.error('Failed to start backend:', _error);
         reject(error);
       });
 
@@ -220,8 +220,8 @@ export class BackendManager {
     logger.info(`Attempting to restart backend (attempt ${this.restartAttempts}/${this.maxRestartAttempts})...`);
 
     setTimeout(() => {
-      this.start().catch((error) => {
-        logger.error('Failed to restart backend:', error);
+      this.start().catch((_error) => {
+        logger.error('Failed to restart backend:', _error);
       });
     }, 2000 * this.restartAttempts); // Exponential backoff
   }
@@ -242,12 +242,12 @@ export class BackendManager {
  * Facilitates communication between Tauri frontend and Node.js backend
  */
 export class IPCBridge {
-  private handlers: Map<string, Function> = new Map();
+  private handlers: Map<string, (...args: any[]) => any> = new Map();
 
   /**
    * Register a handler for an IPC message
    */
-  on(event: string, handler: Function): void {
+  on(event: string, handler: (...args: any[]) => any): void {
     this.handlers.set(event, handler);
   }
 
@@ -411,8 +411,8 @@ export class AutoUpdater {
       }
 
       return { available: false };
-    } catch (error) {
-      logger.error('Failed to check for updates:', error);
+    } catch (_error) {
+      logger.error('Failed to check for updates:', _error);
       return { available: false };
     }
   }

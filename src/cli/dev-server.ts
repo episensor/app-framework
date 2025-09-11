@@ -303,6 +303,7 @@ class DevServerOrchestrator {
         lines.forEach((line: string) => {
           if (line.trim() && !line.includes('➜')) {
             // Strip existing ANSI codes to prevent corruption
+            // eslint-disable-next-line no-control-regex
             const cleanLine = line.replace(/\x1b\[[0-9;]*m/g, '').trim();
             const msg = chalk.red(`[Frontend] ${cleanLine}`);
             if (this.hasShownBanner) {
@@ -394,7 +395,7 @@ class DevServerOrchestrator {
         // Fallback to regular kill
         try {
           this.backendProcess.kill('SIGTERM');
-        } catch (err) {
+        } catch (_err) {
           // Process might already be dead
         }
       }
@@ -409,7 +410,7 @@ class DevServerOrchestrator {
         // Fallback to regular kill
         try {
           this.frontendProcess.kill('SIGTERM');
-        } catch (err) {
+        } catch (_err) {
           // Process might already be dead
         }
       }

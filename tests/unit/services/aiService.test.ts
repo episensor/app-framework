@@ -30,8 +30,8 @@ jest.mock('../../../src/core', () => ({
   }))
 }));
 
-jest.mock('../../../src/core/secureFileHandler', () => ({
-  getSecureFileHandler: jest.fn(() => ({
+jest.mock('../../../src/core/storageService', () => ({
+  getStorageService: jest.fn(() => ({
     saveFile: jest.fn()
   }))
 }));

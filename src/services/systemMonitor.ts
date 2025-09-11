@@ -230,8 +230,8 @@ class SystemMonitor {
           return (parseInt(match[1]) - 2732) / 10;
         }
       }
-    } catch (error) {
-      logger.debug('Could not get CPU temperature:', error);
+    } catch (_error) {
+      logger.debug('Could not get CPU temperature:', _error);
     }
 
     return undefined;
@@ -332,8 +332,8 @@ class SystemMonitor {
       }
       
       return result;
-    } catch (error) {
-      logger.debug('Could not get detailed memory info:', error);
+    } catch (_error) {
+      logger.debug('Could not get detailed memory info:', _error);
       return undefined;
     }
   }
@@ -366,8 +366,8 @@ class SystemMonitor {
           };
         }
       }
-    } catch (error) {
-      logger.debug('Could not get swap information:', error);
+    } catch (_error) {
+      logger.debug('Could not get swap information:', _error);
     }
 
     return undefined;
@@ -424,8 +424,8 @@ class SystemMonitor {
       if (io) {
         diskInfo.io = io;
       }
-    } catch (error) {
-      logger.debug('Could not get disk information:', error);
+    } catch (_error) {
+      logger.debug('Could not get disk information:', _error);
     }
 
     return diskInfo;
@@ -484,8 +484,8 @@ class SystemMonitor {
           };
         }
       }
-    } catch (error) {
-      logger.debug('Could not get disk I/O statistics:', error);
+    } catch (_error) {
+      logger.debug('Could not get disk I/O statistics:', _error);
     }
 
     return undefined;
@@ -617,8 +617,8 @@ class SystemMonitor {
           }
         }
       }
-    } catch (error) {
-      logger.debug(`Could not get stats for interface ${interfaceName}:`, error);
+    } catch (_error) {
+      logger.debug(`Could not get stats for interface ${interfaceName}:`, _error);
     }
 
     return undefined;
@@ -763,8 +763,8 @@ class SystemMonitor {
         closeWait,
         total: established + listening + timeWait + closeWait
       };
-    } catch (error) {
-      logger.debug('Could not get network connections by state:', error);
+    } catch (_error) {
+      logger.debug('Could not get network connections by state:', _error);
       return {
         established: 0,
         listening: 0,
@@ -795,8 +795,8 @@ class SystemMonitor {
         const { stdout } = await execAsync(command);
         return parseInt(stdout.trim()) || 0;
       }
-    } catch (error) {
-      logger.debug('Could not get network connections:', error);
+    } catch (_error) {
+      logger.debug('Could not get network connections:', _error);
     }
 
     return 0;
@@ -832,8 +832,8 @@ class SystemMonitor {
         // Parse Windows output
         // Implementation would be more complex
       }
-    } catch (error) {
-      logger.debug('Could not get process list:', error);
+    } catch (_error) {
+      logger.debug('Could not get process list:', _error);
     }
 
     return processes;
@@ -859,8 +859,8 @@ class SystemMonitor {
         if (callback) {
           callback(health);
         }
-      } catch (error) {
-        logger.error('Error monitoring system health:', error);
+      } catch (_error) {
+        logger.error('Error monitoring system health:', _error);
       }
     }, interval);
   }

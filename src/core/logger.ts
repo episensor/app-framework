@@ -293,6 +293,7 @@ class Logger {
 
   child(name: string): any {
     // Return a smart proxy that handles both pre and post initialization
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     
     const logMethod = (level: string) => {

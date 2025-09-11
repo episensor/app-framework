@@ -92,7 +92,7 @@ export async function buildSidecar(options: SidecarBuildOptions): Promise<void> 
   // Check if pkg is installed
   try {
     await execAsync('npx pkg --version');
-  } catch (error) {
+  } catch (_error) {
     throw new Error(
       'pkg is not installed. Install it with: npm install --save-dev @yao-pkg/pkg'
     );
@@ -132,7 +132,7 @@ export async function buildSidecar(options: SidecarBuildOptions): Promise<void> 
       }
       
       console.log(`✅ Built ${outputName} (${targetKey})`);
-    } catch (error: any) {
+    } catch (_error: any) {
       console.error(`❌ Failed to build ${targetKey}: ${error.message}`);
     }
   }
@@ -275,8 +275,8 @@ export async function createServerWrapper(
 async function main() {
   try {
     await import('./${path.basename(inputFile)}');
-  } catch (error) {
-    console.error('Server failed to start:', error);
+  } catch (_error) {
+    console.error('Server failed to start:', _error);
     process.exit(1);
   }
 }
@@ -319,13 +319,14 @@ export async function buildSidecarCLI(args: string[]): Promise<void> {
       case '--no-compress':
         config.compress = false;
         break;
-      case '--target':
+      case '--target': {
         const [platform, arch] = args[++i].split('-') as [string, string];
         config.targets = [{
           platform: platform as any,
           arch: arch as any
         }];
         break;
+      }
     }
   }
   

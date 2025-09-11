@@ -42,8 +42,8 @@ router.get('/entries', async (req: Request, res: Response) => {
       success: true,
       logs: logs || []
     });
-  } catch (error: any) {
-    console.error('Failed to fetch log entries:', error);
+  } catch (_error: any) {
+    console.error('Failed to fetch log entries:', _error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch log entries',
@@ -92,8 +92,8 @@ router.get('/files', async (_req: Request, res: Response) => {
       success: true,
       files: logFiles
     });
-  } catch (error: any) {
-    console.error('Failed to fetch log files:', error);
+  } catch (_error: any) {
+    console.error('Failed to fetch log files:', _error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch log files',
@@ -130,8 +130,8 @@ router.get('/download/:filename', async (req: Request, res: Response) => {
     }
 
     res.download(filePath);
-  } catch (error: any) {
-    console.error('Failed to download log file:', error);
+  } catch (_error: any) {
+    console.error('Failed to download log file:', _error);
     res.status(500).json({
       success: false,
       error: 'Failed to download log file'
@@ -169,8 +169,8 @@ router.get('/stream/:filename', async (req: Request, res: Response) => {
     res.setHeader('Content-Type', 'text/plain');
     const stream = createReadStream(filePath);
     stream.pipe(res);
-  } catch (error: any) {
-    console.error('Failed to stream log file:', error);
+  } catch (_error: any) {
+    console.error('Failed to stream log file:', _error);
     res.status(500).json({
       success: false,
       error: 'Failed to stream log file'
@@ -191,8 +191,8 @@ router.post('/clear', async (_req: Request, res: Response) => {
       success: true,
       message: 'Logs cleared successfully'
     });
-  } catch (error: any) {
-    console.error('Failed to clear logs:', error);
+  } catch (_error: any) {
+    console.error('Failed to clear logs:', _error);
     res.status(500).json({
       success: false,
       error: 'Failed to clear logs'
@@ -237,8 +237,8 @@ router.get('/archives', async (_req: Request, res: Response) => {
       success: true,
       archives
     });
-  } catch (error: any) {
-    console.error('Failed to fetch archives:', error);
+  } catch (_error: any) {
+    console.error('Failed to fetch archives:', _error);
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch archives',
@@ -278,8 +278,8 @@ router.delete('/archive/:filename', async (req: Request, res: Response) => {
       success: true,
       message: 'Archive deleted successfully'
     });
-  } catch (error: any) {
-    console.error('Failed to delete archive:', error);
+  } catch (_error: any) {
+    console.error('Failed to delete archive:', _error);
     return res.status(500).json({
       success: false,
       error: 'Failed to delete archive'
@@ -315,8 +315,8 @@ router.get('/export', async (req: Request, res: Response) => {
     ).join('\n');
     
     res.send(textLogs);
-  } catch (error: any) {
-    console.error('Failed to export logs:', error);
+  } catch (_error: any) {
+    console.error('Failed to export logs:', _error);
     res.status(500).json({
       success: false,
       error: 'Failed to export logs'
@@ -378,8 +378,8 @@ router.get('/stats', async (_req: Request, res: Response) => {
         newestLog: newestTime?.toISOString() || null
       }
     });
-  } catch (error: any) {
-    console.error('Failed to get log stats:', error);
+  } catch (_error: any) {
+    console.error('Failed to get log stats:', _error);
     res.status(500).json({
       success: false,
       error: 'Failed to get log statistics'
@@ -403,10 +403,10 @@ router.post('/compact', async (req: Request, res: Response) => {
       stats,
       message: `Logs older than ${days} days have been archived`
     });
-  } catch (error: any) {
+  } catch (_error: any) {
     res.status(500).json({ 
       success: false, 
-      error: error?.message || 'Failed to compact logs' 
+      error: _error?.message || 'Failed to compact logs' 
     });
   }
 });
@@ -425,10 +425,10 @@ router.post('/cleanup-zero', async (_req: Request, res: Response) => {
       ...result,
       message: `Removed ${result.removed} zero-length files`
     });
-  } catch (error: any) {
+  } catch (_error: any) {
     res.status(500).json({ 
       success: false, 
-      error: error?.message || 'Failed to cleanup logs' 
+      error: _error?.message || 'Failed to cleanup logs' 
     });
   }
 });
@@ -446,10 +446,10 @@ router.post('/purge-all', async (_req: Request, res: Response) => {
       success: true,
       message: 'All logs have been purged'
     });
-  } catch (error: any) {
+  } catch (_error: any) {
     res.status(500).json({ 
       success: false, 
-      error: error?.message || 'Failed to purge logs' 
+      error: _error?.message || 'Failed to purge logs' 
     });
   }
 });
@@ -468,10 +468,10 @@ router.get('/all-files', async (_req: Request, res: Response) => {
       files,
       count: files.length
     });
-  } catch (error: any) {
+  } catch (_error: any) {
     res.status(500).json({ 
       success: false, 
-      error: error?.message || 'Failed to list log files',
+      error: _error?.message || 'Failed to list log files',
       files: [] 
     });
   }
@@ -519,10 +519,10 @@ router.get('/download-any/:filename(*)', async (req: Request, res: Response) => 
     }
     
     return res.download(filePath, safeName);
-  } catch (error: any) {
+  } catch (_error: any) {
     return res.status(500).json({ 
       success: false, 
-      error: error?.message || 'Failed to download file' 
+      error: _error?.message || 'Failed to download file' 
     });
   }
 });
@@ -550,10 +550,10 @@ router.post('/rotate', async (_req: Request, res: Response) => {
       success: true,
       message: 'Log rotation triggered'
     });
-  } catch (error: any) {
+  } catch (_error: any) {
     res.status(500).json({ 
       success: false, 
-      error: error?.message || 'Failed to rotate logs' 
+      error: _error?.message || 'Failed to rotate logs' 
     });
   }
 });

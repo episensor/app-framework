@@ -12,7 +12,7 @@ buildSidecarCLI(process.argv.slice(2))
     console.log('✅ Sidecar build complete!');
     process.exit(0);
   })
-  .catch((error) => {
-    console.error('❌ Sidecar build failed:', error);
+  .catch((_error) => {
+    console.error('❌ Sidecar build failed:', _error);
     process.exit(1);
   });

@@ -123,8 +123,8 @@ export class SettingsService extends EventEmitter {
 
       ensureLogger().info('Settings loaded successfully');
       this.emit('loaded', this.settings);
-    } catch (error: any) {
-      ensureLogger().error('Failed to load settings:', error);
+    } catch (_error: any) {
+      ensureLogger().error('Failed to load settings:', _error);
       throw new Error(`Failed to load settings: ${error.message}`);
     }
   }
@@ -161,8 +161,8 @@ export class SettingsService extends EventEmitter {
       
       ensureLogger().info('Settings saved successfully');
       this.emit('saved', this.settings);
-    } catch (error: any) {
-      ensureLogger().error('Failed to save settings:', error);
+    } catch (_error: any) {
+      ensureLogger().error('Failed to save settings:', _error);
       throw new Error(`Failed to save settings: ${error.message}`);
     }
   }
@@ -343,8 +343,8 @@ export class SettingsService extends EventEmitter {
       const imported = JSON.parse(data);
       await this.update(imported);
       ensureLogger().info('Settings imported successfully');
-    } catch (error: any) {
-      ensureLogger().error('Failed to import settings:', error);
+    } catch (_error: any) {
+      ensureLogger().error('Failed to import settings:', _error);
       throw new Error(`Failed to import settings: ${error.message}`);
     }
   }
@@ -367,9 +367,9 @@ export class SettingsService extends EventEmitter {
     this.saveTimeout = setTimeout(async () => {
       try {
         await this.save();
-      } catch (error: any) {
-        ensureLogger().error('Auto-save failed:', error);
-        this.emit('save-error', error);
+      } catch (_error: any) {
+        ensureLogger().error('Auto-save failed:', _error);
+        this.emit('save-error', _error);
       }
     }, this.saveDebounce);
   }

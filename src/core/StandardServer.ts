@@ -258,7 +258,7 @@ export class StandardServer {
           ensureLogger().error(`Port ${port} requires elevated privileges`);
           process.exit(1);
         } else {
-          ensureLogger().error('Server error:', error);
+          ensureLogger().error('Server error:', _error);
           process.exit(1);
         }
       });

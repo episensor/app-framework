@@ -22,8 +22,8 @@ const mockFileHandler = {
   listFiles: jest.fn().mockResolvedValue([])
 };
 
-jest.mock('../../../src/core/secureFileHandler', () => ({
-  getSecureFileHandler: jest.fn(() => mockFileHandler)
+jest.mock('../../../src/core/storageService', () => ({
+  getStorageService: jest.fn(() => mockFileHandler)
 }));
 
 describe('QueueService', () => {

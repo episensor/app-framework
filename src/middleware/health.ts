@@ -145,7 +145,7 @@ export function createHealthCheck(options: HealthCheckOptions = {}): Router {
                         health.status === 'degraded' ? 200 : 503;
 
       res.status(statusCode).json(health);
-    } catch (error: any) {
+    } catch (_error: any) {
       res.status(503).json({
         status: 'unhealthy',
         timestamp: new Date().toISOString(),

@@ -1,8 +1,8 @@
 /**
- * Unit tests for SecureFileHandler
+ * Unit tests for StorageService
  */
 
-import { SecureFileHandler, getSecureFileHandler } from '../../../src/core/secureFileHandler';
+import { StorageService, getStorageService } from '../../../src/core/storageService';
 import fs from 'fs-extra';
 import crypto from 'crypto';
 
@@ -29,12 +29,12 @@ jest.mock('../../../src/core', () => ({
   }))
 }));
 
-describe('SecureFileHandler', () => {
-  let handler: SecureFileHandler;
+describe('StorageService', () => {
+  let handler: StorageService;
   
   beforeEach(() => {
     jest.clearAllMocks();
-    handler = new SecureFileHandler();
+    handler = new StorageService();
     
     // Setup default mocks
     (fs.ensureDir as jest.Mock).mockResolvedValue(undefined);
@@ -173,7 +173,7 @@ describe('SecureFileHandler', () => {
     });
     
     test('automatically initializes when needed', async () => {
-      const uninitializedHandler = new SecureFileHandler();
+      const uninitializedHandler = new StorageService();
       // Handler will auto-initialize when readFile is called
       const content = await uninitializedHandler.readFile('test.txt', 'data');
       expect(content).toBeDefined();
@@ -463,18 +463,18 @@ describe('SecureFileHandler', () => {
     });
   });
   
-  describe('getSecureFileHandler singleton', () => {
+  describe('getStorageService singleton', () => {
     test('returns the same instance', () => {
-      const handler1 = getSecureFileHandler();
-      const handler2 = getSecureFileHandler();
+      const handler1 = getStorageService();
+      const handler2 = getStorageService();
       
       expect(handler1).toBe(handler2);
     });
     
-    test('instance is SecureFileHandler', () => {
-      const handler = getSecureFileHandler();
+    test('instance is StorageService', () => {
+      const handler = getStorageService();
       
-      expect(handler).toBeInstanceOf(SecureFileHandler);
+      expect(handler).toBeInstanceOf(StorageService);
     });
   });
 });

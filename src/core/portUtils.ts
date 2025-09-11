@@ -225,12 +225,12 @@ export async function clearPort(port: number): Promise<PortClearResult> {
     // Verify the port is now free
     const available = await isPortAvailable(port);
     return { cleared: available, port };
-  } catch (error: any) {
-    console.warn(`Failed to clear port ${port}:`, error.message);
+  } catch (_error: any) {
+    console.warn(`Failed to clear port ${port}:`, _error.message);
     return {
       cleared: false,
       port,
-      error: error.message
+      error: _error.message
     };
   }
 }

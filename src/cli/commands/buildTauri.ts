@@ -51,8 +51,8 @@ export const buildTauriCommand = new Command('build-tauri')
           console.log('3. Build Tauri app: npm run tauri:build');
         }
       }
-    } catch (error) {
-      console.error('❌ Build failed:', error);
+    } catch (_error) {
+      console.error('❌ Build failed:', _error);
       process.exit(1);
     }
   });

@@ -287,8 +287,8 @@ class HealthCheckService {
           path: diskPath
         };
       }
-    } catch (error) {
-      console.error('Failed to get disk metrics:', error);
+    } catch (_error) {
+      console.error('Failed to get disk metrics:', _error);
       // Return zeros if we can't get disk stats
       return {
         total: 0,
@@ -353,7 +353,7 @@ class HealthCheckService {
           status: isHealthy ? 'connected' : 'disconnected',
           responseTime: Date.now() - startTime
         });
-      } catch (error) {
+      } catch (_error) {
         results.push({
           name: dep.name,
           status: 'error',
@@ -376,7 +376,7 @@ class HealthCheckService {
       try {
         const result = await check.check();
         results.push(result);
-      } catch (error) {
+      } catch (_error) {
         results.push({
           name: check.name,
           status: 'unhealthy',
@@ -421,8 +421,8 @@ class HealthCheckService {
         if (this.memoryUsageHistory.length > this.historySize) {
           this.memoryUsageHistory.shift();
         }
-      } catch (error) {
-        console.error('Failed to collect metrics:', error);
+      } catch (_error) {
+        console.error('Failed to collect metrics:', _error);
       }
     }, 5000);
   }
@@ -478,7 +478,7 @@ export function createHealthCheckRouter(options?: {
       const statusCode = health.status === 'healthy' ? 200 : 
                         health.status === 'degraded' ? 200 : 503;
       res.status(statusCode).json(health);
-    } catch (error) {
+    } catch (_error) {
       res.status(503).json({
         status: 'unhealthy',
         error: 'Failed to get health status'
@@ -491,7 +491,7 @@ export function createHealthCheckRouter(options?: {
     try {
       const metrics = await healthService.getMetrics();
       res.json(metrics);
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({
         error: 'Failed to get metrics'
       });
@@ -511,7 +511,7 @@ export function createHealthCheckRouter(options?: {
         const results = await healthService.checkDependencies(options.dependencies!);
         const allHealthy = results.every(r => r.status === 'connected');
         res.status(allHealthy ? 200 : 503).json(results);
-      } catch (error) {
+      } catch (_error) {
         res.status(500).json({
           error: 'Failed to check dependencies'
         });
@@ -526,7 +526,7 @@ export function createHealthCheckRouter(options?: {
         const results = await healthService.runCustomChecks(options.customChecks!);
         const allHealthy = results.every(r => r.status === 'healthy');
         res.status(allHealthy ? 200 : 503).json(results);
-      } catch (error) {
+      } catch (_error) {
         res.status(500).json({
           error: 'Failed to run custom checks'
         });

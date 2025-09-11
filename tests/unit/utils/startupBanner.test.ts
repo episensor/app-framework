@@ -67,7 +67,7 @@ describe('displayStartupBanner', () => {
       
       expect(consoleLogSpy).toHaveBeenCalled();
       const output = consoleLogSpy.mock.calls.join('\n');
-      expect(output).toContain('TEST APP');
+      expect(output).toContain('Test App');
       expect(output).toContain('1.0.0');
       expect(output).toContain('8080');
     });
@@ -181,7 +181,7 @@ describe('displayStartupBanner', () => {
       displayStartupBanner(options);
       
       const output = consoleLogSpy.mock.calls.join('\n');
-      expect(output).toContain('COMPLETE TEST APP');
+      expect(output).toContain('Complete Test App');
       expect(output).toContain('2.5.0');
       expect(output).toContain('Full featured test application');
       expect(output).toContain('8080');

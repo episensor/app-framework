@@ -221,8 +221,8 @@ export class FileHandler {
       if (deletedCount > 0) {
         ensureLogger().info(`Cleaned ${deletedCount} temporary files`);
       }
-    } catch (error: any) {
-      ensureLogger().error('Error cleaning temp files:', error);
+    } catch (_error: any) {
+      ensureLogger().error('Error cleaning temp files:', _error);
     }
 
     return deletedCount;
@@ -365,8 +365,8 @@ export class JSONHandler {
   static parse<T = any>(jsonString: string): T {
     try {
       return JSON.parse(jsonString);
-    } catch (error: any) {
-      throw new Error(`Invalid JSON: ${error.message}`);
+    } catch (_error: any) {
+      throw new Error(`Invalid JSON: ${_error.message}`);
     }
   }
 

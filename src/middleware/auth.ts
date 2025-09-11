@@ -154,8 +154,8 @@ export function createLoginHandler(authService: AuthService) {
           message: result.error || 'Invalid username or password'
         });
       }
-    } catch (error: any) {
-      ensureLogger().error('Login error:', error);
+    } catch (_error: any) {
+      ensureLogger().error('Login error:', _error);
       res.status(500).json({
         success: false,
         error: 'Login failed',

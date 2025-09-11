@@ -93,16 +93,16 @@ export async function rebuildNativeModules(
         `npx electron-rebuild -v ${electronVersion}`,
         { cwd, stdio: 'inherit' }
       );
-    } catch (error) {
-      console.error('Failed to rebuild for Electron:', error);
+    } catch (_error) {
+      console.error('Failed to rebuild for Electron:', _error);
       throw error;
     }
   } else {
     // Rebuild for Node.js
     try {
       execSync('npm rebuild', { cwd, stdio: 'inherit' });
-    } catch (error) {
-      console.error('Failed to rebuild native modules:', error);
+    } catch (_error) {
+      console.error('Failed to rebuild native modules:', _error);
       throw error;
     }
   }
@@ -137,7 +137,7 @@ Module.prototype.require = function(id) {
     try {
       // Try to load from native modules directory
       return originalRequire.apply(this, [path.join(nativeModulesPath, id)]);
-    } catch (error) {
+    } catch (_error) {
       // Fall back to original require
       return originalRequire.apply(this, arguments);
     }

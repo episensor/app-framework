@@ -98,8 +98,8 @@ class WebSocketServer {
       });
 
       // Handle errors
-      socket.on('error', (error: Error) => {
-        logger.error(`Socket error for ${socket.id}:`, error);
+      socket.on('error', (_error: Error) => {
+        logger.error(`Socket error for ${socket.id}:`, _error);
       });
     });
   }

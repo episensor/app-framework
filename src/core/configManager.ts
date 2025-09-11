@@ -70,8 +70,8 @@ export class ConfigManager extends EventEmitter {
 
       this.isInitialized = true;
       logger.debug('Configuration initialized successfully');
-    } catch (error) {
-      logger.error('Failed to initialize configuration:', error);
+    } catch (_error) {
+      logger.error('Failed to initialize configuration:', _error);
       throw error;
     }
   }
@@ -145,8 +145,8 @@ export class ConfigManager extends EventEmitter {
       if (oldConfig && Object.keys(oldConfig).length > 0) {
         this.detectAndEmitChanges(oldConfig, config);
       }
-    } catch (error) {
-      logger.error('Failed to load configuration:', error);
+    } catch (_error) {
+      logger.error('Failed to load configuration:', _error);
       throw error;
     }
   }
@@ -172,8 +172,8 @@ export class ConfigManager extends EventEmitter {
       );
 
       logger.info(`Configuration saved to ${this.configPath}`);
-    } catch (error) {
-      logger.error('Failed to save configuration:', error);
+    } catch (_error) {
+      logger.error('Failed to save configuration:', _error);
       throw error;
     }
   }
@@ -321,8 +321,8 @@ export class ConfigManager extends EventEmitter {
             logger.info('Configuration file changed, reloading...');
             try {
               await this.reload();
-            } catch (error) {
-              logger.error('Failed to reload configuration:', error);
+            } catch (_error) {
+              logger.error('Failed to reload configuration:', _error);
             }
           }, 500);
         }

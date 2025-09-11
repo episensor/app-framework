@@ -234,7 +234,7 @@ export function validate<T extends ZodSchema>(schema: T, options?: ValidationOpt
         req.body = value;
       }
       next();
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof ZodError) {
         const errors = formatValidationErrors(error);
         const message = createErrorMessage(errors, 'Invalid request');
@@ -266,7 +266,7 @@ export function validateParams<T extends ZodSchema>(schema: T, options?: Validat
         req.params = value;
       }
       next();
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof ZodError) {
         const errors = formatValidationErrors(error);
         const message = createErrorMessage(errors, 'Invalid parameters');
@@ -298,7 +298,7 @@ export function validateQuery<T extends ZodSchema>(schema: T, options?: Validati
         req.query = value;
       }
       next();
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof ZodError) {
         const errors = formatValidationErrors(error);
         const message = createErrorMessage(errors, 'Invalid query');
@@ -336,7 +336,7 @@ export function validateRequest<T extends {
         if (opts.stripUnknown) {
           req.body = value;
         }
-      } catch (error) {
+      } catch (_error) {
         if (error instanceof ZodError) {
           errors.push(...formatValidationErrors(error));
         }
@@ -350,7 +350,7 @@ export function validateRequest<T extends {
         if (opts.stripUnknown) {
           req.params = value;
         }
-      } catch (error) {
+      } catch (_error) {
         if (error instanceof ZodError) {
           errors.push(...formatValidationErrors(error));
         }
@@ -364,7 +364,7 @@ export function validateRequest<T extends {
         if (opts.stripUnknown) {
           req.query = value;
         }
-      } catch (error) {
+      } catch (_error) {
         if (error instanceof ZodError) {
           errors.push(...formatValidationErrors(error));
         }
@@ -395,7 +395,7 @@ export function validateAsync(validationFn: (req: Request) => Promise<any>) {
     try {
       await validationFn(req);
       next();
-    } catch (error: any) {
+    } catch (_error: any) {
       const validationError: FieldValidationError = {
         field: error.field || 'unknown',
         message: error.message || 'Validation failed'
