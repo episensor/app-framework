@@ -108,6 +108,23 @@ export {
   type SettingOption
 } from './settings/SettingsSchema.js';
 
+// Enhanced Settings Schema exports
+export {
+  type EnhancedSettingsSchema,
+  type SettingsCategory as EnhancedSettingsCategory,
+  type SettingDefinition as EnhancedSettingDefinition,
+  type SettingsFormState,
+  type SettingsValidationResult,
+  getSettingByKey,
+  validateSetting,
+  validateAllSettings,
+  getRestartRequiredSettings as getEnhancedRestartRequiredSettings,
+  flattenSettingsValues,
+  unflattenSettingsValues,
+  getDefaultSettingsValues,
+  createSettingsFormState
+} from './settings/EnhancedSettingsSchema.js';
+
 // Log Categories exports
 export {
   LogLevels,

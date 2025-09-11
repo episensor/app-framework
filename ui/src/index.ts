@@ -94,6 +94,8 @@ export { TerminalLogViewer } from './components/logs/TerminalLogViewer';
 export type { TerminalLogViewerProps } from './components/logs/TerminalLogViewer';
 export { LogViewer } from './components/logs/LogViewer';
 export type { LogViewerProps } from './components/logs/LogViewer';
+export { EnhancedLogViewer } from './components/logs/EnhancedLogViewer';
+export type { EnhancedLogViewerProps, LogEntry, LogFile, LogCategory } from './components/logs/EnhancedLogViewer';
 
 
 // Settings components
@@ -102,6 +104,8 @@ export { ThemeToggle, CompactThemeToggle } from '../components/settings/ThemeTog
 export type { ThemeToggleProps } from '../components/settings/ThemeToggle';
 export { Settings } from './components/settings/Settings';
 export type { SettingsProps } from './components/settings/Settings';
+export { EnhancedSettings } from './components/settings/EnhancedSettings';
+export type { EnhancedSettingsProps } from './components/settings/EnhancedSettings';
 
 // Update components
 export { UpdateNotification } from '../components/updates/UpdateNotification';
