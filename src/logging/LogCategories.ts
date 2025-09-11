@@ -169,10 +169,10 @@ export function parseLogEntry(raw: string | object): LogEntry | null {
         const [, timestamp, level, category, message] = match;
         return {
           id: `${Date.now()}-${Math.random()}`,
-          timestamp,
-          level: level.toLowerCase() as keyof typeof LogLevels,
-          category,
-          message
+          timestamp: timestamp || '',
+          level: (level?.toLowerCase() || 'info') as keyof typeof LogLevels,
+          category: category || '',
+          message: message || ''
         };
       }
     } else if (typeof raw === 'object') {

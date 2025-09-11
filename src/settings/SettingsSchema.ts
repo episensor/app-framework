@@ -154,13 +154,18 @@ export function unflattenSettings(flattened: Record<string, any>): any {
     let current = settings;
     
     for (let i = 0; i < parts.length - 1; i++) {
-      if (!current[parts[i]]) {
-        current[parts[i]] = {};
+      const part = parts[i];
+      if (!part) continue;
+      if (!current[part]) {
+        current[part] = {};
       }
-      current = current[parts[i]];
+      current = current[part];
     }
     
-    current[parts[parts.length - 1]] = value;
+    const lastPart = parts[parts.length - 1];
+    if (lastPart) {
+      current[lastPart] = value;
+    }
   }
   
   return settings;
