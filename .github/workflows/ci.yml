@@ -44,7 +44,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]  # Temporarily removed macos-latest due to fs-extra ESM issues
+        os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [18, 20, 22]
         
     steps:
@@ -81,9 +81,9 @@ jobs:
     - name: Run integration tests
       run: npm run test:integration || true  # Ignore exit code
       
-    # Coverage disabled due to Jest/fs-extra issues
-    # - name: Generate coverage report
-    #   run: npm run test:coverage
+    - name: Generate coverage report
+      run: npm run test:coverage -- --maxWorkers=1 --forceExit || true
+      continue-on-error: true
       
     # Coverage upload disabled until Jest issues resolved
     # - name: Upload coverage to Codecov
@@ -191,7 +191,7 @@ jobs:
     needs: [lint, test, security]
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]  # macos removed due to fs-extra issues
+        os: [ubuntu-latest, windows-latest, macos-latest]
     
     steps:
     - name: Checkout code
@@ -267,9 +267,10 @@ jobs:
     - name: Determine version bump
       id: version
       run: |
-        if [[ ${{ github.event.head_commit.message }} =~ ^BREAKING ]]; then
+        COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | head -n1)
+        if [[ "$COMMIT_MSG" =~ ^BREAKING ]]; then
           echo "bump=major" >> $GITHUB_OUTPUT
-        elif [[ ${{ github.event.head_commit.message }} =~ ^feat ]]; then
+        elif [[ "$COMMIT_MSG" =~ ^feat ]]; then
           echo "bump=minor" >> $GITHUB_OUTPUT
         else
           echo "bump=patch" >> $GITHUB_OUTPUT

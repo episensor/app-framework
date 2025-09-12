@@ -1,6 +1,6 @@
 import os from "os";
 import path from "path";
-import fs from "fs-extra";
+import { mkdirSync } from "fs";
 
 /**
  * Get the appropriate data directory for the application.
@@ -56,13 +56,13 @@ export function getAppDataPath(appId: string, appName: string): string {
     }
 
     // Ensure the directory exists
-    fs.ensureDirSync(appDataDir);
+    mkdirSync(appDataDir, { recursive: true });
     return appDataDir;
   }
 
   // In development or web mode, use the project root ./data directory
   const dataDir = path.join(process.cwd(), "data");
-  fs.ensureDirSync(dataDir);
+  mkdirSync(dataDir, { recursive: true });
   return dataDir;
 }
 
@@ -91,7 +91,7 @@ export function getDataFilePath(
  */
 export function getLogsPath(appId: string, appName: string): string {
   const logsDir = path.join(getAppDataPath(appId, appName), "logs");
-  fs.ensureDirSync(logsDir);
+  mkdirSync(logsDir, { recursive: true });
   return logsDir;
 }
 
@@ -104,7 +104,7 @@ export function getLogsPath(appId: string, appName: string): string {
  */
 export function getConfigPath(appId: string, appName: string): string {
   const configDir = path.join(getAppDataPath(appId, appName), "config");
-  fs.ensureDirSync(configDir);
+  mkdirSync(configDir, { recursive: true });
   return configDir;
 }
 
@@ -117,7 +117,7 @@ export function getConfigPath(appId: string, appName: string): string {
  */
 export function getCachePath(appId: string, appName: string): string {
   const cacheDir = path.join(getAppDataPath(appId, appName), "cache");
-  fs.ensureDirSync(cacheDir);
+  mkdirSync(cacheDir, { recursive: true });
   return cacheDir;
 }
 

@@ -5,7 +5,8 @@
  */
 
 import path from "path";
-import fs from "fs-extra";
+import * as fsUtils from "../utils/fs-utils.js";
+import { createWriteStream } from "fs";
 import { createLogger } from "./index.js";
 import crypto from "crypto";
 
@@ -80,16 +81,16 @@ export class StorageService {
     try {
       // Ensure all base directories exist
       for (const dir of Object.values(BASE_DIRS)) {
-        await fs.ensureDir(dir);
+        await fsUtils.ensureDir(dir);
       }
 
       // Ensure .gitignore exists in attachments and data directories
       const gitignoreContent = "*\n!.gitignore\n";
-      await fs.writeFile(
+      await fsUtils.writeFile(
         path.join(BASE_DIRS.attachments, ".gitignore"),
         gitignoreContent,
       );
-      await fs.writeFile(
+      await fsUtils.writeFile(
         path.join(BASE_DIRS.data, ".gitignore"),
         gitignoreContent,
       );
@@ -174,13 +175,13 @@ export class StorageService {
     const safePath = this.getSafePath(filename, category);
 
     // Check if file exists and handle accordingly
-    if (await fs.pathExists(safePath)) {
+    if (await fsUtils.pathExists(safePath)) {
       if (!options.overwrite) {
         throw new Error(`File already exists: ${filename}`);
       }
       if (options.createBackup) {
         const backupPath = `${safePath}.backup.${Date.now()}`;
-        await fs.copy(safePath, backupPath);
+        await fsUtils.copy(safePath, backupPath);
         ensureLogger().info(`Created backup: ${backupPath}`);
       }
     }
@@ -196,7 +197,7 @@ export class StorageService {
     }
 
     // Save the file
-    await fs.writeFile(safePath, content);
+    await fsUtils.writeFile(safePath, content);
 
     // Calculate hash
     const hash = crypto
@@ -204,7 +205,7 @@ export class StorageService {
       .update(Buffer.isBuffer(content) ? content : Buffer.from(content))
       .digest("hex");
 
-    const stats = await fs.stat(safePath);
+    const stats = await fsUtils.stat(safePath);
 
     ensureLogger().debug(`File saved: ${safePath} (${size} bytes)`);
 
@@ -231,12 +232,12 @@ export class StorageService {
     const safePath = this.getSafePath(filename, category);
 
     // Check if file exists
-    if (!(await fs.pathExists(safePath))) {
+    if (!(await fsUtils.pathExists(safePath))) {
       throw new Error(`File not found: ${filename}`);
     }
 
     // Check file size
-    const stats = await fs.stat(safePath);
+    const stats = await fsUtils.stat(safePath);
     const maxSize = options.maxSize || this.maxFileSize;
 
     if (stats.size > maxSize) {
@@ -247,8 +248,8 @@ export class StorageService {
 
     // Read the file
     const content = options.encoding
-      ? await fs.readFile(safePath, options.encoding)
-      : await fs.readFile(safePath);
+      ? await fsUtils.readFile(safePath, options.encoding)
+      : await fsUtils.readFile(safePath);
 
     ensureLogger().debug(`File read: ${safePath} (${stats.size} bytes)`);
 
@@ -266,12 +267,12 @@ export class StorageService {
 
     const safePath = this.getSafePath(filename, category);
 
-    if (!(await fs.pathExists(safePath))) {
+    if (!(await fsUtils.pathExists(safePath))) {
       ensureLogger().warn(`File not found for deletion: ${filename}`);
       return false;
     }
 
-    await fs.unlink(safePath);
+    await fsUtils.unlink(safePath);
     ensureLogger().debug(`File deleted: ${safePath}`);
     return true;
   }
@@ -289,13 +290,13 @@ export class StorageService {
     const files: FileInfo[] = [];
 
     try {
-      const entries = await fs.readdir(baseDir);
+      const entries = await fsUtils.readdir(baseDir);
 
       for (const entry of entries) {
         if (pattern && !pattern.test(entry)) continue;
 
         const fullPath = path.join(baseDir, entry);
-        const stats = await fs.stat(fullPath);
+        const stats = await fsUtils.stat(fullPath);
 
         if (stats.isFile()) {
           files.push({
@@ -325,11 +326,11 @@ export class StorageService {
 
     const safePath = this.getSafePath(filename, category);
 
-    if (!(await fs.pathExists(safePath))) {
+    if (!(await fsUtils.pathExists(safePath))) {
       return null;
     }
 
-    const stats = await fs.stat(safePath);
+    const stats = await fsUtils.stat(safePath);
 
     return {
       name: filename,
@@ -353,13 +354,13 @@ export class StorageService {
     const sourcePath = this.getSafePath(filename, fromCategory);
     const destPath = this.getSafePath(filename, toCategory);
 
-    if (!(await fs.pathExists(sourcePath))) {
+    if (!(await fsUtils.pathExists(sourcePath))) {
       throw new Error(`Source file not found: ${filename}`);
     }
 
-    await fs.move(sourcePath, destPath, { overwrite: false });
+    await fsUtils.move(sourcePath, destPath, { overwrite: false });
 
-    const stats = await fs.stat(destPath);
+    const stats = await fsUtils.stat(destPath);
 
     ensureLogger().debug(
       `File moved from ${fromCategory} to ${toCategory}: ${filename}`,
@@ -437,10 +438,10 @@ export class StorageService {
           `File size exceeds maximum allowed size of ${maxSize} bytes`,
         );
       }
-      await fs.writeFile(uploadPath, file);
+      await fsUtils.writeFile(uploadPath, file);
     } else {
       // For streams, we need to check size while writing
-      const writeStream = fs.createWriteStream(uploadPath);
+      const writeStream = createWriteStream(uploadPath);
       let size = 0;
 
       await new Promise((resolve, reject) => {
@@ -448,7 +449,7 @@ export class StorageService {
           size += chunk.length;
           if (size > maxSize) {
             writeStream.destroy();
-            fs.unlink(uploadPath).catch(() => {}); // Clean up partial file
+            fsUtils.unlink(uploadPath).catch(() => {}); // Clean up partial file
             reject(
               new Error(
                 `File size exceeds maximum allowed size of ${maxSize} bytes`,
@@ -466,11 +467,11 @@ export class StorageService {
     }
 
     // Generate file hash
-    const fileBuffer = await fs.readFile(uploadPath);
+    const fileBuffer = await fsUtils.readFile(uploadPath);
     const hash = crypto.createHash("sha256").update(fileBuffer).digest("hex");
 
     // Get file stats
-    const stats = await fs.stat(uploadPath);
+    const stats = await fsUtils.stat(uploadPath);
 
     const uploadedFile: UploadedFile = {
       originalName,
