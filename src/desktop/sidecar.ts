@@ -7,7 +7,7 @@
 
 import { exec } from "child_process";
 import { promisify } from "util";
-import fs from "fs-extra";
+import { ensureDir, readJson, writeFile } from "../utils/fs-utils.js";
 import path from "path";
 
 const execAsync = promisify(exec);
@@ -89,7 +89,7 @@ export async function buildSidecar(
   } = options;
 
   // Ensure output directory exists
-  await fs.ensureDir(outputDir);
+  await ensureDir(outputDir);
 
   // Check if pkg is installed
   try {
@@ -134,7 +134,7 @@ export async function buildSidecar(
 
       // Make the binary executable on Unix systems
       if (target.platform !== "windows") {
-        await fs.chmod(outputPath, 0o755);
+        await import('fs').then(fs => fs.promises.chmod(outputPath, 0o755));
       }
 
       console.log(`✅ Built ${outputName} (${targetKey})`);
@@ -290,7 +290,7 @@ async function main() {
 main().catch(console.error);
 `;
 
-  await fs.writeFile(outputFile, wrapperCode);
+  await writeFile(outputFile, wrapperCode);
 }
 
 /**
@@ -298,7 +298,7 @@ main().catch(console.error);
  */
 export async function buildSidecarCLI(args: string[]): Promise<void> {
   const projectRoot = process.cwd();
-  const packageJson = await fs.readJson(path.join(projectRoot, "package.json"));
+  const packageJson = await readJson(path.join(projectRoot, "package.json"));
 
   // Default configuration
   const config: SidecarBuildOptions = {

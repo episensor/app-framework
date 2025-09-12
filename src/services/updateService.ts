@@ -4,20 +4,23 @@
  */
 
 import { createLogger } from "../core/index.js";
-import fs from "fs-extra";
+import { pathExists, readFile } from "../utils/fs-utils.js";
 import path from "path";
 
-let pkg: any;
-try {
-  const pkgPath = path.join(process.cwd(), "package.json");
-  if (fs.existsSync(pkgPath)) {
-    pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
-  } else {
-    pkg = { version: "3.6.0", name: "@episensor/app-framework" };
+let pkg: any = { version: "3.6.0", name: "@episensor/app-framework" };
+
+// Initialize package info asynchronously
+(async () => {
+  try {
+    const pkgPath = path.join(process.cwd(), "package.json");
+    if (await pathExists(pkgPath)) {
+      const content = await readFile(pkgPath, "utf8");
+      pkg = JSON.parse(content);
+    }
+  } catch {
+    // Use default values
   }
-} catch {
-  pkg = { version: "3.6.0", name: "@episensor/app-framework" };
-}
+})();
 
 let logger: any; // Will be initialized when needed
 

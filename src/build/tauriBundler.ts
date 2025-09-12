@@ -5,7 +5,7 @@
 
 import { execSync } from "child_process";
 import path from "path";
-import fs from "fs-extra";
+import { ensureDir, pathExists, move } from "../utils/fs-utils.js";
 
 export interface TauriBundleOptions {
   /** Entry point for the server (e.g., 'dist/index.js' or 'dist/server/index.js') */
@@ -126,7 +126,7 @@ async function compileWithPkg(
 
   try {
     // Ensure output directory exists
-    await fs.ensureDir(config.binaryOutput);
+    await ensureDir(config.binaryOutput);
 
     execSync(command, { stdio: "inherit" });
     console.log("✅ Binaries compiled successfully");
@@ -151,8 +151,8 @@ async function renameBinariesForTauri(
     const sourcePath = path.join(config.binaryOutput, pkgName);
     const targetPath = path.join(config.binaryOutput, tauriName);
 
-    if (await fs.pathExists(sourcePath)) {
-      await fs.rename(sourcePath, targetPath);
+    if (await pathExists(sourcePath)) {
+      await move(sourcePath, targetPath);
       console.log(`  ✅ ${platform}: ${tauriName}`);
     } else {
       console.warn(`  ⚠️  ${platform}: Binary not found at ${sourcePath}`);

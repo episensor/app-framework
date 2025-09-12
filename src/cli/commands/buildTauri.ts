@@ -9,7 +9,7 @@ import {
   buildTauriSidecar,
   generateBuildSidecarScript,
 } from "../../build/tauriBundler.js";
-import fs from "fs-extra";
+import { pathExists } from "../../utils/fs-utils.js";
 import path from "path";
 
 export const buildTauriCommand = new Command("build-tauri")
@@ -68,7 +68,7 @@ export const buildTauriCommand = new Command("build-tauri")
           "src-tauri",
           "tauri.conf.json",
         );
-        if (await fs.pathExists(tauriConfigPath)) {
+        if (await pathExists(tauriConfigPath)) {
           console.log("\n📋 Next steps:");
           console.log(
             "1. Test the binary: ./src-tauri/binaries/server-aarch64-apple-darwin",

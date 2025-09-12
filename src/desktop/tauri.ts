@@ -5,7 +5,7 @@
 
 import { spawn, ChildProcess } from "child_process";
 import path from "path";
-import fs from "fs-extra";
+import { ensureDir, pathExists, readJson, writeJson, remove } from "../utils/fs-utils.js";
 import { createLogger } from "../core/index.js";
 import net from "net";
 
@@ -316,7 +316,7 @@ export class AppDataManager {
    * Ensure data directory exists
    */
   async ensureDataDir(): Promise<void> {
-    await fs.ensureDir(this.dataDir);
+    await ensureDir(this.dataDir);
   }
 
   /**
@@ -331,8 +331,8 @@ export class AppDataManager {
    */
   async readJson(filename: string): Promise<any> {
     const filepath = this.getPath(filename);
-    if (await fs.pathExists(filepath)) {
-      return fs.readJson(filepath);
+    if (await pathExists(filepath)) {
+      return readJson(filepath);
     }
     return null;
   }
@@ -343,7 +343,7 @@ export class AppDataManager {
   async writeJson(filename: string, data: any): Promise<void> {
     await this.ensureDataDir();
     const filepath = this.getPath(filename);
-    await fs.writeJson(filepath, data, { spaces: 2 });
+    await writeJson(filepath, data, { spaces: 2 });
   }
 
   /**
@@ -351,7 +351,7 @@ export class AppDataManager {
    */
   async exists(filename: string): Promise<boolean> {
     const filepath = this.getPath(filename);
-    return fs.pathExists(filepath);
+    return pathExists(filepath);
   }
 
   /**
@@ -359,8 +359,8 @@ export class AppDataManager {
    */
   async delete(filename: string): Promise<void> {
     const filepath = this.getPath(filename);
-    if (await fs.pathExists(filepath)) {
-      await fs.remove(filepath);
+    if (await pathExists(filepath)) {
+      await remove(filepath);
     }
   }
 

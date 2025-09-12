@@ -4,7 +4,7 @@
  */
 
 import * as esbuild from "esbuild";
-import fs from "fs-extra";
+import { ensureDir, writeFile, stat, copy, move, remove, writeJson } from "../utils/fs-utils.js";
 import path from "path";
 import { execSync } from "child_process";
 import { createLogger } from "../core/index.js";
@@ -61,7 +61,7 @@ export async function bundleBackend(options: BundleOptions): Promise<void> {
   logger.info(`Bundling backend for ${appName} v${version}`);
 
   // Ensure output directory exists
-  await fs.ensureDir(outDir);
+  await ensureDir(outDir);
 
   // Default externals for Node.js
   const defaultExternals = [
@@ -106,26 +106,26 @@ export async function bundleBackend(options: BundleOptions): Promise<void> {
   });
 
   // Write metafile for analysis
-  await fs.writeFile(
+  await writeFile(
     path.join(outDir, "backend-meta.json"),
     JSON.stringify(result.metafile, null, 2),
   );
 
   // Create wrapper script
   const wrapperScript = generateWrapperScript(appName, format);
-  await fs.writeFile(path.join(outDir, "start-backend.js"), wrapperScript);
+  await writeFile(path.join(outDir, "start-backend.js"), wrapperScript);
 
   // Copy resources
   if (resources.config) {
     const configDest = path.join(outDir, "config");
-    await fs.ensureDir(configDest);
-    await fs.copy(resources.config, path.join(configDest, "app.json"));
+    await ensureDir(configDest);
+    await copy(resources.config, path.join(configDest, "app.json"));
   }
 
   if (resources.data) {
     const dataDir = path.join(outDir, "data");
     for (const dir of resources.data) {
-      await fs.ensureDir(path.join(dataDir, dir));
+      await ensureDir(path.join(dataDir, dir));
     }
   }
 
@@ -161,7 +161,7 @@ export async function bundleBackend(options: BundleOptions): Promise<void> {
   }
 
   // Get bundle size
-  const stats = await fs.stat(path.join(outDir, "backend.js"));
+  const stats = await stat(path.join(outDir, "backend.js"));
   const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
 
   logger.info(`✅ Backend bundled successfully!`);
@@ -218,14 +218,15 @@ export async function bundleDependencies(
   packageJsonPath: string,
   outDir: string,
 ): Promise<void> {
-  const packageJson = await fs.readJson(packageJsonPath);
+  const fs = await import('fs');
+  const packageJson = JSON.parse(await fs.promises.readFile(packageJsonPath, 'utf8'));
   const dependencies = packageJson.dependencies || {};
 
   logger.info("Installing production dependencies...");
 
   // Create temporary directory for dependencies
   const tempDir = path.join(outDir, "temp");
-  await fs.ensureDir(tempDir);
+  await ensureDir(tempDir);
 
   // Create minimal package.json
   const minimalPackage = {
@@ -234,7 +235,7 @@ export async function bundleDependencies(
     dependencies,
   };
 
-  await fs.writeJson(path.join(tempDir, "package.json"), minimalPackage);
+  await writeJson(path.join(tempDir, "package.json"), minimalPackage);
 
   // Install production dependencies
   execSync("npm install --production --no-audit --no-fund", {
@@ -243,14 +244,14 @@ export async function bundleDependencies(
   });
 
   // Move node_modules to output directory
-  await fs.move(
+  await move(
     path.join(tempDir, "node_modules"),
     path.join(outDir, "node_modules"),
     { overwrite: true },
   );
 
   // Clean up temp directory
-  await fs.remove(tempDir);
+  await remove(tempDir);
 }
 
 /**
@@ -263,7 +264,7 @@ export async function createTauriConfig(
   identifier: string,
 ): Promise<void> {
   const tauriDir = path.join(projectDir, "src-tauri");
-  await fs.ensureDir(tauriDir);
+  await ensureDir(tauriDir);
 
   const config = {
     $schema:
@@ -322,7 +323,7 @@ export async function createTauriConfig(
     },
   };
 
-  await fs.writeJson(path.join(tauriDir, "tauri.conf.json"), config, {
+  await writeJson(path.join(tauriDir, "tauri.conf.json"), config, {
     spaces: 2,
   });
 
@@ -338,9 +339,9 @@ export async function initializeTauriProject(
   const tauriDir = path.join(projectDir, "src-tauri");
 
   // Create directory structure
-  await fs.ensureDir(path.join(tauriDir, "src"));
-  await fs.ensureDir(path.join(tauriDir, "icons"));
-  await fs.ensureDir(path.join(tauriDir, "resources"));
+  await ensureDir(path.join(tauriDir, "src"));
+  await ensureDir(path.join(tauriDir, "icons"));
+  await ensureDir(path.join(tauriDir, "resources"));
 
   // Create main.rs with backend integration
   const mainRs = `// Prevents additional console window on Windows in release
@@ -407,7 +408,7 @@ fn main() {
 }
 `;
 
-  await fs.writeFile(path.join(tauriDir, "src", "main.rs"), mainRs);
+  await writeFile(path.join(tauriDir, "src", "main.rs"), mainRs);
 
   // Create Cargo.toml
   const cargoToml = `[package]
@@ -431,7 +432,7 @@ default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
 `;
 
-  await fs.writeFile(path.join(tauriDir, "Cargo.toml"), cargoToml);
+  await writeFile(path.join(tauriDir, "Cargo.toml"), cargoToml);
 
   // Create build.rs
   const buildRs = `fn main() {
@@ -439,7 +440,7 @@ custom-protocol = ["tauri/custom-protocol"]
 }
 `;
 
-  await fs.writeFile(path.join(tauriDir, "build.rs"), buildRs);
+  await writeFile(path.join(tauriDir, "build.rs"), buildRs);
 
   logger.info(`Initialized Tauri project structure at ${tauriDir}`);
 }

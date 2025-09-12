@@ -6,7 +6,7 @@
 import { Low } from "lowdb";
 import { JSONFile } from "lowdb/node";
 import path from "path";
-import fs from "fs-extra";
+import { ensureDir } from "../utils/fs-utils.js";
 import { createLogger } from "../core/index.js";
 let logger: any; // Will be initialized when needed
 
@@ -50,7 +50,7 @@ class ConversationStorage {
     try {
       // Ensure data directory exists
       const dataDir = path.join(process.cwd(), "data");
-      await fs.ensureDir(dataDir);
+      await ensureDir(dataDir);
 
       // Initialize lowdb with JSON file adapter
       const dbPath = path.join(dataDir, "conversations.json");

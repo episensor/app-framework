@@ -3,7 +3,7 @@
  * Manages native Node.js modules that can't be bundled
  */
 
-import fs from "fs-extra";
+import { ensureDir, pathExists, copy, writeFile, readFile, readdir, stat } from "../utils/fs-utils.js";
 import path from "path";
 import { execSync } from "child_process";
 
@@ -59,18 +59,15 @@ export async function copyNativeModules(
   const { modules, sourceDir, targetDir } = config;
 
   // Ensure target directory exists
-  await fs.ensureDir(path.join(targetDir, "node_modules"));
+  await ensureDir(path.join(targetDir, "node_modules"));
 
   for (const moduleName of modules) {
     const sourcePath = path.join(sourceDir, "node_modules", moduleName);
     const targetPath = path.join(targetDir, "node_modules", moduleName);
 
-    if (await fs.pathExists(sourcePath)) {
+    if (await pathExists(sourcePath)) {
       console.log(`📦 Copying native module: ${moduleName}`);
-      await fs.copy(sourcePath, targetPath, {
-        overwrite: true,
-        dereference: true,
-      });
+      await copy(sourcePath, targetPath);
     } else {
       console.warn(`⚠️  Native module not found: ${moduleName}`);
     }
@@ -152,16 +149,17 @@ Module.prototype.require = function(id) {
 module.exports = { nativeModulesPath };
 `;
 
-  await fs.writeFile(outputPath, loaderScript, "utf8");
+  await writeFile(outputPath, loaderScript, "utf8");
 }
 
 /**
  * Check if a module is a native module
  */
-export function isNativeModule(moduleName: string): boolean {
+export async function isNativeModule(moduleName: string): Promise<boolean> {
   try {
     const packageJsonPath = require.resolve(`${moduleName}/package.json`);
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+    const content = await readFile(packageJsonPath, "utf8");
+    const packageJson = JSON.parse(content);
 
     // Check for common indicators of native modules
     return !!(
@@ -186,31 +184,31 @@ export async function detectNativeModules(
   const nodeModulesDir = path.join(projectDir, "node_modules");
   const nativeModules: string[] = [];
 
-  if (!(await fs.pathExists(nodeModulesDir))) {
+  if (!(await pathExists(nodeModulesDir))) {
     return nativeModules;
   }
 
-  const modules = await fs.readdir(nodeModulesDir);
+  const modules = await readdir(nodeModulesDir);
 
   for (const moduleName of modules) {
     if (moduleName.startsWith(".")) continue;
 
     const modulePath = path.join(nodeModulesDir, moduleName);
-    const stat = await fs.stat(modulePath);
+    const stats = await stat(modulePath);
 
-    if (stat.isDirectory()) {
+    if (stats.isDirectory()) {
       if (moduleName.startsWith("@")) {
         // Scoped package
-        const scopedModules = await fs.readdir(modulePath);
+        const scopedModules = await readdir(modulePath);
         for (const scopedModule of scopedModules) {
           const fullName = `${moduleName}/${scopedModule}`;
-          if (isNativeModule(fullName)) {
+          if (await isNativeModule(fullName)) {
             nativeModules.push(fullName);
           }
         }
       } else {
         // Regular package
-        if (isNativeModule(moduleName)) {
+        if (await isNativeModule(moduleName)) {
           nativeModules.push(moduleName);
         }
       }
