@@ -262,7 +262,7 @@ jobs:
     - name: Download package artifact
       uses: actions/download-artifact@v4
       with:
-        name: package
+        name: package-ubuntu-latest
         
     - name: Determine version bump
       id: version
