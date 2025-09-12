@@ -3,7 +3,15 @@
  * Manages native Node.js modules that can't be bundled
  */
 
-import { ensureDir, pathExists, copy, writeFile, readFile, readdir, stat } from "../utils/fs-utils.js";
+import {
+  ensureDir,
+  pathExists,
+  copy,
+  writeFile,
+  readFile,
+  readdir,
+  stat,
+} from "../utils/fs-utils.js";
 import path from "path";
 import { execSync } from "child_process";
 

@@ -4,7 +4,15 @@
  */
 
 import * as esbuild from "esbuild";
-import { ensureDir, writeFile, stat, copy, move, remove, writeJson } from "../utils/fs-utils.js";
+import {
+  ensureDir,
+  writeFile,
+  stat,
+  copy,
+  move,
+  remove,
+  writeJson,
+} from "../utils/fs-utils.js";
 import path from "path";
 import { execSync } from "child_process";
 import { createLogger } from "../core/index.js";
@@ -218,8 +226,10 @@ export async function bundleDependencies(
   packageJsonPath: string,
   outDir: string,
 ): Promise<void> {
-  const fs = await import('fs');
-  const packageJson = JSON.parse(await fs.promises.readFile(packageJsonPath, 'utf8'));
+  const fs = await import("fs");
+  const packageJson = JSON.parse(
+    await fs.promises.readFile(packageJsonPath, "utf8"),
+  );
   const dependencies = packageJson.dependencies || {};
 
   logger.info("Installing production dependencies...");

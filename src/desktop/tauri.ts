@@ -5,7 +5,13 @@
 
 import { spawn, ChildProcess } from "child_process";
 import path from "path";
-import { ensureDir, pathExists, readJson, writeJson, remove } from "../utils/fs-utils.js";
+import {
+  ensureDir,
+  pathExists,
+  readJson,
+  writeJson,
+  remove,
+} from "../utils/fs-utils.js";
 import { createLogger } from "../core/index.js";
 import net from "net";
 

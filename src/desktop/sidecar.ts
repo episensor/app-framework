@@ -134,7 +134,7 @@ export async function buildSidecar(
 
       // Make the binary executable on Unix systems
       if (target.platform !== "windows") {
-        await import('fs').then(fs => fs.promises.chmod(outputPath, 0o755));
+        await import("fs").then((fs) => fs.promises.chmod(outputPath, 0o755));
       }
 
       console.log(`✅ Built ${outputName} (${targetKey})`);
