@@ -3,15 +3,15 @@
  * Provides standardized test server management for all EpiSensor applications
  */
 
-import { spawn, ChildProcess } from 'child_process';
-import { execSync } from 'child_process';
-import { createLogger } from '../core/index.js';
+import { spawn, ChildProcess } from "child_process";
+import { execSync } from "child_process";
+import { createLogger } from "../core/index.js";
 
 let logger: any; // Will be initialized when needed
 
 function ensureLogger() {
   if (!logger) {
-    logger = createLogger('TestServer');
+    logger = createLogger("TestServer");
   }
   return logger;
 }
@@ -45,9 +45,9 @@ export class TestServer {
       apiBase: `http://localhost:${config.port}`,
       env: {},
       startupTimeout: 30000,
-      healthEndpoint: '/api/health',
+      healthEndpoint: "/api/health",
       silent: true,
-      ...config
+      ...config,
     };
   }
 
@@ -56,21 +56,29 @@ export class TestServer {
    */
   private cleanupPort(): void {
     try {
-      if (process.platform === 'win32') {
+      if (process.platform === "win32") {
         // Windows: Find and kill process using the port
-        execSync(`netstat -ano | findstr :${this.config.port} | findstr LISTENING`, { stdio: 'ignore' });
-        const result = execSync(`netstat -ano | findstr :${this.config.port} | findstr LISTENING`).toString();
-        const lines = result.split('\n');
+        execSync(
+          `netstat -ano | findstr :${this.config.port} | findstr LISTENING`,
+          { stdio: "ignore" },
+        );
+        const result = execSync(
+          `netstat -ano | findstr :${this.config.port} | findstr LISTENING`,
+        ).toString();
+        const lines = result.split("\n");
         for (const line of lines) {
           const parts = line.trim().split(/\s+/);
           const pid = parts[parts.length - 1];
-          if (pid && pid !== '0') {
-            execSync(`taskkill /F /PID ${pid}`, { stdio: 'ignore' });
+          if (pid && pid !== "0") {
+            execSync(`taskkill /F /PID ${pid}`, { stdio: "ignore" });
           }
         }
       } else {
         // Unix-like: Use lsof to find and kill process
-        execSync(`lsof -ti:${this.config.port} | xargs kill -9 2>/dev/null || true`, { stdio: 'ignore' });
+        execSync(
+          `lsof -ti:${this.config.port} | xargs kill -9 2>/dev/null || true`,
+          { stdio: "ignore" },
+        );
       }
     } catch (_error) {
       // Port might already be free, ignore errors
@@ -84,22 +92,22 @@ export class TestServer {
     const startTime = Date.now();
     const { apiBase, healthEndpoint, startupTimeout } = this.config;
     const healthUrl = `${apiBase}${healthEndpoint}`;
-    
+
     if (!this.config.silent) {
       console.log(`Waiting for server at ${healthUrl}...`);
     }
-    
+
     while (Date.now() - startTime < startupTimeout) {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 1000);
-        
+
         const response = await fetch(healthUrl, {
-          signal: controller.signal
+          signal: controller.signal,
         });
-        
+
         clearTimeout(timeoutId);
-        
+
         if (response.ok) {
           if (!this.config.silent) {
             console.log(`Server is ready at ${healthUrl}`);
@@ -109,15 +117,17 @@ export class TestServer {
       } catch (_error) {
         // Server not ready yet
       }
-      
+
       // Check if process has exited
       if (this.process && this.process.exitCode !== null) {
-        throw new Error(`Server process exited with code ${this.process.exitCode}`);
+        throw new Error(
+          `Server process exited with code ${this.process.exitCode}`,
+        );
       }
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
-    
+
     throw new Error(`Server failed to start within ${startupTimeout}ms`);
   }
 
@@ -145,40 +155,40 @@ export class TestServer {
 
     // Determine command based on entry point extension
     const { entryPoint } = this.config;
-    const isTypeScript = entryPoint.endsWith('.ts');
-    const command = isTypeScript ? 'npx' : 'node';
-    const args = isTypeScript ? ['tsx', entryPoint] : [entryPoint];
+    const isTypeScript = entryPoint.endsWith(".ts");
+    const command = isTypeScript ? "npx" : "node";
+    const args = isTypeScript ? ["tsx", entryPoint] : [entryPoint];
 
     // Start the server process
     this.process = spawn(command, args, {
       env: {
         ...process.env,
         ...this.config.env,
-        NODE_ENV: 'test',
+        NODE_ENV: "test",
         PORT: String(this.config.port),
         API_PORT: String(this.config.port),
-        SILENT_STARTUP: '1'
+        SILENT_STARTUP: "1",
       },
-      stdio: this.config.silent ? ['ignore', 'pipe', 'pipe'] : 'inherit'
+      stdio: this.config.silent ? ["ignore", "pipe", "pipe"] : "inherit",
     });
 
     // Handle process output if not silent
     if (this.config.silent && this.process.stdout && this.process.stderr) {
-      this.process.stdout.on('data', (data) => {
+      this.process.stdout.on("data", (data) => {
         const output = data.toString();
         // Only log errors or important messages
-        if (output.includes('ERROR') || output.includes('WARN')) {
+        if (output.includes("ERROR") || output.includes("WARN")) {
           ensureLogger().debug(`Server output: ${output}`);
         }
       });
 
-      this.process.stderr.on('data', (data) => {
+      this.process.stderr.on("data", (data) => {
         ensureLogger().error(`Server error: ${data}`);
       });
     }
 
     // Handle process exit
-    this.process.on('exit', (code) => {
+    this.process.on("exit", (code) => {
       if (code !== 0 && code !== null) {
         ensureLogger().error(`Server process exited with code ${code}`);
       }
@@ -212,18 +222,18 @@ export class TestServer {
       // Set a timeout for graceful shutdown
       const killTimeout = setTimeout(() => {
         if (this.process) {
-          this.process.kill('SIGKILL');
+          this.process.kill("SIGKILL");
         }
         cleanup();
       }, 5000);
 
-      this.process.on('exit', () => {
+      this.process.on("exit", () => {
         clearTimeout(killTimeout);
         cleanup();
       });
 
       // Try graceful shutdown first
-      this.process.kill('SIGTERM');
+      this.process.kill("SIGTERM");
     });
   }
 
@@ -242,9 +252,9 @@ export class TestServer {
     const response = await fetch(url, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-      }
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
     });
 
     const text = await response.text();
@@ -259,7 +269,7 @@ export class TestServer {
       status: response.status,
       ok: response.ok,
       data,
-      response
+      response,
     };
   }
 }

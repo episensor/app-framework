@@ -3,31 +3,31 @@
  * Manages native Node.js modules that can't be bundled
  */
 
-import fs from 'fs-extra';
-import path from 'path';
-import { execSync } from 'child_process';
+import fs from "fs-extra";
+import path from "path";
+import { execSync } from "child_process";
 
 export interface NativeModuleConfig {
   /**
    * List of native modules to copy to resources
    */
   modules: string[];
-  
+
   /**
    * Source node_modules directory
    */
   sourceDir: string;
-  
+
   /**
    * Target resources directory
    */
   targetDir: string;
-  
+
   /**
    * Whether to rebuild native modules for target platform
    */
   rebuild?: boolean;
-  
+
   /**
    * Electron version (if rebuilding for Electron)
    */
@@ -38,36 +38,38 @@ export interface NativeModuleConfig {
  * Default native modules that commonly need special handling
  */
 export const COMMON_NATIVE_MODULES = [
-  'serialport',
-  '@serialport/bindings-cpp',
-  'node-pty',
-  'bcrypt',
-  'better-sqlite3',
-  'canvas',
-  'sharp',
-  'fsevents',
-  'usb',
-  'node-hid'
+  "serialport",
+  "@serialport/bindings-cpp",
+  "node-pty",
+  "bcrypt",
+  "better-sqlite3",
+  "canvas",
+  "sharp",
+  "fsevents",
+  "usb",
+  "node-hid",
 ];
 
 /**
  * Copy native modules to resources directory
  */
-export async function copyNativeModules(config: NativeModuleConfig): Promise<void> {
+export async function copyNativeModules(
+  config: NativeModuleConfig,
+): Promise<void> {
   const { modules, sourceDir, targetDir } = config;
-  
+
   // Ensure target directory exists
-  await fs.ensureDir(path.join(targetDir, 'node_modules'));
-  
+  await fs.ensureDir(path.join(targetDir, "node_modules"));
+
   for (const moduleName of modules) {
-    const sourcePath = path.join(sourceDir, 'node_modules', moduleName);
-    const targetPath = path.join(targetDir, 'node_modules', moduleName);
-    
+    const sourcePath = path.join(sourceDir, "node_modules", moduleName);
+    const targetPath = path.join(targetDir, "node_modules", moduleName);
+
     if (await fs.pathExists(sourcePath)) {
       console.log(`📦 Copying native module: ${moduleName}`);
       await fs.copy(sourcePath, targetPath, {
         overwrite: true,
-        dereference: true
+        dereference: true,
       });
     } else {
       console.warn(`⚠️  Native module not found: ${moduleName}`);
@@ -80,29 +82,29 @@ export async function copyNativeModules(config: NativeModuleConfig): Promise<voi
  */
 export async function rebuildNativeModules(
   targetDir: string,
-  electronVersion?: string
+  electronVersion?: string,
 ): Promise<void> {
-  console.log('🔨 Rebuilding native modules...');
-  
+  console.log("🔨 Rebuilding native modules...");
+
   const cwd = targetDir;
-  
+
   if (electronVersion) {
     // Rebuild for Electron
     try {
-      execSync(
-        `npx electron-rebuild -v ${electronVersion}`,
-        { cwd, stdio: 'inherit' }
-      );
+      execSync(`npx electron-rebuild -v ${electronVersion}`, {
+        cwd,
+        stdio: "inherit",
+      });
     } catch (_error) {
-      console.error('Failed to rebuild for Electron:', _error);
+      console.error("Failed to rebuild for Electron:", _error);
       throw _error;
     }
   } else {
     // Rebuild for Node.js
     try {
-      execSync('npm rebuild', { cwd, stdio: 'inherit' });
+      execSync("npm rebuild", { cwd, stdio: "inherit" });
     } catch (_error) {
-      console.error('Failed to rebuild native modules:', _error);
+      console.error("Failed to rebuild native modules:", _error);
       throw _error;
     }
   }
@@ -113,7 +115,7 @@ export async function rebuildNativeModules(
  */
 export async function createNativeModuleLoader(
   outputPath: string,
-  nativeModules: string[]
+  nativeModules: string[],
 ): Promise<void> {
   const loaderScript = `/**
  * Native Module Loader
@@ -150,7 +152,7 @@ Module.prototype.require = function(id) {
 module.exports = { nativeModulesPath };
 `;
 
-  await fs.writeFile(outputPath, loaderScript, 'utf8');
+  await fs.writeFile(outputPath, loaderScript, "utf8");
 }
 
 /**
@@ -159,16 +161,16 @@ module.exports = { nativeModulesPath };
 export function isNativeModule(moduleName: string): boolean {
   try {
     const packageJsonPath = require.resolve(`${moduleName}/package.json`);
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-    
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+
     // Check for common indicators of native modules
     return !!(
       packageJson.gypfile ||
       packageJson.binary ||
       packageJson.scripts?.install ||
-      packageJson.scripts?.postinstall?.includes('node-gyp') ||
-      packageJson.dependencies?.['node-addon-api'] ||
-      packageJson.dependencies?.['nan']
+      packageJson.scripts?.postinstall?.includes("node-gyp") ||
+      packageJson.dependencies?.["node-addon-api"] ||
+      packageJson.dependencies?.["nan"]
     );
   } catch {
     return false;
@@ -178,24 +180,26 @@ export function isNativeModule(moduleName: string): boolean {
 /**
  * Detect all native modules in a project
  */
-export async function detectNativeModules(projectDir: string): Promise<string[]> {
-  const nodeModulesDir = path.join(projectDir, 'node_modules');
+export async function detectNativeModules(
+  projectDir: string,
+): Promise<string[]> {
+  const nodeModulesDir = path.join(projectDir, "node_modules");
   const nativeModules: string[] = [];
-  
-  if (!await fs.pathExists(nodeModulesDir)) {
+
+  if (!(await fs.pathExists(nodeModulesDir))) {
     return nativeModules;
   }
-  
+
   const modules = await fs.readdir(nodeModulesDir);
-  
+
   for (const moduleName of modules) {
-    if (moduleName.startsWith('.')) continue;
-    
+    if (moduleName.startsWith(".")) continue;
+
     const modulePath = path.join(nodeModulesDir, moduleName);
     const stat = await fs.stat(modulePath);
-    
+
     if (stat.isDirectory()) {
-      if (moduleName.startsWith('@')) {
+      if (moduleName.startsWith("@")) {
         // Scoped package
         const scopedModules = await fs.readdir(modulePath);
         for (const scopedModule of scopedModules) {
@@ -212,7 +216,7 @@ export async function detectNativeModules(projectDir: string): Promise<string[]>
       }
     }
   }
-  
+
   return nativeModules;
 }
 
@@ -232,46 +236,46 @@ export interface BundleWithNativeModulesOptions {
  * Create a bundle that properly handles native modules
  */
 export async function bundleWithNativeModules(
-  options: BundleWithNativeModulesOptions
+  options: BundleWithNativeModulesOptions,
 ): Promise<void> {
   const {
     entryPoint,
     outputPath,
     autoDetect = true,
     rebuild = false,
-    electronVersion
+    electronVersion,
   } = options;
-  
+
   const projectDir = path.dirname(entryPoint);
   const outputDir = path.dirname(outputPath);
-  
+
   // Detect or use provided native modules
   let nativeModules = options.nativeModules || [];
   if (autoDetect) {
     const detected = await detectNativeModules(projectDir);
     nativeModules = [...new Set([...nativeModules, ...detected])];
-    console.log(`🔍 Detected native modules: ${nativeModules.join(', ')}`);
+    console.log(`🔍 Detected native modules: ${nativeModules.join(", ")}`);
   }
-  
+
   // Copy native modules
   if (nativeModules.length > 0) {
     await copyNativeModules({
       modules: nativeModules,
       sourceDir: projectDir,
-      targetDir: outputDir
+      targetDir: outputDir,
     });
-    
+
     // Create loader script
     await createNativeModuleLoader(
-      path.join(outputDir, 'native-loader.js'),
-      nativeModules
+      path.join(outputDir, "native-loader.js"),
+      nativeModules,
     );
-    
+
     // Rebuild if requested
     if (rebuild) {
       await rebuildNativeModules(outputDir, electronVersion);
     }
   }
-  
-  console.log('✅ Native modules prepared for bundling');
+
+  console.log("✅ Native modules prepared for bundling");
 }

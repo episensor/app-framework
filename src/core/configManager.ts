@@ -3,15 +3,15 @@
  * Provides schema validation, file watching, and environment variable merging
  */
 
-import fs from 'fs/promises';
-import { existsSync, watch, FSWatcher } from 'fs';
-import path from 'path';
-import { z, ZodSchema } from 'zod';
-import dotenv from 'dotenv';
-import { EventEmitter } from 'events';
-import { createLogger } from './logger.js';
+import fs from "fs/promises";
+import { existsSync, watch, FSWatcher } from "fs";
+import path from "path";
+import { z, ZodSchema } from "zod";
+import dotenv from "dotenv";
+import { EventEmitter } from "events";
+import { createLogger } from "./logger.js";
 
-const logger = createLogger('ConfigManager');
+const logger = createLogger("ConfigManager");
 
 export interface ConfigManagerOptions {
   configPath?: string;
@@ -42,7 +42,9 @@ export class ConfigManager extends EventEmitter {
 
   constructor(options: ConfigManagerOptions = {}) {
     super();
-    this.configPath = options.configPath || path.join(process.cwd(), 'data', 'config', 'app.json');
+    this.configPath =
+      options.configPath ||
+      path.join(process.cwd(), "data", "config", "app.json");
     this.envPath = options.envPath;
     this.schema = options.schema;
     this.defaults = options.defaults || {};
@@ -69,9 +71,9 @@ export class ConfigManager extends EventEmitter {
       await this.loadConfig();
 
       this.isInitialized = true;
-      logger.debug('Configuration initialized successfully');
+      logger.debug("Configuration initialized successfully");
     } catch (_error) {
-      logger.error('Failed to initialize configuration:', _error);
+      logger.error("Failed to initialize configuration:", _error);
       throw _error;
     }
   }
@@ -84,14 +86,14 @@ export class ConfigManager extends EventEmitter {
     if (this.envPath && existsSync(this.envPath)) {
       const result = dotenv.config({ path: this.envPath });
       if (result.error) {
-        logger.warn('Failed to load .env file:', result.error);
+        logger.warn("Failed to load .env file:", result.error);
       } else {
         logger.info(`Loaded environment variables from ${this.envPath}`);
       }
     }
 
     // Also check for default .env file
-    const defaultEnvPath = path.join(process.cwd(), '.env');
+    const defaultEnvPath = path.join(process.cwd(), ".env");
     if (existsSync(defaultEnvPath) && defaultEnvPath !== this.envPath) {
       dotenv.config({ path: defaultEnvPath });
     }
@@ -107,12 +109,14 @@ export class ConfigManager extends EventEmitter {
 
       // Load from file if it exists
       if (existsSync(this.configPath)) {
-        const fileContent = await fs.readFile(this.configPath, 'utf-8');
+        const fileContent = await fs.readFile(this.configPath, "utf-8");
         const fileConfig = JSON.parse(fileContent);
         config = this.deepMerge(config, fileConfig);
         logger.debug(`Loaded configuration from ${this.configPath}`);
       } else {
-        logger.debug(`Configuration file not found at ${this.configPath}, using defaults`);
+        logger.debug(
+          `Configuration file not found at ${this.configPath}, using defaults`,
+        );
         // Create the config directory if it doesn't exist
         const configDir = path.dirname(this.configPath);
         if (!existsSync(configDir)) {
@@ -131,8 +135,13 @@ export class ConfigManager extends EventEmitter {
       if (this.schema) {
         const validationResult = this.schema.safeParse(config);
         if (!validationResult.success) {
-          logger.error('Configuration validation failed:', validationResult.error);
-          throw new Error(`Invalid configuration: ${validationResult.error.message}`);
+          logger.error(
+            "Configuration validation failed:",
+            validationResult.error,
+          );
+          throw new Error(
+            `Invalid configuration: ${validationResult.error.message}`,
+          );
         }
         config = validationResult.data;
       }
@@ -146,7 +155,7 @@ export class ConfigManager extends EventEmitter {
         this.detectAndEmitChanges(oldConfig, config);
       }
     } catch (_error) {
-      logger.error('Failed to load configuration:', _error);
+      logger.error("Failed to load configuration:", _error);
       throw _error;
     }
   }
@@ -156,7 +165,7 @@ export class ConfigManager extends EventEmitter {
    */
   async saveConfig(config?: any): Promise<void> {
     const configToSave = config || this.config;
-    
+
     try {
       // Ensure directory exists
       const configDir = path.dirname(this.configPath);
@@ -168,12 +177,12 @@ export class ConfigManager extends EventEmitter {
       await fs.writeFile(
         this.configPath,
         JSON.stringify(configToSave, null, 2),
-        'utf-8'
+        "utf-8",
       );
 
       logger.info(`Configuration saved to ${this.configPath}`);
     } catch (_error) {
-      logger.error('Failed to save configuration:', _error);
+      logger.error("Failed to save configuration:", _error);
       throw _error;
     }
   }
@@ -186,11 +195,11 @@ export class ConfigManager extends EventEmitter {
       return this.config as T;
     }
 
-    const keys = key.split('.');
+    const keys = key.split(".");
     let value = this.config;
 
     for (const k of keys) {
-      if (value && typeof value === 'object' && k in value) {
+      if (value && typeof value === "object" && k in value) {
         value = value[k];
       } else {
         return undefined as T;
@@ -204,12 +213,12 @@ export class ConfigManager extends EventEmitter {
    * Set configuration value by key (supports dot notation)
    */
   async set(key: string, value: any): Promise<void> {
-    const keys = key.split('.');
+    const keys = key.split(".");
     const lastKey = keys.pop()!;
-    
+
     let target = this.config;
     for (const k of keys) {
-      if (!(k in target) || typeof target[k] !== 'object') {
+      if (!(k in target) || typeof target[k] !== "object") {
         target[k] = {};
       }
       target = target[k];
@@ -224,7 +233,9 @@ export class ConfigManager extends EventEmitter {
       if (!validationResult.success) {
         // Revert the change
         target[lastKey] = oldValue;
-        throw new Error(`Invalid configuration: ${validationResult.error.message}`);
+        throw new Error(
+          `Invalid configuration: ${validationResult.error.message}`,
+        );
       }
     }
 
@@ -232,11 +243,11 @@ export class ConfigManager extends EventEmitter {
     await this.saveConfig();
 
     // Emit change event
-    this.emit('configChanged', {
+    this.emit("configChanged", {
       key,
       oldValue,
       newValue: value,
-      timestamp: new Date()
+      timestamp: new Date(),
     } as ConfigChangeEvent);
   }
 
@@ -261,7 +272,7 @@ export class ConfigManager extends EventEmitter {
   async reset(): Promise<void> {
     this.config = { ...this.defaults };
     await this.saveConfig();
-    this.emit('configReset', { timestamp: new Date() });
+    this.emit("configReset", { timestamp: new Date() });
   }
 
   /**
@@ -269,7 +280,7 @@ export class ConfigManager extends EventEmitter {
    */
   async reload(): Promise<void> {
     await this.loadConfig();
-    this.emit('configReloaded', { timestamp: new Date() });
+    this.emit("configReloaded", { timestamp: new Date() });
   }
 
   /**
@@ -277,7 +288,7 @@ export class ConfigManager extends EventEmitter {
    */
   getTyped<T>(): T {
     if (!this.schema) {
-      throw new Error('Schema is required for typed configuration');
+      throw new Error("Schema is required for typed configuration");
     }
     return this.config as T;
   }
@@ -296,9 +307,9 @@ export class ConfigManager extends EventEmitter {
     if (result.success) {
       return { valid: true };
     } else {
-      return { 
-        valid: false, 
-        errors: result.error.format() 
+      return {
+        valid: false,
+        errors: result.error.format(),
       };
     }
   }
@@ -311,24 +322,24 @@ export class ConfigManager extends EventEmitter {
 
     if (existsSync(this.configPath)) {
       this.watcher = watch(this.configPath, (eventType) => {
-        if (eventType === 'change') {
+        if (eventType === "change") {
           // Debounce file changes
           if (this.debounceTimer) {
             clearTimeout(this.debounceTimer);
           }
 
           this.debounceTimer = setTimeout(async () => {
-            logger.info('Configuration file changed, reloading...');
+            logger.info("Configuration file changed, reloading...");
             try {
               await this.reload();
             } catch (_error) {
-              logger.error('Failed to reload configuration:', _error);
+              logger.error("Failed to reload configuration:", _error);
             }
           }, 500);
         }
       });
 
-      logger.debug('Started watching configuration file');
+      logger.debug("Started watching configuration file");
     }
   }
 
@@ -339,7 +350,7 @@ export class ConfigManager extends EventEmitter {
     if (this.watcher) {
       this.watcher.close();
       this.watcher = undefined;
-      logger.debug('Stopped watching configuration file');
+      logger.debug("Stopped watching configuration file");
     }
 
     if (this.debounceTimer) {
@@ -357,14 +368,14 @@ export class ConfigManager extends EventEmitter {
 
     // Common environment variable mappings
     const envMappings: Record<string, string[]> = {
-      'NODE_ENV': ['environment'],
-      'PORT': ['server.port'],
-      'HOST': ['server.host'],
-      'LOG_LEVEL': ['logging.level'],
-      'DATABASE_URL': ['database.url'],
-      'REDIS_URL': ['redis.url'],
-      'SESSION_SECRET': ['session.secret'],
-      'CORS_ORIGIN': ['cors.origin']
+      NODE_ENV: ["environment"],
+      PORT: ["server.port"],
+      HOST: ["server.host"],
+      LOG_LEVEL: ["logging.level"],
+      DATABASE_URL: ["database.url"],
+      REDIS_URL: ["redis.url"],
+      SESSION_SECRET: ["session.secret"],
+      CORS_ORIGIN: ["cors.origin"],
     };
 
     // Apply environment variable overrides
@@ -376,14 +387,18 @@ export class ConfigManager extends EventEmitter {
     }
 
     // Also check for prefixed environment variables (e.g., APP_CONFIG_)
-    const prefix = process.env.CONFIG_PREFIX || 'APP_CONFIG_';
+    const prefix = process.env.CONFIG_PREFIX || "APP_CONFIG_";
     for (const [key, value] of Object.entries(process.env)) {
       if (key.startsWith(prefix)) {
         const configKey = key
           .substring(prefix.length)
           .toLowerCase()
-          .replace(/_/g, '.');
-        this.setNestedValue(merged, configKey.split('.'), this.parseEnvValue(value!));
+          .replace(/_/g, ".");
+        this.setNestedValue(
+          merged,
+          configKey.split("."),
+          this.parseEnvValue(value!),
+        );
       }
     }
 
@@ -399,13 +414,13 @@ export class ConfigManager extends EventEmitter {
       return JSON.parse(value);
     } catch {
       // Check for boolean
-      if (value.toLowerCase() === 'true') return true;
-      if (value.toLowerCase() === 'false') return false;
-      
+      if (value.toLowerCase() === "true") return true;
+      if (value.toLowerCase() === "false") return false;
+
       // Check for number
       const num = Number(value);
       if (!isNaN(num)) return num;
-      
+
       // Return as string
       return value;
     }
@@ -419,7 +434,7 @@ export class ConfigManager extends EventEmitter {
     let target = obj;
 
     for (const key of path) {
-      if (!(key in target) || typeof target[key] !== 'object') {
+      if (!(key in target) || typeof target[key] !== "object") {
         target[key] = {};
       }
       target = target[key];
@@ -435,7 +450,7 @@ export class ConfigManager extends EventEmitter {
     const output = { ...target };
 
     if (isObject(target) && isObject(source)) {
-      Object.keys(source).forEach(key => {
+      Object.keys(source).forEach((key) => {
         if (isObject(source[key])) {
           if (!(key in target)) {
             Object.assign(output, { [key]: source[key] });
@@ -454,8 +469,15 @@ export class ConfigManager extends EventEmitter {
   /**
    * Detect and emit change events
    */
-  private detectAndEmitChanges(oldConfig: any, newConfig: any, prefix: string = ''): void {
-    const allKeys = new Set([...Object.keys(oldConfig || {}), ...Object.keys(newConfig || {})]);
+  private detectAndEmitChanges(
+    oldConfig: any,
+    newConfig: any,
+    prefix: string = "",
+  ): void {
+    const allKeys = new Set([
+      ...Object.keys(oldConfig || {}),
+      ...Object.keys(newConfig || {}),
+    ]);
 
     for (const key of allKeys) {
       const fullKey = prefix ? `${prefix}.${key}` : key;
@@ -465,11 +487,11 @@ export class ConfigManager extends EventEmitter {
       if (isObject(oldValue) && isObject(newValue)) {
         this.detectAndEmitChanges(oldValue, newValue, fullKey);
       } else if (oldValue !== newValue) {
-        this.emit('configChanged', {
+        this.emit("configChanged", {
           key: fullKey,
           oldValue,
           newValue,
-          timestamp: new Date()
+          timestamp: new Date(),
         } as ConfigChangeEvent);
       }
     }
@@ -480,7 +502,7 @@ export class ConfigManager extends EventEmitter {
  * Helper function to check if value is an object
  */
 function isObject(item: any): boolean {
-  return item && typeof item === 'object' && !Array.isArray(item);
+  return item && typeof item === "object" && !Array.isArray(item);
 }
 
 /**
@@ -488,7 +510,9 @@ function isObject(item: any): boolean {
  */
 let defaultManager: ConfigManager | null = null;
 
-export function getConfigManager(options?: ConfigManagerOptions): ConfigManager {
+export function getConfigManager(
+  options?: ConfigManagerOptions,
+): ConfigManager {
   if (!defaultManager) {
     defaultManager = new ConfigManager(options);
   }
@@ -502,42 +526,46 @@ export const CommonSchemas = {
   // Server configuration schema
   serverConfig: z.object({
     port: z.number().min(1).max(65535),
-    host: z.string().default('0.0.0.0'),
+    host: z.string().default("0.0.0.0"),
     https: z.boolean().optional(),
-    cors: z.object({
-      enabled: z.boolean().default(true),
-      origin: z.union([z.string(), z.array(z.string())]).optional()
-    }).optional()
+    cors: z
+      .object({
+        enabled: z.boolean().default(true),
+        origin: z.union([z.string(), z.array(z.string())]).optional(),
+      })
+      .optional(),
   }),
 
   // Logging configuration schema
   loggingConfig: z.object({
-    level: z.enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly']).default('info'),
+    level: z
+      .enum(["error", "warn", "info", "http", "verbose", "debug", "silly"])
+      .default("info"),
     file: z.boolean().default(true),
     console: z.boolean().default(true),
-    maxSize: z.string().default('20m'),
-    maxFiles: z.string().default('14d')
+    maxSize: z.string().default("20m"),
+    maxFiles: z.string().default("14d"),
   }),
 
   // Database configuration schema
   databaseConfig: z.object({
-    type: z.enum(['postgres', 'mysql', 'sqlite', 'mongodb']).optional(),
+    type: z.enum(["postgres", "mysql", "sqlite", "mongodb"]).optional(),
     url: z.string().optional(),
     host: z.string().optional(),
     port: z.number().optional(),
     database: z.string().optional(),
     username: z.string().optional(),
     password: z.string().optional(),
-    ssl: z.boolean().optional()
+    ssl: z.boolean().optional(),
   }),
 
   // Redis configuration schema
   redisConfig: z.object({
     url: z.string().optional(),
-    host: z.string().default('localhost'),
+    host: z.string().default("localhost"),
     port: z.number().default(6379),
     password: z.string().optional(),
-    db: z.number().default(0)
+    db: z.number().default(0),
   }),
 
   // Session configuration schema
@@ -545,13 +573,14 @@ export const CommonSchemas = {
     secret: z.string(),
     resave: z.boolean().default(false),
     saveUninitialized: z.boolean().default(false),
-    cookie: z.object({
-      secure: z.boolean().default(false),
-      httpOnly: z.boolean().default(true),
-      maxAge: z.number().default(86400000), // 24 hours
-      sameSite: z.enum(['lax', 'strict', 'none']).optional()
-    }).optional(),
-    store: z.enum(['memory', 'redis', 'file']).default('memory')
-  })
+    cookie: z
+      .object({
+        secure: z.boolean().default(false),
+        httpOnly: z.boolean().default(true),
+        maxAge: z.number().default(86400000), // 24 hours
+        sameSite: z.enum(["lax", "strict", "none"]).optional(),
+      })
+      .optional(),
+    store: z.enum(["memory", "redis", "file"]).default("memory"),
+  }),
 };
-

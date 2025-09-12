@@ -3,14 +3,14 @@
  * Generic authentication utilities for Express applications
  */
 
-import { Request, Response, NextFunction } from 'express';
-import { createLogger } from '../core/index.js';
+import { Request, Response, NextFunction } from "express";
+import { createLogger } from "../core/index.js";
 
 let logger: any; // Will be initialized when needed
 
 function ensureLogger() {
   if (!logger) {
-    logger = createLogger('AuthMiddleware');
+    logger = createLogger("AuthMiddleware");
   }
   return logger;
 }
@@ -30,7 +30,7 @@ declare global {
 }
 
 // Extend express-session types
-declare module 'express-session' {
+declare module "express-session" {
   interface SessionData {
     authenticated?: boolean;
     username?: string;
@@ -51,15 +51,19 @@ export interface AuthConfig {
  */
 export function createAuthMiddleware(config: AuthConfig = {}) {
   const {
-    loginPath = '/login',
-    apiPrefix = '/api/',
+    loginPath = "/login",
+    apiPrefix = "/api/",
     excludePaths = [],
-    onUnauthorized
+    onUnauthorized,
   } = config;
 
-  return function requireAuth(req: Request, res: Response, next: NextFunction): void {
+  return function requireAuth(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): void {
     // Check if path is excluded
-    if (excludePaths.some(path => req.path.startsWith(path))) {
+    if (excludePaths.some((path) => req.path.startsWith(path))) {
       return next();
     }
 
@@ -67,9 +71,9 @@ export function createAuthMiddleware(config: AuthConfig = {}) {
     if (req.session && req.session.authenticated) {
       // Attach user to request
       req.user = {
-        id: req.session.userId || '',
-        username: req.session.username || '',
-        roles: req.session.roles || []
+        id: req.session.userId || "",
+        username: req.session.username || "",
+        roles: req.session.roles || [],
       };
       return next();
     }
@@ -82,10 +86,10 @@ export function createAuthMiddleware(config: AuthConfig = {}) {
     // Default behavior
     if (req.path.startsWith(apiPrefix)) {
       // For API routes, return JSON error
-      res.status(401).json({ 
+      res.status(401).json({
         success: false,
-        error: 'Authentication required',
-        message: 'Please log in to access this resource'
+        error: "Authentication required",
+        message: "Please log in to access this resource",
       });
     } else {
       // For web routes, redirect to login
@@ -122,13 +126,16 @@ export function createLoginHandler(authService: AuthService) {
       if (!username || !password) {
         res.status(400).json({
           success: false,
-          error: 'Missing credentials',
-          message: 'Username and password are required'
+          error: "Missing credentials",
+          message: "Username and password are required",
         });
         return;
       }
 
-      const result = await authService.validateCredentials({ username, password });
+      const result = await authService.validateCredentials({
+        username,
+        password,
+      });
 
       if (result.valid && result.user) {
         // Set session
@@ -143,23 +150,23 @@ export function createLoginHandler(authService: AuthService) {
           success: true,
           user: {
             username: result.user.username,
-            roles: result.user.roles
-          }
+            roles: result.user.roles,
+          },
         });
       } else {
         ensureLogger().warn(`Failed login attempt for user: ${username}`);
         res.status(401).json({
           success: false,
-          error: 'Invalid credentials',
-          message: result.error || 'Invalid username or password'
+          error: "Invalid credentials",
+          message: result.error || "Invalid username or password",
         });
       }
     } catch (_error: any) {
-      ensureLogger().error('Login error:', _error);
+      ensureLogger().error("Login error:", _error);
       res.status(500).json({
         success: false,
-        error: 'Login failed',
-        message: 'An error occurred during login'
+        error: "Login failed",
+        message: "An error occurred during login",
       });
     }
   };
@@ -171,13 +178,13 @@ export function createLoginHandler(authService: AuthService) {
 export function createLogoutHandler() {
   return (req: Request, res: Response): void => {
     const username = req.session?.username;
-    
+
     req.session.destroy((err: any) => {
       if (err) {
-        ensureLogger().error('Error destroying session:', err);
+        ensureLogger().error("Error destroying session:", err);
         res.status(500).json({
           success: false,
-          error: 'Logout failed'
+          error: "Logout failed",
         });
         return;
       }
@@ -201,12 +208,12 @@ export function createAuthCheckHandler() {
         authenticated: true,
         user: {
           username: req.session.username,
-          roles: req.session.roles
-        }
+          roles: req.session.roles,
+        },
       });
     } else {
       res.status(401).json({
-        authenticated: false
+        authenticated: false,
       });
     }
   };
@@ -222,19 +229,19 @@ export function requireRole(roles: string | string[]) {
     if (!req.user) {
       res.status(401).json({
         success: false,
-        error: 'Authentication required'
+        error: "Authentication required",
       });
       return;
     }
 
     const userRoles = req.user.roles || [];
-    const hasRole = requiredRoles.some(role => userRoles.includes(role));
+    const hasRole = requiredRoles.some((role) => userRoles.includes(role));
 
     if (!hasRole) {
       res.status(403).json({
         success: false,
-        error: 'Insufficient permissions',
-        message: `This action requires one of the following roles: ${requiredRoles.join(', ')}`
+        error: "Insufficient permissions",
+        message: `This action requires one of the following roles: ${requiredRoles.join(", ")}`,
       });
       return;
     }
@@ -247,21 +254,38 @@ export function requireRole(roles: string | string[]) {
  * Simple in-memory auth service for development
  */
 export class SimpleAuthService implements AuthService {
-  private users: Map<string, { password: string; id: string; roles?: string[] }>;
+  private users: Map<
+    string,
+    { password: string; id: string; roles?: string[] }
+  >;
 
-  constructor(users: Array<{ username: string; password: string; id?: string; roles?: string[] }> = []) {
+  constructor(
+    users: Array<{
+      username: string;
+      password: string;
+      id?: string;
+      roles?: string[];
+    }> = [],
+  ) {
     this.users = new Map();
-    
+
     // Add default admin user if no users provided
     if (users.length === 0) {
-      users = [{ username: 'admin', password: 'admin', id: 'admin-1', roles: ['admin'] }];
+      users = [
+        {
+          username: "admin",
+          password: "admin",
+          id: "admin-1",
+          roles: ["admin"],
+        },
+      ];
     }
 
-    users.forEach(user => {
+    users.forEach((user) => {
       this.users.set(user.username, {
         password: user.password,
         id: user.id || `user-${user.username}`,
-        roles: user.roles
+        roles: user.roles,
       });
     });
   }
@@ -272,7 +296,7 @@ export class SimpleAuthService implements AuthService {
     if (!user || user.password !== credentials.password) {
       return {
         valid: false,
-        error: 'Invalid username or password'
+        error: "Invalid username or password",
       };
     }
 
@@ -281,8 +305,8 @@ export class SimpleAuthService implements AuthService {
       user: {
         id: user.id,
         username: credentials.username,
-        roles: user.roles
-      }
+        roles: user.roles,
+      },
     };
   }
 
@@ -290,7 +314,7 @@ export class SimpleAuthService implements AuthService {
     this.users.set(username, {
       password,
       id: `user-${username}`,
-      roles
+      roles,
     });
   }
 }
@@ -301,5 +325,5 @@ export default {
   createLogoutHandler,
   createAuthCheckHandler,
   requireRole,
-  SimpleAuthService
+  SimpleAuthService,
 };

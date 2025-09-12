@@ -5,6 +5,7 @@ A comprehensive, production-ready framework for building enterprise internal too
 ## 📋 Documentation
 
 ### Core Guides
+
 - **[API](./docs/API.md)** - Complete API documentation with best practices
 - **[Development](./docs/DEVELOPMENT.md)** - How to build applications with the framework
 - **[Architecture](./docs/ARCHITECTURE.md)** - System design and structure
@@ -12,6 +13,7 @@ A comprehensive, production-ready framework for building enterprise internal too
 - **[Structure](./docs/STRUCTURE.md)** - Application directory structure standard
 
 ### Features
+
 - **[WebSocket](./docs/WEBSOCKET.md)** - Real-time communication implementation
 - **[Desktop](./docs/DESKTOP.md)** - Desktop application support with Tauri
 - **[Bundling](./docs/BUNDLING.md)** - Desktop bundling guide
@@ -19,6 +21,7 @@ A comprehensive, production-ready framework for building enterprise internal too
 - **[Patterns](./docs/PATTERNS.md)** - Proven architectural patterns
 
 ### Configuration & Testing
+
 - **[Testing](./docs/TESTING.md)** - Testing guidelines and patterns
 - **[Logging](./docs/LOGGING.md)** - Logging system documentation
 - **[Theme](./docs/THEME.md)** - Theme system and customization
@@ -26,13 +29,16 @@ A comprehensive, production-ready framework for building enterprise internal too
 - **[CORS](./docs/CORS.md)** - Dynamic CORS middleware
 
 #### Test Suite Overview
+
 The framework includes extensive test coverage:
+
 - **Unit Tests**: 362+ tests covering all core modules
 - **Integration Tests**: API and service integration testing
 - **TestServer**: Built-in test server for application testing
 - **Mock Services**: Comprehensive mocking utilities
 
 #### Running Tests
+
 ```bash
 # Run all tests
 npm test
@@ -49,6 +55,7 @@ npm run typecheck
 ```
 
 #### Test Infrastructure
+
 - Jest with TypeScript support
 - Built-in TestServer class for app testing
 - Mock implementations for all services
@@ -70,16 +77,16 @@ npm install @episensor/app-framework
 ### Minimal Application
 
 ```typescript
-import { StandardServer } from '@episensor/app-framework';
+import { StandardServer } from "@episensor/app-framework";
 
 const server = new StandardServer({
-  appName: 'My App',
-  appVersion: '1.0.0',
+  appName: "My App",
+  appVersion: "1.0.0",
   port: 8080,
   enableWebSocket: true,
   onInitialize: async (app) => {
-    app.get('/health', (req, res) => res.json({ status: 'ok' }));
-  }
+    app.get("/health", (req, res) => res.json({ status: "ok" }));
+  },
 });
 
 await server.initialize();
@@ -89,6 +96,7 @@ await server.start();
 ## ✨ Core Features
 
 ### 🖥️ Server Management
+
 - **StandardServer** - Simplified server setup with Express
 - **Port Management** - Automatic port conflict resolution
 - **Graceful Shutdown** - Clean resource cleanup
@@ -96,6 +104,7 @@ await server.start();
 - **Startup Banner** - Professional application startup display
 
 ### 📝 Logging System
+
 - **Dual Logger System** - Simple console + production file logging
 - **Enhanced Logger** - File rotation, compression, archiving
 - **Category-based Logging** - Organize logs by service/module
@@ -103,6 +112,7 @@ await server.start();
 - **Flat Structure** - All logs in `/data/logs` for easy backup/restore
 
 ### 🔌 Real-Time Communication
+
 - **WebSocketManager** - Unified Socket.IO management with namespace support
 - **Redis Adapter** - Optional Redis adapter for scaling
 - **Room Management** - Built-in room join/leave handlers
@@ -112,6 +122,7 @@ await server.start();
 - **Connection Status** - Monitor connection health
 
 ### 🔒 Security & Authentication
+
 - **Session Management** - Express sessions with Redis support
 - **Authentication Middleware** - Role-based access control
 - **Input Validation** - Zod/Joi schema validation
@@ -119,6 +130,7 @@ await server.start();
 - **CORS Configuration** - Cross-origin resource sharing
 
 ### ⚙️ Configuration & Settings
+
 - **ConfigManager** Advanced configuration with Zod validation
 - **Environment Merging** Automatic env variable merging
 - **File Watching** Auto-reload on config file changes
@@ -127,6 +139,7 @@ await server.start();
 - **Settings Service** - Dynamic settings with UI generation
 
 ### 📊 Health Monitoring
+
 - **HealthCheckService** Real system metrics collection
 - **CPU Metrics** Real CPU usage with history tracking
 - **Memory Metrics** Memory usage percentage and details
@@ -137,6 +150,7 @@ await server.start();
 - **Informational Only** Never interrupts service operation
 
 ### 🔧 Services & Utilities
+
 - **Queue Service** - Background job processing with persistence
 - **AI Service** - Multi-provider AI integration (OpenAI, Claude)
 - **Port Utilities** - Port availability checking and management
@@ -147,6 +161,7 @@ await server.start();
 ### 🎨 UI Components Library
 
 #### Base Components (20+)
+
 - **Forms** - Input, Select, Checkbox, Radio, Switch, Textarea
 - **Layout** - Card, Dialog, Tabs, Accordion, Separator
 - **Data Display** - Table, Badge, Alert, Progress, Avatar
@@ -154,6 +169,7 @@ await server.start();
 - **Feedback** - Toast, Tooltip, Popover, Alert Dialog
 
 #### Advanced Components
+
 - **SettingsFramework** - Complete settings UI with validation
 - **LogViewer** - Real-time log display with filtering
 - **ConnectionStatus** - WebSocket connection monitoring
@@ -163,11 +179,13 @@ await server.start();
 - **UpdateNotification** - Application update notifications
 
 ### 🧪 Testing Utilities
+
 - **TestServer** - Standardized test server for integration tests
 - **Test Utilities** - Request helpers, WebSocket testing
 - **Mock Services** - Pre-configured mocks for services
 
 ### 📊 Middleware
+
 - **Validation** - Request/response validation
 - **Error Handling** - Centralized error management
 - **File Upload** - Secure file upload handling
@@ -178,19 +196,22 @@ await server.start();
 ## 📦 Installation
 
 ### Full Framework (Backend + Frontend)
+
 ```bash
 npm install @episensor/app-framework
 ```
 
 ### Import Examples
+
 ```javascript
 // Backend
-import { StandardServer, createLogger } from '@episensor/app-framework';
+import { StandardServer, createLogger } from "@episensor/app-framework";
 
 // Frontend UI components
-import { Button, Card, useWebSocket } from '@episensor/app-framework/ui';
+import { Button, Card, useWebSocket } from "@episensor/app-framework/ui";
 ```
-```
+
+````
 
 ## 💡 Usage Examples
 
@@ -211,7 +232,7 @@ const server = new StandardServer({
       name: z.string(),
       email: z.string().email()
     });
-    
+
     app.post('/api/users', validate(userSchema), async (req, res) => {
       // Validated request body
       const user = await createUser(req.body);
@@ -219,46 +240,46 @@ const server = new StandardServer({
     });
   }
 });
-```
+````
 
 ### Real-Time Dashboard
 
 ```typescript
-import { StandardServer, getWebSocketServer } from '@episensor/app-framework';
+import { StandardServer, getWebSocketServer } from "@episensor/app-framework";
 
 const server = new StandardServer({
-  appName: 'Dashboard',
-  appVersion: '1.0.0',
+  appName: "Dashboard",
+  appVersion: "1.0.0",
   enableWebSocket: true,
   onStart: async () => {
     const ws = getWebSocketServer();
-    
+
     // Stream metrics every second
     setInterval(() => {
       const metrics = collectMetrics();
-      ws.broadcast('metrics:update', metrics);
+      ws.broadcast("metrics:update", metrics);
     }, 1000);
-  }
+  },
 });
 ```
 
 ### React WebSocket Integration
 
 ```tsx
-import { useWebSocket } from '@episensor/app-framework/ui';
+import { useWebSocket } from "@episensor/app-framework/ui";
 
 function Dashboard() {
-  const { connected, on, off } = useWebSocket('http://localhost:8080');
+  const { connected, on, off } = useWebSocket("http://localhost:8080");
   const [metrics, setMetrics] = useState([]);
-  
+
   useEffect(() => {
     if (connected) {
       const handler = (data) => setMetrics(data);
-      on('metrics:update', handler);
-      return () => off('metrics:update', handler);
+      on("metrics:update", handler);
+      return () => off("metrics:update", handler);
     }
   }, [connected]);
-  
+
   return <MetricsDisplay data={metrics} />;
 }
 ```
@@ -266,20 +287,20 @@ function Dashboard() {
 ### Background Job Processing
 
 ```typescript
-import { QueueService } from '@episensor/app-framework';
+import { QueueService } from "@episensor/app-framework";
 
 const queue = new QueueService({
   concurrent: 5,
-  persistent: true
+  persistent: true,
 });
 
-queue.registerHandler('send-email', async (job) => {
+queue.registerHandler("send-email", async (job) => {
   await sendEmail(job.data);
 });
 
-await queue.addJob('send-email', {
-  to: 'user@example.com',
-  subject: 'Welcome!'
+await queue.addJob("send-email", {
+  to: "user@example.com",
+  subject: "Welcome!",
 });
 ```
 
@@ -303,7 +324,7 @@ settings.registerCategory({
 });
 
 // React component
-<SettingsFramework 
+<SettingsFramework
   categories={settings.getUISchema()}
   onSave={async (values) => settings.update(values)}
 />
@@ -312,91 +333,100 @@ settings.registerCategory({
 ### Health Monitoring
 
 ```typescript
-import { createHealthCheckRouter, getHealthCheckService } from '@episensor/app-framework';
+import {
+  createHealthCheckRouter,
+  getHealthCheckService,
+} from "@episensor/app-framework";
 
 // Add health check endpoints
 const healthRouter = createHealthCheckRouter({
-  version: '1.0.0',
-  customChecks: [{
-    name: 'database',
-    check: async () => ({
-      name: 'database',
-      status: await db.ping() ? 'healthy' : 'unhealthy'
-    })
-  }]
+  version: "1.0.0",
+  customChecks: [
+    {
+      name: "database",
+      check: async () => ({
+        name: "database",
+        status: (await db.ping()) ? "healthy" : "unhealthy",
+      }),
+    },
+  ],
 });
 
-app.use('/api', healthRouter);
+app.use("/api", healthRouter);
 
 // Get real-time metrics
 const healthService = getHealthCheckService();
 const metrics = await healthService.getMetrics();
-console.log(`CPU: ${metrics.cpu.usage}%, Memory: ${metrics.memory.percentage}%`);
+console.log(
+  `CPU: ${metrics.cpu.usage}%, Memory: ${metrics.memory.percentage}%`,
+);
 ```
 
 ### Configuration Management
 
 ```typescript
-import { getConfigManager, CommonSchemas } from '@episensor/app-framework';
-import { z } from 'zod';
+import { getConfigManager, CommonSchemas } from "@episensor/app-framework";
+import { z } from "zod";
 
 // Define config schema
 const configSchema = z.object({
   server: CommonSchemas.serverConfig,
   logging: CommonSchemas.loggingConfig,
   custom: z.object({
-    feature: z.boolean().default(true)
-  })
+    feature: z.boolean().default(true),
+  }),
 });
 
 // Initialize with schema validation
 const config = getConfigManager({
   schema: configSchema,
   watchFile: true, // Auto-reload on changes
-  mergeEnv: true   // Merge environment variables
+  mergeEnv: true, // Merge environment variables
 });
 
 await config.initialize();
 
 // Type-safe access
-const port = config.get<number>('server.port');
+const port = config.get<number>("server.port");
 
 // Listen for changes
-config.on('configChanged', (event) => {
-  console.log(`Config ${event.key} changed from ${event.oldValue} to ${event.newValue}`);
+config.on("configChanged", (event) => {
+  console.log(
+    `Config ${event.key} changed from ${event.oldValue} to ${event.newValue}`,
+  );
 });
 ```
 
 ### WebSocket Manager
 
 ```typescript
-import { getWebSocketManager } from '@episensor/app-framework';
+import { getWebSocketManager } from "@episensor/app-framework";
 
 // Initialize WebSocket manager
 const wsManager = getWebSocketManager({
-  cors: { origin: 'http://localhost:3000' },
-  adapter: 'redis', // Optional Redis scaling
-  redisUrl: process.env.REDIS_URL
+  cors: { origin: "http://localhost:3000" },
+  adapter: "redis", // Optional Redis scaling
+  redisUrl: process.env.REDIS_URL,
 });
 
 await wsManager.initialize(httpServer);
 
 // Register namespace with handlers
-wsManager.registerNamespace('/dashboard', {
-  'subscribe': (socket, topic) => {
+wsManager.registerNamespace("/dashboard", {
+  subscribe: (socket, topic) => {
     socket.join(`topic:${topic}`);
-    socket.emit('subscribed', { topic });
+    socket.emit("subscribed", { topic });
   },
-  'unsubscribe': (socket, topic) => {
+  unsubscribe: (socket, topic) => {
     socket.leave(`topic:${topic}`);
-  }
+  },
 });
 
 // Broadcast to specific rooms
-wsManager.broadcast('update', data, {
-  namespace: '/dashboard',
-  room: 'topic:metrics',
-  compress: true
+wsManager.broadcast("update", data, {
+  namespace: "/dashboard",
+  room: "topic:metrics",
+  compress: true,
 });
 
 // Get connection stats
@@ -494,35 +524,35 @@ import type {
   JobStatus,
   SettingType,
   ApiResponse,
-  ValidationSchema
-} from '@episensor/app-framework';
+  ValidationSchema,
+} from "@episensor/app-framework";
 
 import type {
   ButtonProps,
   TableColumn,
   SettingCategory,
-  WebSocketHook
-} from '@episensor/app-framework/ui';
+  WebSocketHook,
+} from "@episensor/app-framework/ui";
 ```
 
 ## 🧪 Testing
 
 ```typescript
-import { TestServer, setupTestServer } from '@episensor/app-framework';
+import { TestServer, setupTestServer } from "@episensor/app-framework";
 
-describe('API Tests', () => {
+describe("API Tests", () => {
   let server: TestServer;
-  
+
   beforeAll(async () => {
     server = await setupTestServer({
       setupApp: (app) => {
-        app.get('/test', (req, res) => res.json({ ok: true }));
-      }
+        app.get("/test", (req, res) => res.json({ ok: true }));
+      },
     });
   });
-  
-  test('endpoint works', async () => {
-    const res = await server.request('/test');
+
+  test("endpoint works", async () => {
+    const res = await server.request("/test");
     expect(res.body.ok).toBe(true);
   });
 });
@@ -547,15 +577,17 @@ CMD ["node", "dist/index.js"]
 
 ```javascript
 module.exports = {
-  apps: [{
-    name: 'my-app',
-    script: './dist/index.js',
-    instances: 'max',
-    exec_mode: 'cluster',
-    env: {
-      NODE_ENV: 'production'
-    }
-  }]
+  apps: [
+    {
+      name: "my-app",
+      script: "./dist/index.js",
+      instances: "max",
+      exec_mode: "cluster",
+      env: {
+        NODE_ENV: "production",
+      },
+    },
+  ],
 };
 ```
 

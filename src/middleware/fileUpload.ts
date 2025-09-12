@@ -3,17 +3,17 @@
  * Simple file upload handling for Express
  */
 
-import { Request, Response, NextFunction } from 'express';
-import multer from 'multer';
-import path from 'path';
-import { FileHandler } from '../services/fileHandler.js';
-import { createLogger } from '../core/index.js';
+import { Request, Response, NextFunction } from "express";
+import multer from "multer";
+import path from "path";
+import { FileHandler } from "../services/fileHandler.js";
+import { createLogger } from "../core/index.js";
 
 let logger: any; // Will be initialized when needed
 
 function ensureLogger() {
   if (!logger) {
-    logger = createLogger('FileUpload');
+    logger = createLogger("FileUpload");
   }
   return logger;
 }
@@ -32,12 +32,12 @@ export interface FileUploadConfig {
  */
 export function createFileUpload(config: FileUploadConfig = {}) {
   const {
-    destination = './uploads',
+    destination = "./uploads",
     maxSize = 10 * 1024 * 1024, // 10MB default
     allowedTypes = [],
-    fieldName = 'file',
+    fieldName = "file",
     multiple = false,
-    maxCount = 10
+    maxCount = 10,
   } = config;
 
   // Configure multer storage
@@ -48,7 +48,7 @@ export function createFileUpload(config: FileUploadConfig = {}) {
     storage,
     limits: {
       fileSize: maxSize,
-      files: maxCount
+      files: maxCount,
     },
     fileFilter: (_req, file, cb) => {
       // Check file type if restrictions are set
@@ -59,42 +59,46 @@ export function createFileUpload(config: FileUploadConfig = {}) {
         }
       }
       cb(null, true);
-    }
+    },
   });
 
   // Return appropriate middleware
-  const multerMiddleware = multiple 
+  const multerMiddleware = multiple
     ? upload.array(fieldName, maxCount)
     : upload.single(fieldName);
 
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     multerMiddleware(req, res, async (err) => {
       if (err) {
-        ensureLogger().error('Upload error:', err);
-        
+        ensureLogger().error("Upload error:", err);
+
         if (err instanceof multer.MulterError) {
-          if (err.code === 'LIMIT_FILE_SIZE') {
+          if (err.code === "LIMIT_FILE_SIZE") {
             res.status(400).json({
               success: false,
-              error: 'File too large',
-              message: `File size exceeds maximum of ${maxSize} bytes`
+              error: "File too large",
+              message: `File size exceeds maximum of ${maxSize} bytes`,
             });
             return;
           }
-          if (err.code === 'LIMIT_FILE_COUNT') {
+          if (err.code === "LIMIT_FILE_COUNT") {
             res.status(400).json({
               success: false,
-              error: 'Too many files',
-              message: `Maximum ${maxCount} files allowed`
+              error: "Too many files",
+              message: `Maximum ${maxCount} files allowed`,
             });
             return;
           }
         }
-        
+
         res.status(400).json({
           success: false,
-          error: 'Upload failed',
-          message: err.message
+          error: "Upload failed",
+          message: err.message,
         });
         return;
       }
@@ -102,48 +106,47 @@ export function createFileUpload(config: FileUploadConfig = {}) {
       // Process uploaded files
       try {
         const fileHandler = new FileHandler(destination);
-        
+
         if (multiple && req.files && Array.isArray(req.files)) {
           // Multiple files
           const uploadedFiles = [];
-          
+
           for (const file of req.files) {
             const uploaded = await fileHandler.saveUpload(
               file.buffer,
               file.originalname,
-              { allowedTypes, maxSize }
+              { allowedTypes, maxSize },
             );
             uploadedFiles.push({
               ...uploaded,
-              mimetype: file.mimetype
+              mimetype: file.mimetype,
             });
           }
-          
+
           req.uploadedFiles = uploadedFiles;
           ensureLogger().info(`Uploaded ${uploadedFiles.length} files`);
-          
         } else if (req.file) {
           // Single file
           const uploaded = await fileHandler.saveUpload(
             req.file.buffer,
             req.file.originalname,
-            { allowedTypes, maxSize }
+            { allowedTypes, maxSize },
           );
-          
+
           req.uploadedFile = {
             ...uploaded,
-            mimetype: req.file.mimetype
+            mimetype: req.file.mimetype,
           };
           ensureLogger().info(`Uploaded file: ${uploaded.filename}`);
         }
-        
+
         next();
       } catch (_error: any) {
-        ensureLogger().error('File processing error:', _error);
+        ensureLogger().error("File processing error:", _error);
         res.status(500).json({
           success: false,
-          error: 'File processing failed',
-          message: _error.message
+          error: "File processing failed",
+          message: _error.message,
         });
       }
     });
@@ -155,7 +158,7 @@ export function createFileUpload(config: FileUploadConfig = {}) {
  */
 export function parseFormData(fields: string[] = []) {
   const upload = multer();
-  return upload.fields(fields.map(field => ({ name: field })));
+  return upload.fields(fields.map((field) => ({ name: field })));
 }
 
 /**
@@ -165,14 +168,14 @@ export function sendFile(filePath: string, filename?: string) {
   return (_req: Request, res: Response) => {
     const resolvedPath = path.resolve(filePath);
     const downloadName = filename || path.basename(filePath);
-    
+
     res.download(resolvedPath, downloadName, (err) => {
       if (err) {
-        ensureLogger().error('Download error:', err);
+        ensureLogger().error("Download error:", err);
         if (!res.headersSent) {
           res.status(404).json({
             success: false,
-            error: 'File not found'
+            error: "File not found",
           });
         }
       }
@@ -184,12 +187,12 @@ export function sendFile(filePath: string, filename?: string) {
  * Express middleware to clean old temp files periodically
  */
 export function createTempCleaner(
-  tempDir: string = './temp',
+  tempDir: string = "./temp",
   maxAge: number = 24 * 60 * 60 * 1000, // 24 hours
-  interval: number = 60 * 60 * 1000 // 1 hour
+  interval: number = 60 * 60 * 1000, // 1 hour
 ) {
-  const fileHandler = new FileHandler('./uploads', tempDir);
-  
+  const fileHandler = new FileHandler("./uploads", tempDir);
+
   // Start periodic cleaning
   setInterval(async () => {
     try {
@@ -198,7 +201,7 @@ export function createTempCleaner(
         ensureLogger().info(`Cleaned ${deleted} old temporary files`);
       }
     } catch (_error: any) {
-      ensureLogger().error('Temp file cleanup error:', _error);
+      ensureLogger().error("Temp file cleanup error:", _error);
     }
   }, interval);
 
@@ -237,5 +240,5 @@ export default {
   createFileUpload,
   parseFormData,
   sendFile,
-  createTempCleaner
+  createTempCleaner,
 };

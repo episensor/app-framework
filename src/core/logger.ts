@@ -3,17 +3,22 @@
  * Provides centralized logging with rotation, compression, and management
  */
 
-import winston, { Logger as WinstonLogger, format, transports } from 'winston';
-import DailyRotateFile from 'winston-daily-rotate-file';
-import path from 'path';
-import fs from 'fs/promises';
-import { createReadStream, createWriteStream, ReadStream, existsSync } from 'fs';
-import { createGzip } from 'zlib';
-import { pipeline } from 'stream/promises';
-import { Request, Response } from 'express';
+import winston, { Logger as WinstonLogger, format, transports } from "winston";
+import DailyRotateFile from "winston-daily-rotate-file";
+import path from "path";
+import fs from "fs/promises";
+import {
+  createReadStream,
+  createWriteStream,
+  ReadStream,
+  existsSync,
+} from "fs";
+import { createGzip } from "zlib";
+import { pipeline } from "stream/promises";
+import { Request, Response } from "express";
 
 // Use process.cwd() based paths for better compatibility
-const getLogsDir = () => path.join(process.cwd(), 'data', 'logs');
+const getLogsDir = () => path.join(process.cwd(), "data", "logs");
 
 interface LogLevels {
   levels: {
@@ -76,17 +81,17 @@ const logLevels: LogLevels = {
     http: 3,
     verbose: 4,
     debug: 5,
-    silly: 6
+    silly: 6,
   },
   colors: {
-    error: 'red',
-    warn: 'yellow',
-    info: 'green',
-    http: 'magenta',
-    verbose: 'cyan',
-    debug: 'blue',
-    silly: 'gray'
-  }
+    error: "red",
+    warn: "yellow",
+    info: "green",
+    http: "magenta",
+    verbose: "cyan",
+    debug: "blue",
+    silly: "gray",
+  },
 };
 
 // Apply colors to winston
@@ -101,8 +106,8 @@ class Logger {
   private initPromise?: Promise<void>;
 
   constructor() {
-    this.logsDir = getLogsDir();  // Now defaults to data/logs
-    this.archiveDir = path.join(this.logsDir, 'archive');
+    this.logsDir = getLogsDir(); // Now defaults to data/logs
+    this.archiveDir = path.join(this.logsDir, "archive");
     this.loggers = new Map();
     this.initialized = false;
     this.messageQueue = [];
@@ -116,7 +121,7 @@ class Logger {
     logsDir?: string;
   }): Promise<void> {
     if (this.initialized) return;
-    
+
     // If already initializing, wait for it
     if (this.initPromise) {
       return this.initPromise;
@@ -141,54 +146,54 @@ class Logger {
 
     // Create log directories
     await this.ensureDirectories();
-    
+
     // Clean up old root-level log files and subdirectories
     await this.cleanupOldLogs();
     await this.cleanupSubdirectories();
-    
+
     // Create default logger with options
-    this.createLogger(options?.appName || 'system', {
-      level: options?.logLevel || 'info',
+    this.createLogger(options?.appName || "system", {
+      level: options?.logLevel || "info",
       console: options?.consoleOutput !== false,
-      file: options?.fileOutput !== false
+      file: options?.fileOutput !== false,
     });
-    
+
     this.initialized = true;
-    
+
     // Process any queued messages after a small delay to ensure transports are ready
     setTimeout(() => this.processMessageQueue(), 100);
   }
 
   private processMessageQueue(): void {
     if (this.messageQueue.length === 0) return;
-    
+
     const messages = [...this.messageQueue];
     this.messageQueue = [];
-    
+
     for (const { name, level, args } of messages) {
       const logger = this.createLogger(name);
       if (logger) {
         // Use a type-safe way to call the logger method
         switch (level) {
-          case 'info':
+          case "info":
             (logger.info as any).apply(logger, args);
             break;
-          case 'error':
+          case "error":
             (logger.error as any).apply(logger, args);
             break;
-          case 'warn':
+          case "warn":
             (logger.warn as any).apply(logger, args);
             break;
-          case 'debug':
+          case "debug":
             (logger.debug as any).apply(logger, args);
             break;
-          case 'verbose':
+          case "verbose":
             (logger.verbose as any).apply(logger, args);
             break;
-          case 'http':
+          case "http":
             (logger.http as any).apply(logger, args);
             break;
-          case 'silly':
+          case "silly":
             (logger.silly as any).apply(logger, args);
             break;
         }
@@ -203,30 +208,35 @@ class Logger {
   /**
    * Get recent log entries from memory or file
    */
-  async getRecentLogs(limit: number = 100, level: string = 'all'): Promise<any[]> {
+  async getRecentLogs(
+    limit: number = 100,
+    level: string = "all",
+  ): Promise<any[]> {
     const logsDir = this.logsDir;
-    
+
     try {
       // Find the most recent log file
       const files = await fs.readdir(logsDir);
-      const logFiles = files.filter(f => f.startsWith('app-') && f.endsWith('.log'));
-      
+      const logFiles = files.filter(
+        (f) => f.startsWith("app-") && f.endsWith(".log"),
+      );
+
       if (logFiles.length === 0) {
         // Fallback to app.log if no dated files exist
-        const fallbackFile = path.join(logsDir, 'app.log');
+        const fallbackFile = path.join(logsDir, "app.log");
         if (!existsSync(fallbackFile)) {
           return [];
         }
-        logFiles.push('app.log');
+        logFiles.push("app.log");
       }
-      
+
       // Sort to get most recent
       logFiles.sort().reverse();
       const logFile = path.join(logsDir, logFiles[0]);
 
-      const content = await fs.readFile(logFile, 'utf-8');
-      const lines = content.split('\n').filter((line: string) => line.trim());
-      
+      const content = await fs.readFile(logFile, "utf-8");
+      const lines = content.split("\n").filter((line: string) => line.trim());
+
       // Parse log lines into structured format
       const logs = lines.map((line: string) => {
         // Try to parse JSON format first
@@ -234,39 +244,42 @@ class Logger {
           const jsonLog = JSON.parse(line);
           return {
             timestamp: jsonLog.timestamp || new Date().toISOString(),
-            level: (jsonLog.level || 'info').toLowerCase(),
+            level: (jsonLog.level || "info").toLowerCase(),
             source: jsonLog.source || jsonLog.service || undefined,
-            message: jsonLog.message || jsonLog.msg || line
+            message: jsonLog.message || jsonLog.msg || line,
           };
         } catch {
           // Try to parse standard text format: [timestamp] [level] [source] message
-          const match = line.match(/\[([\d-T:.Z]+)\]\s*\[(\w+)\]\s*(?:\[([^\]]+)\])?\s*(.*)/);
+          const match = line.match(
+            /\[([\d-T:.Z]+)\]\s*\[(\w+)\]\s*(?:\[([^\]]+)\])?\s*(.*)/,
+          );
           if (match) {
             return {
               timestamp: match[1],
               level: match[2].toLowerCase(),
               source: match[3] || undefined,
-              message: match[4]
+              message: match[4],
             };
           }
           // Fallback for non-standard format
           return {
             timestamp: new Date().toISOString(),
-            level: 'info',
-            message: line
+            level: "info",
+            message: line,
           };
         }
       });
 
       // Filter by level if specified
-      const filtered = level === 'all' 
-        ? logs 
-        : logs.filter((log: any) => log.level === level.toLowerCase());
+      const filtered =
+        level === "all"
+          ? logs
+          : logs.filter((log: any) => log.level === level.toLowerCase());
 
       // Return most recent entries, newest first
       return filtered.slice(-limit).reverse();
     } catch (_error) {
-      console.error('Failed to read logs:', _error);
+      console.error("Failed to read logs:", _error);
       return [];
     }
   }
@@ -276,18 +289,18 @@ class Logger {
    */
   async clearLogs(): Promise<void> {
     const logsDir = this.logsDir;
-    
+
     try {
       if (existsSync(logsDir)) {
         const files = await fs.readdir(logsDir);
         for (const file of files) {
-          if (file.endsWith('.log') || file.endsWith('.txt')) {
+          if (file.endsWith(".log") || file.endsWith(".txt")) {
             await fs.unlink(path.join(logsDir, file));
           }
         }
       }
     } catch (_error) {
-      console.error('Failed to clear logs:', _error);
+      console.error("Failed to clear logs:", _error);
       throw _error;
     }
   }
@@ -296,7 +309,7 @@ class Logger {
     // Return a smart proxy that handles both pre and post initialization
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
-    
+
     const logMethod = (level: string) => {
       return (...args: any[]) => {
         if (self.initialized) {
@@ -304,49 +317,59 @@ class Logger {
           const logger = self.createLogger(name);
           if (logger) {
             const method = (logger as any)[level];
-            if (typeof method === 'function') {
+            if (typeof method === "function") {
               method.apply(logger, args);
             }
           }
         } else {
           // Log to console immediately
-          const prefix = level === 'error' ? `[${name} ERROR]` : 
-                         level === 'warn' ? `[${name} WARN]` : 
-                         level === 'debug' ? `[${name} DEBUG]` : 
-                         `[${name}]`;
-          const consoleFn = level === 'error' ? console.error :
-                           level === 'warn' ? console.warn :
-                           level === 'debug' ? console.debug :
-                           console.log;
+          const prefix =
+            level === "error"
+              ? `[${name} ERROR]`
+              : level === "warn"
+                ? `[${name} WARN]`
+                : level === "debug"
+                  ? `[${name} DEBUG]`
+                  : `[${name}]`;
+          const consoleFn =
+            level === "error"
+              ? console.error
+              : level === "warn"
+                ? console.warn
+                : level === "debug"
+                  ? console.debug
+                  : console.log;
           consoleFn(prefix, ...args);
-          
+
           // Queue for file logging
           self.messageQueue.push({ name, level, args });
-          
+
           // Trigger initialization if not already started
           if (!self.initPromise) {
-            self.initialize({
-              appName: 'app',
-              logLevel: process.env.LOG_LEVEL || 'info',
-              consoleOutput: true,
-              fileOutput: true,
-              logsDir: path.join(process.cwd(), 'data', 'logs')
-            }).catch(err => {
-              console.error('[Logger] Failed to initialize:', err);
-            });
+            self
+              .initialize({
+                appName: "app",
+                logLevel: process.env.LOG_LEVEL || "info",
+                consoleOutput: true,
+                fileOutput: true,
+                logsDir: path.join(process.cwd(), "data", "logs"),
+              })
+              .catch((err) => {
+                console.error("[Logger] Failed to initialize:", err);
+              });
           }
         }
       };
     };
-    
+
     return {
-      info: logMethod('info'),
-      error: logMethod('error'),
-      warn: logMethod('warn'),
-      debug: logMethod('debug'),
-      verbose: logMethod('verbose'),
-      http: logMethod('http'),
-      silly: logMethod('silly')
+      info: logMethod("info"),
+      error: logMethod("error"),
+      warn: logMethod("warn"),
+      debug: logMethod("debug"),
+      verbose: logMethod("verbose"),
+      http: logMethod("http"),
+      silly: logMethod("silly"),
     };
   }
 
@@ -356,7 +379,7 @@ class Logger {
       await fs.mkdir(this.logsDir, { recursive: true });
       await fs.mkdir(this.archiveDir, { recursive: true });
     } catch (_error) {
-      console.error('Failed to create log directories:', _error);
+      console.error("Failed to create log directories:", _error);
     }
   }
 
@@ -366,13 +389,13 @@ class Logger {
   private async cleanupSubdirectories(): Promise<void> {
     try {
       const items = await fs.readdir(this.logsDir);
-      
+
       for (const item of items) {
-        if (item === 'archive') continue; // Keep archive directory
-        
+        if (item === "archive") continue; // Keep archive directory
+
         const itemPath = path.join(this.logsDir, item);
         const stat = await fs.stat(itemPath);
-        
+
         if (stat.isDirectory()) {
           // Remove empty subdirectories
           try {
@@ -393,19 +416,19 @@ class Logger {
 
   private async cleanupOldLogs(): Promise<void> {
     const rootDir = process.cwd();
-    const topLevelLogsDir = path.join(rootDir, 'logs');
-    
+    const topLevelLogsDir = path.join(rootDir, "logs");
+
     // Check if there's a top-level logs directory
     if (existsSync(topLevelLogsDir)) {
       try {
         // Move any log files to data/logs
         const files = await fs.readdir(topLevelLogsDir);
-        
+
         for (const file of files) {
-          if (file.endsWith('.log') || file.endsWith('.txt')) {
+          if (file.endsWith(".log") || file.endsWith(".txt")) {
             const oldPath = path.join(topLevelLogsDir, file);
             const newPath = path.join(this.logsDir, file);
-            
+
             try {
               await fs.rename(oldPath, newPath);
               console.log(`Moved log file from /logs to /data/logs: ${file}`);
@@ -414,17 +437,20 @@ class Logger {
             }
           }
         }
-        
+
         // Remove top-level logs directory if empty
         const remainingFiles = await fs.readdir(topLevelLogsDir);
-        const hasOnlyDsStore = remainingFiles.length === 1 && remainingFiles[0] === '.DS_Store';
-        
+        const hasOnlyDsStore =
+          remainingFiles.length === 1 && remainingFiles[0] === ".DS_Store";
+
         if (remainingFiles.length === 0 || hasOnlyDsStore) {
           if (hasOnlyDsStore) {
-            await fs.unlink(path.join(topLevelLogsDir, '.DS_Store')).catch(() => {});
+            await fs
+              .unlink(path.join(topLevelLogsDir, ".DS_Store"))
+              .catch(() => {});
           }
           await fs.rmdir(topLevelLogsDir);
-          console.log('Removed empty top-level logs directory');
+          console.log("Removed empty top-level logs directory");
         }
       } catch (_error) {
         // Directory might not exist or already cleaned
@@ -432,67 +458,81 @@ class Logger {
     }
   }
 
-  createLogger(category: string = 'general', options: LoggerOptions = {}): ExtendedWinstonLogger {
+  createLogger(
+    category: string = "general",
+    options: LoggerOptions = {},
+  ): ExtendedWinstonLogger {
     const loggerKey = `${category}-${JSON.stringify(options)}`;
-    
+
     if (this.loggers.has(loggerKey)) {
       return this.loggers.get(loggerKey)!;
     }
 
     // Use flat structure - all logs in data/logs directly
     const logDir = this.logsDir;
-    const level = options.level || process.env.LOG_LEVEL || 'info';
+    const level = options.level || process.env.LOG_LEVEL || "info";
 
     // Console format with colors - no JSON output
     const consoleFormat = format.combine(
-      format.timestamp({ format: 'HH:mm:ss.SSS' }),
+      format.timestamp({ format: "HH:mm:ss.SSS" }),
       format.colorize(),
       format.printf(({ timestamp, level, message, source, ...meta }) => {
         // Extract commonly used metadata
-        const sourceStr = source ? ` [${source}]` : '';
-        
+        const sourceStr = source ? ` [${source}]` : "";
+
         // For errors, show the error message inline
-        if (meta.error && typeof meta.error === 'string') {
+        if (meta.error && typeof meta.error === "string") {
           return `[${timestamp}] ${level}:${sourceStr} ${message}: ${meta.error}`;
         }
-        
+
         // For other metadata, format key fields inline (no JSON)
         const importantMeta = [];
-        
+
         // Handle all common metadata fields
         for (const [key, value] of Object.entries(meta)) {
           // Skip internal winston fields and stack traces
-          if (key === 'stack' || key === 'timestamp' || key === 'level' || key === 'message') continue;
-          
+          if (
+            key === "stack" ||
+            key === "timestamp" ||
+            key === "level" ||
+            key === "message"
+          )
+            continue;
+
           // Format the value appropriately
           if (value !== undefined && value !== null) {
             importantMeta.push(`${key}=${value}`);
           }
         }
-        
-        const metaStr = importantMeta.length > 0 ? ` (${importantMeta.join(', ')})` : '';
-        
+
+        const metaStr =
+          importantMeta.length > 0 ? ` (${importantMeta.join(", ")})` : "";
+
         return `[${timestamp}] ${level}:${sourceStr} ${message}${metaStr}`;
-      })
+      }),
     );
 
     // File format (structured JSON for machine parsing)
     const fileFormat = format.combine(
-      format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
+      format.timestamp({ format: "YYYY-MM-DD HH:mm:ss.SSS" }),
       format.errors({ stack: true }),
-      format.json()
+      format.json(),
     );
 
     // Create transports
     const logTransports: any[] = [];
 
     // Console transport
-    if (options.console !== false && (process.env.NODE_ENV !== 'production' || process.env.LOG_TO_CONSOLE === 'true')) {
+    if (
+      options.console !== false &&
+      (process.env.NODE_ENV !== "production" ||
+        process.env.LOG_TO_CONSOLE === "true")
+    ) {
       logTransports.push(
         new transports.Console({
           format: consoleFormat,
-          level: level
-        })
+          level: level,
+        }),
       );
     }
 
@@ -501,29 +541,29 @@ class Logger {
       // Daily rotating file transport for all logs
       logTransports.push(
         new DailyRotateFile({
-          filename: path.join(logDir, 'app-%DATE%.log'),
-          datePattern: 'YYYY-MM-DD',
+          filename: path.join(logDir, "app-%DATE%.log"),
+          datePattern: "YYYY-MM-DD",
           zippedArchive: options.compress !== false,
-          maxSize: options.maxSize || '20m',
-          maxFiles: options.maxFiles || '14d',
+          maxSize: options.maxSize || "20m",
+          maxFiles: options.maxFiles || "14d",
           format: fileFormat,
           level: level,
-          auditFile: path.join(logDir, '.app-audit.json')
-        })
+          auditFile: path.join(logDir, ".app-audit.json"),
+        }),
       );
 
       // Separate error log file
       logTransports.push(
         new DailyRotateFile({
-          filename: path.join(logDir, 'error-%DATE%.log'),
-          datePattern: 'YYYY-MM-DD',
+          filename: path.join(logDir, "error-%DATE%.log"),
+          datePattern: "YYYY-MM-DD",
           zippedArchive: options.compress !== false,
-          maxSize: options.maxSize || '20m',
-          maxFiles: '30d',
+          maxSize: options.maxSize || "20m",
+          maxFiles: "30d",
           format: fileFormat,
-          level: 'error',
-          auditFile: path.join(logDir, '.error-audit.json')
-        })
+          level: "error",
+          auditFile: path.join(logDir, ".error-audit.json"),
+        }),
       );
     }
 
@@ -532,32 +572,40 @@ class Logger {
       levels: logLevels.levels,
       transports: logTransports,
       exitOnError: false,
-      defaultMeta: { source: category }
+      defaultMeta: { source: category },
     }) as ExtendedWinstonLogger;
 
     // Add convenience methods
-    logger.logRequest = (req: Request, res: Response, duration: number): void => {
+    logger.logRequest = (
+      req: Request,
+      res: Response,
+      duration: number,
+    ): void => {
       const logData = {
         method: req.method,
         url: req.url,
         status: res.statusCode,
         duration: `${duration}ms`,
         ip: req.ip,
-        userAgent: req.get('user-agent')
+        userAgent: req.get("user-agent"),
       };
-      
+
       if (res.statusCode >= 400) {
-        logger.error('Request failed', logData);
+        logger.error("Request failed", logData);
       } else {
-        logger.http('Request completed', logData);
+        logger.http("Request completed", logData);
       }
     };
 
-    logger.logSimulator = (simulatorId: string, action: string, data: any = {}): void => {
+    logger.logSimulator = (
+      simulatorId: string,
+      action: string,
+      data: any = {},
+    ): void => {
       logger.info(`Simulator ${action}`, {
         simulatorId,
         action,
-        ...data
+        ...data,
       });
     };
 
@@ -565,7 +613,7 @@ class Logger {
       logger.error(error.message, {
         stack: error.stack,
         name: error.name,
-        ...context
+        ...context,
       });
     };
 
@@ -579,31 +627,31 @@ class Logger {
       fileCount: 0,
       files: [],
       oldestLog: undefined,
-      newestLog: undefined
+      newestLog: undefined,
     };
 
     try {
       const files = await fs.readdir(this.logsDir);
-      
+
       for (const file of files) {
         // Skip directories and non-log files
-        if (file === 'archive' || file.startsWith('.')) continue;
-        
+        if (file === "archive" || file.startsWith(".")) continue;
+
         const filePath = path.join(this.logsDir, file);
         const stat = await fs.stat(filePath);
-        
-        if (stat.isFile() && (file.endsWith('.log') || file.endsWith('.gz'))) {
+
+        if (stat.isFile() && (file.endsWith(".log") || file.endsWith(".gz"))) {
           const fileInfo: LogFileInfo = {
             name: file,
             size: stat.size,
             modified: stat.mtime,
-            compressed: file.endsWith('.gz')
+            compressed: file.endsWith(".gz"),
           };
-          
+
           stats.files.push(fileInfo);
           stats.totalSize += stat.size;
           stats.fileCount++;
-          
+
           // Track oldest and newest
           if (!stats.oldestLog || stat.mtime < stats.oldestLog) {
             stats.oldestLog = stat.mtime;
@@ -613,11 +661,11 @@ class Logger {
           }
         }
       }
-      
+
       // Sort files by date (newest first)
       stats.files.sort((a, b) => b.modified.getTime() - a.modified.getTime());
     } catch (_error) {
-      console.error('Failed to get log stats:', _error);
+      console.error("Failed to get log stats:", _error);
     }
 
     return stats;
@@ -629,23 +677,23 @@ class Logger {
 
     try {
       const files = await fs.readdir(this.logsDir);
-      
+
       for (const file of files) {
-        if (file === 'archive' || file.startsWith('.')) continue;
-        
+        if (file === "archive" || file.startsWith(".")) continue;
+
         const filePath = path.join(this.logsDir, file);
         const stat = await fs.stat(filePath);
-        
+
         if (stat.isFile() && stat.mtime < cutoffDate) {
           const archivePath = path.join(this.archiveDir, file);
-          
-          if (file.endsWith('.log')) {
+
+          if (file.endsWith(".log")) {
             // Compress before archiving
             const gzipPath = `${archivePath}.gz`;
             const source = createReadStream(filePath);
             const destination = createWriteStream(gzipPath);
             const gzip = createGzip();
-            
+
             await pipeline(source, gzip, destination);
             await fs.unlink(filePath);
           } else {
@@ -655,7 +703,7 @@ class Logger {
         }
       }
     } catch (_error) {
-      console.error('Failed to archive logs:', _error);
+      console.error("Failed to archive logs:", _error);
     }
   }
 
@@ -668,7 +716,7 @@ class Logger {
     if (existsSync(logPath)) {
       return createReadStream(logPath);
     }
-    
+
     // Check in archive
     if (existsSync(archivePath)) {
       return createReadStream(archivePath);
@@ -682,48 +730,50 @@ class Logger {
    */
   async compactLogs(daysToKeep: number = 7): Promise<LogStats> {
     await this.ensureDirectories();
-    
+
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
-    
+
     let archivedCount = 0;
     let totalSize = 0;
-    
+
     try {
       const files = await fs.readdir(this.logsDir);
-      
+
       for (const file of files) {
-        if (!file.endsWith('.log')) continue;
-        
+        if (!file.endsWith(".log")) continue;
+
         const filePath = path.join(this.logsDir, file);
         const stats = await fs.stat(filePath);
-        
+
         if (stats.mtime < cutoffDate) {
           // Archive the file
           const archivePath = path.join(this.archiveDir, `${file}.gz`);
-          
+
           await pipeline(
             createReadStream(filePath),
             createGzip({ level: 9 }),
-            createWriteStream(archivePath)
+            createWriteStream(archivePath),
           );
-          
+
           await fs.unlink(filePath);
           archivedCount++;
           totalSize += stats.size;
         }
       }
-      
+
       // Get updated stats
       const updatedStats = await this.getLogStats();
-      
-      const appLogger = this.createLogger('system');
-      appLogger.info(`Compacted ${archivedCount} log files (${totalSize} bytes)`);
-      
+
+      const appLogger = this.createLogger("system");
+      appLogger.info(
+        `Compacted ${archivedCount} log files (${totalSize} bytes)`,
+      );
+
       return updatedStats;
     } catch (_error) {
-      const appLogger = this.createLogger('system');
-      appLogger.error('Failed to compact logs:', _error);
+      const appLogger = this.createLogger("system");
+      appLogger.error("Failed to compact logs:", _error);
       throw _error;
     }
   }
@@ -733,19 +783,19 @@ class Logger {
    */
   async cleanupZeroFiles(): Promise<{ removed: number }> {
     await this.ensureDirectories();
-    
+
     let removed = 0;
     const directories = [this.logsDir, this.archiveDir];
-    
+
     for (const dir of directories) {
       try {
         const files = await fs.readdir(dir);
-        
+
         for (const file of files) {
-          if (file.endsWith('.gz') || file.endsWith('.log')) {
+          if (file.endsWith(".gz") || file.endsWith(".log")) {
             const filePath = path.join(dir, file);
             const stats = await fs.stat(filePath);
-            
+
             if (stats.size === 0) {
               await fs.unlink(filePath);
               removed++;
@@ -753,14 +803,14 @@ class Logger {
           }
         }
       } catch (_error) {
-        const appLogger = this.createLogger('system');
+        const appLogger = this.createLogger("system");
         appLogger.warn(`Failed to clean directory ${dir}:`, _error);
       }
     }
-    
-    const appLogger = this.createLogger('system');
+
+    const appLogger = this.createLogger("system");
     appLogger.info(`Cleaned up ${removed} zero-length files`);
-    
+
     return { removed };
   }
 
@@ -770,13 +820,13 @@ class Logger {
   async purgeAllLogs(): Promise<void> {
     const removeRecursive = async (dirPath: string) => {
       if (!existsSync(dirPath)) return;
-      
+
       const entries = await fs.readdir(dirPath);
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dirPath, entry);
         const stats = await fs.stat(fullPath);
-        
+
         if (stats.isDirectory()) {
           await removeRecursive(fullPath);
           await fs.rmdir(fullPath);
@@ -785,113 +835,121 @@ class Logger {
         }
       }
     };
-    
+
     await removeRecursive(this.logsDir);
-    
+
     // Recreate directories
     await this.ensureDirectories();
-    
-    const appLogger = this.createLogger('system');
-    appLogger.warn('All logs have been purged');
+
+    const appLogger = this.createLogger("system");
+    appLogger.warn("All logs have been purged");
   }
 
   /**
    * Export logs in various formats
    */
-  async exportLogs(options: {
-    level?: string;
-    format?: 'txt' | 'json' | 'csv';
-    startDate?: Date;
-    endDate?: Date;
-  } = {}): Promise<string> {
-    const { 
-      level = 'all',
-      format = 'txt',
-      startDate,
-      endDate 
-    } = options;
-    
-    const currentLogFile = path.join(this.logsDir, `app-${new Date().toISOString().split('T')[0]}.log`);
-    
+  async exportLogs(
+    options: {
+      level?: string;
+      format?: "txt" | "json" | "csv";
+      startDate?: Date;
+      endDate?: Date;
+    } = {},
+  ): Promise<string> {
+    const { level = "all", format = "txt", startDate, endDate } = options;
+
+    const currentLogFile = path.join(
+      this.logsDir,
+      `app-${new Date().toISOString().split("T")[0]}.log`,
+    );
+
     if (!existsSync(currentLogFile)) {
-      throw new Error('No logs found for export');
+      throw new Error("No logs found for export");
     }
-    
-    const content = await fs.readFile(currentLogFile, 'utf8');
-    const lines = content.split('\n').filter(line => line.trim());
-    
+
+    const content = await fs.readFile(currentLogFile, "utf8");
+    const lines = content.split("\n").filter((line) => line.trim());
+
     // Filter by level if specified
     let filteredLines = lines;
-    if (level !== 'all') {
+    if (level !== "all") {
       const levelUpper = level.toUpperCase();
-      filteredLines = lines.filter(line => 
-        line.includes(`[${levelUpper}]`) || 
-        line.includes(` ${levelUpper} `)
+      filteredLines = lines.filter(
+        (line) =>
+          line.includes(`[${levelUpper}]`) || line.includes(` ${levelUpper} `),
       );
     }
-    
+
     // Filter by date range if specified
     if (startDate || endDate) {
-      filteredLines = filteredLines.filter(line => {
-        const timestampMatch = line.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+      filteredLines = filteredLines.filter((line) => {
+        const timestampMatch = line.match(
+          /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/,
+        );
         if (!timestampMatch) return true;
-        
+
         const lineDate = new Date(timestampMatch[0]);
         if (startDate && lineDate < startDate) return false;
         if (endDate && lineDate > endDate) return false;
-        
+
         return true;
       });
     }
-    
+
     // Format output based on requested format
     switch (format) {
-      case 'json': {
-        const entries = filteredLines.map(line => {
+      case "json": {
+        const entries = filteredLines.map((line) => {
           try {
             // Try to parse as JSON first
-            if (line.trim().startsWith('{')) {
+            if (line.trim().startsWith("{")) {
               return JSON.parse(line);
             }
-            
+
             // Parse text format
-            const match = line.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+\[(\w+)\]\s+(?:\[([^\]]+)\]\s+)?(.*)$/);
+            const match = line.match(
+              /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+\[(\w+)\]\s+(?:\[([^\]]+)\]\s+)?(.*)$/,
+            );
             if (match) {
               const [, timestamp, level, category, message] = match;
               return {
                 timestamp,
                 level: level.toLowerCase(),
-                category: category || 'general',
-                message
+                category: category || "general",
+                message,
               };
             }
-            
+
             return { message: line };
           } catch {
             return { message: line };
           }
         });
-        
+
         return JSON.stringify(entries, null, 2);
       }
-      
-      case 'csv': {
-        const csv = ['Timestamp,Level,Category,Message'];
-        
-        filteredLines.forEach(line => {
-          const match = line.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+\[(\w+)\]\s+(?:\[([^\]]+)\]\s+)?(.*)$/);
+
+      case "csv": {
+        const csv = ["Timestamp,Level,Category,Message"];
+
+        filteredLines.forEach((line) => {
+          const match = line.match(
+            /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+\[(\w+)\]\s+(?:\[([^\]]+)\]\s+)?(.*)$/,
+          );
           if (match) {
             const [, timestamp, level, category, message] = match;
-            csv.push(`"${timestamp}","${level}","${category || ''}","${message.replace(/"/g, '""')}"`);
+            csv.push(
+              `"${timestamp}","${level}","${category || ""}","${message.replace(/"/g, '""')}"`,
+            );
           }
         });
-        
-        return csv.join('\n');
+
+        return csv.join("\n");
       }
-      
-      case 'txt':
+
+      case "txt":
       default:
-        return filteredLines.join('\n');
+        return filteredLines.join("\n");
     }
   }
 
@@ -900,24 +958,24 @@ class Logger {
    */
   async getAllLogFiles(): Promise<LogFileInfo[]> {
     const files: LogFileInfo[] = [];
-    
+
     // Get files from logs directory
     if (existsSync(this.logsDir)) {
       const logFiles = await fs.readdir(this.logsDir);
       for (const file of logFiles) {
-        if (file.startsWith('app-') || file.startsWith('error-')) {
+        if (file.startsWith("app-") || file.startsWith("error-")) {
           const fullPath = path.join(this.logsDir, file);
           const stats = await fs.stat(fullPath);
           files.push({
             name: file,
             size: stats.size,
             modified: stats.mtime,
-            compressed: false
+            compressed: false,
           });
         }
       }
     }
-    
+
     // Get files from archive directory
     if (existsSync(this.archiveDir)) {
       const archiveFiles = await fs.readdir(this.archiveDir);
@@ -928,14 +986,14 @@ class Logger {
           name: `archive/${file}`,
           size: stats.size,
           modified: stats.mtime,
-          compressed: file.endsWith('.gz')
+          compressed: file.endsWith(".gz"),
         });
       }
     }
-    
+
     // Sort by modified date (newest first)
     files.sort((a, b) => b.modified.getTime() - a.modified.getTime());
-    
+
     return files;
   }
 
@@ -952,7 +1010,7 @@ const logger = new Logger();
 
 export function createLogger(name?: string): any {
   if (!name) {
-    return logger.child('App');
+    return logger.child("App");
   }
   return logger.child(name);
 }
@@ -963,8 +1021,8 @@ export function initializeLogger(options?: any): Promise<void> {
 
 export function configureLogging(options?: any): void {
   // For backward compatibility - just trigger initialization
-  logger.initialize(options).catch(err => {
-    console.error('Failed to configure logging:', err);
+  logger.initialize(options).catch((err) => {
+    console.error("Failed to configure logging:", err);
   });
 }
 
@@ -976,11 +1034,16 @@ export async function archiveLogs(olderThanDays?: number): Promise<void> {
   return logger.archiveLogs(olderThanDays);
 }
 
-export async function downloadLogFile(filename: string): Promise<ReadStream | null> {
+export async function downloadLogFile(
+  filename: string,
+): Promise<ReadStream | null> {
   return logger.downloadLogFile(filename);
 }
 
-export async function getRecentLogs(limit?: number, level?: string): Promise<any[]> {
+export async function getRecentLogs(
+  limit?: number,
+  level?: string,
+): Promise<any[]> {
   return logger.getRecentLogs(limit, level);
 }
 

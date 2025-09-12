@@ -1,19 +1,19 @@
 /**
  * Core Framework Components
- * 
+ *
  * These are generic, reusable components that could be extracted
  * into a separate npm package for use in other applications.
  */
 
 // Framework version
-export const FRAMEWORK_VERSION = '3.1.0';
+export const FRAMEWORK_VERSION = "3.1.0";
 
 // Process Management
-export { StandardServer, createStandardServer } from './StandardServer.js';
-export type { StandardServerConfig } from './StandardServer.js';
-export { 
-  clearPort, 
-  isPortAvailable, 
+export { StandardServer, createStandardServer } from "./StandardServer.js";
+export type { StandardServerConfig } from "./StandardServer.js";
+export {
+  clearPort,
+  isPortAvailable,
   getPortInfo,
   getProcessOnPort,
   findAvailablePort,
@@ -24,17 +24,17 @@ export {
   type ProcessInfo,
   type PortStatus,
   type PortClearResult,
-  type PortStatusResult
-} from './portUtils.js';
+  type PortStatusResult,
+} from "./portUtils.js";
 
 // Logging - Consolidated logger implementation
-export { 
+export {
   getLogger,
   default as Logger,
-  createLogger as createLoggerBase
-} from './logger.js';
+  createLogger as createLoggerBase,
+} from "./logger.js";
 
-import { createLogger as createLoggerImport } from './logger.js';
+import { createLogger as createLoggerImport } from "./logger.js";
 
 /**
  * Create a logger instance with automatic file output
@@ -54,21 +54,21 @@ export interface Logger {
   debug: (...args: any[]) => void;
 }
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = "debug" | "info" | "warn" | "error";
 
 // Security
-export { 
+export {
   getStorageService,
   StorageService,
   getSecureFileHandler,
-  SecureFileHandler 
-} from './storageService.js';
+  SecureFileHandler,
+} from "./storageService.js";
 
 /**
  * Usage Example:
- * 
+ *
  * import { StandardServer, createLogger } from '@/core';
- * 
+ *
  * const logger = createLogger('MyApp');
  * const server = new StandardServer({
  *   appName: 'MyApp',

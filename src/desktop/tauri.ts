@@ -3,13 +3,13 @@
  * Provides utilities for integrating Node.js backends with Tauri desktop apps
  */
 
-import { spawn, ChildProcess } from 'child_process';
-import path from 'path';
-import fs from 'fs-extra';
-import { createLogger } from '../core/index.js';
-import net from 'net';
+import { spawn, ChildProcess } from "child_process";
+import path from "path";
+import fs from "fs-extra";
+import { createLogger } from "../core/index.js";
+import net from "net";
 
-const logger = createLogger('TauriIntegration');
+const logger = createLogger("TauriIntegration");
 
 export interface BackendConfig {
   executable: string;
@@ -31,10 +31,10 @@ export class BackendManager {
 
   constructor(config: BackendConfig) {
     this.config = {
-      host: '127.0.0.1',
-      healthEndpoint: '/health',
+      host: "127.0.0.1",
+      healthEndpoint: "/health",
       startupTimeout: 30000,
-      ...config
+      ...config,
     };
   }
 
@@ -43,30 +43,30 @@ export class BackendManager {
    */
   async start(): Promise<void> {
     if (this.isRunning) {
-      logger.warn('Backend is already running');
+      logger.warn("Backend is already running");
       return;
     }
 
-    logger.info('Starting backend process...');
+    logger.info("Starting backend process...");
 
     return new Promise((resolve, reject) => {
       const env = {
         ...process.env,
-        NODE_ENV: 'production',
-        DESKTOP_MODE: 'true',
+        NODE_ENV: "production",
+        DESKTOP_MODE: "true",
         PORT: String(this.config.port),
         HOST: this.config.host,
-        ...this.config.env
+        ...this.config.env,
       };
 
       this.process = spawn(this.config.executable, this.config.args || [], {
         env,
         cwd: this.config.cwd,
-        stdio: ['ignore', 'pipe', 'pipe']
+        stdio: ["ignore", "pipe", "pipe"],
       });
 
       // Handle stdout
-      this.process.stdout?.on('data', (data) => {
+      this.process.stdout?.on("data", (data) => {
         const message = data.toString().trim();
         if (message) {
           logger.info(`Backend: ${message}`);
@@ -74,15 +74,15 @@ export class BackendManager {
       });
 
       // Handle stderr
-      this.process.stderr?.on('data', (data) => {
+      this.process.stderr?.on("data", (data) => {
         const message = data.toString().trim();
-        if (message && !message.includes('DEBUG')) {
+        if (message && !message.includes("DEBUG")) {
           logger.error(`Backend Error: ${message}`);
         }
       });
 
       // Handle process exit
-      this.process.on('exit', (code) => {
+      this.process.on("exit", (code) => {
         this.isRunning = false;
         if (code !== 0) {
           logger.error(`Backend exited with code ${code}`);
@@ -91,9 +91,9 @@ export class BackendManager {
       });
 
       // Handle process error
-      this.process.on('error', (error) => {
+      this.process.on("error", (error) => {
         this.isRunning = false;
-        logger.error('Failed to start backend:', error);
+        logger.error("Failed to start backend:", error);
         reject(error);
       });
 
@@ -102,7 +102,7 @@ export class BackendManager {
         .then(() => {
           this.isRunning = true;
           this.restartAttempts = 0;
-          logger.info('Backend started successfully');
+          logger.info("Backend started successfully");
           resolve();
         })
         .catch(reject);
@@ -117,7 +117,7 @@ export class BackendManager {
       return;
     }
 
-    logger.info('Stopping backend process...');
+    logger.info("Stopping backend process...");
 
     return new Promise((resolve) => {
       if (!this.process) {
@@ -125,20 +125,20 @@ export class BackendManager {
         return;
       }
 
-      this.process.once('exit', () => {
+      this.process.once("exit", () => {
         this.isRunning = false;
         this.process = null;
-        logger.info('Backend stopped');
+        logger.info("Backend stopped");
         resolve();
       });
 
       // Try graceful shutdown first
-      this.process.kill('SIGTERM');
+      this.process.kill("SIGTERM");
 
       // Force kill after timeout
       setTimeout(() => {
         if (this.process) {
-          this.process.kill('SIGKILL');
+          this.process.kill("SIGKILL");
         }
       }, 5000);
     });
@@ -181,7 +181,7 @@ export class BackendManager {
       }
 
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
     throw new Error(`Backend failed to start within ${timeout}ms`);
@@ -193,17 +193,17 @@ export class BackendManager {
   private isPortOpen(port: number): Promise<boolean> {
     return new Promise((resolve) => {
       const socket = new net.Socket();
-      
-      socket.once('connect', () => {
+
+      socket.once("connect", () => {
         socket.destroy();
         resolve(true);
       });
 
-      socket.once('error', () => {
+      socket.once("error", () => {
         resolve(false);
       });
 
-      socket.connect(port, this.config.host || '127.0.0.1');
+      socket.connect(port, this.config.host || "127.0.0.1");
     });
   }
 
@@ -212,16 +212,20 @@ export class BackendManager {
    */
   private async handleCrash(): Promise<void> {
     if (this.restartAttempts >= this.maxRestartAttempts) {
-      logger.error('Max restart attempts reached. Backend will not be restarted.');
+      logger.error(
+        "Max restart attempts reached. Backend will not be restarted.",
+      );
       return;
     }
 
     this.restartAttempts++;
-    logger.info(`Attempting to restart backend (attempt ${this.restartAttempts}/${this.maxRestartAttempts})...`);
+    logger.info(
+      `Attempting to restart backend (attempt ${this.restartAttempts}/${this.maxRestartAttempts})...`,
+    );
 
     setTimeout(() => {
       this.start().catch((_error) => {
-        logger.error('Failed to restart backend:', _error);
+        logger.error("Failed to restart backend:", _error);
       });
     }, 2000 * this.restartAttempts); // Exponential backoff
   }
@@ -232,7 +236,7 @@ export class BackendManager {
   getProcessInfo(): { pid?: number; isRunning: boolean } {
     return {
       pid: this.process?.pid,
-      isRunning: this.isRunning
+      isRunning: this.isRunning,
     };
   }
 }
@@ -289,15 +293,20 @@ export class AppDataManager {
    */
   private getDataDirectory(): string {
     const platform = process.platform;
-    const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+    const homeDir = process.env.HOME || process.env.USERPROFILE || "";
 
     switch (platform) {
-      case 'darwin':
-        return path.join(homeDir, 'Library', 'Application Support', this.appName);
-      case 'win32':
-        return path.join(process.env.APPDATA || '', this.appName);
-      case 'linux':
-        return path.join(homeDir, '.config', this.appName);
+      case "darwin":
+        return path.join(
+          homeDir,
+          "Library",
+          "Application Support",
+          this.appName,
+        );
+      case "win32":
+        return path.join(process.env.APPDATA || "", this.appName);
+      case "linux":
+        return path.join(homeDir, ".config", this.appName);
       default:
         return path.join(homeDir, `.${this.appName}`);
     }
@@ -403,7 +412,7 @@ export class AutoUpdater {
   async checkForUpdates(): Promise<{ available: boolean; version?: string }> {
     try {
       const response = await fetch(this.updateUrl);
-      const data = await response.json() as { version?: string };
+      const data = (await response.json()) as { version?: string };
 
       if (data.version && data.version !== this.currentVersion) {
         logger.info(`Update available: ${data.version}`);
@@ -412,7 +421,7 @@ export class AutoUpdater {
 
       return { available: false };
     } catch (_error) {
-      logger.error('Failed to check for updates:', _error);
+      logger.error("Failed to check for updates:", _error);
       return { available: false };
     }
   }
@@ -433,7 +442,7 @@ export class AutoUpdater {
  */
 export class WindowStateManager {
   private appData: AppDataManager;
-  private stateFile: string = 'window-state.json';
+  private stateFile: string = "window-state.json";
 
   constructor(appName: string) {
     this.appData = new AppDataManager(appName);
@@ -473,5 +482,5 @@ export default {
   IPCBridge,
   AppDataManager,
   AutoUpdater,
-  WindowStateManager
+  WindowStateManager,
 };

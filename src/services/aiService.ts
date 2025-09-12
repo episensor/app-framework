@@ -3,11 +3,11 @@
  * Provides a unified interface for OpenAI, Claude, and other AI services
  */
 
-import { EventEmitter } from 'events';
-import { createLogger } from '../core/index.js';
-import { getStorageService } from '../core/storageService.js';
-import OpenAI from 'openai';
-import * as crypto from 'node:crypto';
+import { EventEmitter } from "events";
+import { createLogger } from "../core/index.js";
+import { getStorageService } from "../core/storageService.js";
+import OpenAI from "openai";
+import * as crypto from "node:crypto";
 
 /**
  * Custom AI Error class that preserves structured error information
@@ -16,10 +16,15 @@ export class AIError extends Error {
   public statusCode: number;
   public errorType: string;
   public provider: string;
-  
-  constructor(message: string, statusCode: number = 500, errorType: string = 'AI_ERROR', provider: string = 'unknown') {
+
+  constructor(
+    message: string,
+    statusCode: number = 500,
+    errorType: string = "AI_ERROR",
+    provider: string = "unknown",
+  ) {
     super(message);
-    this.name = 'AIError';
+    this.name = "AIError";
     this.statusCode = statusCode;
     this.errorType = errorType;
     this.provider = provider;
@@ -79,13 +84,13 @@ let logger: any; // Will be initialized when needed
 
 function ensureLogger() {
   if (!logger) {
-    logger = createLogger('AIService');
+    logger = createLogger("AIService");
   }
   return logger;
 }
 
 export interface AIConfig {
-  provider: 'openai' | 'anthropic' | 'mock';
+  provider: "openai" | "anthropic" | "mock";
   apiKey?: string;
   model?: string;
   temperature?: number;
@@ -102,7 +107,7 @@ export interface AIConfig {
 }
 
 export interface AIMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: "system" | "user" | "assistant";
   content: string;
 }
 
@@ -142,13 +147,19 @@ export interface AIAnalysisOptions {
  */
 export abstract class AIProvider {
   protected config: AIConfig;
-  
+
   constructor(config: AIConfig) {
     this.config = config;
   }
 
-  abstract analyze(prompt: string, options?: AIAnalysisOptions): Promise<AIResponse>;
-  abstract chat(messages: AIMessage[], options?: AIAnalysisOptions): Promise<AIResponse>;
+  abstract analyze(
+    prompt: string,
+    options?: AIAnalysisOptions,
+  ): Promise<AIResponse>;
+  abstract chat(
+    messages: AIMessage[],
+    options?: AIAnalysisOptions,
+  ): Promise<AIResponse>;
   abstract validateConfig(): boolean;
 }
 
@@ -156,12 +167,12 @@ export abstract class AIProvider {
  * Model cost configuration
  */
 const MODEL_COSTS: Record<string, { input: number; output: number }> = {
-  'gpt-3.5-turbo': { input: 0.0005, output: 0.0015 },
-  'gpt-4': { input: 0.01, output: 0.03 },
-  'gpt-4-turbo': { input: 0.01, output: 0.03 },
-  'gpt-4-turbo-preview': { input: 0.01, output: 0.03 },
-  'gpt-4o': { input: 0.005, output: 0.015 },
-  'gpt-4o-mini': { input: 0.00015, output: 0.0006 }
+  "gpt-3.5-turbo": { input: 0.0005, output: 0.0015 },
+  "gpt-4": { input: 0.01, output: 0.03 },
+  "gpt-4-turbo": { input: 0.01, output: 0.03 },
+  "gpt-4-turbo-preview": { input: 0.01, output: 0.03 },
+  "gpt-4o": { input: 0.005, output: 0.015 },
+  "gpt-4o-mini": { input: 0.00015, output: 0.0006 },
 };
 
 /**
@@ -178,13 +189,13 @@ export class OpenAIProvider extends AIProvider {
 
   constructor(config: AIConfig) {
     super(config);
-    
+
     // Set default models or use provided ones
     this.models = {
-      chat: config.models?.chat || config.model || 'gpt-3.5-turbo',
-      template: config.models?.template || 'gpt-4-turbo-preview',
-      fileAnalysis: config.models?.fileAnalysis || 'gpt-4-turbo',
-      validation: config.models?.validation || 'gpt-3.5-turbo'
+      chat: config.models?.chat || config.model || "gpt-3.5-turbo",
+      template: config.models?.template || "gpt-4-turbo-preview",
+      fileAnalysis: config.models?.fileAnalysis || "gpt-4-turbo",
+      validation: config.models?.validation || "gpt-3.5-turbo",
     };
 
     if (config.apiKey) {
@@ -194,30 +205,45 @@ export class OpenAIProvider extends AIProvider {
 
   private initializeClient(): void {
     if (this.client) return;
-    
+
     try {
       const apiKey = this.config.apiKey || process.env.OPENAI_API_KEY;
-      
+
       if (!apiKey) {
-        throw new AIError('OpenAI API key not configured. Set OPENAI_API_KEY environment variable or provide apiKey in config.', 401, 'AUTH_ERROR', 'openai');
+        throw new AIError(
+          "OpenAI API key not configured. Set OPENAI_API_KEY environment variable or provide apiKey in config.",
+          401,
+          "AUTH_ERROR",
+          "openai",
+        );
       }
-      
+
       // Basic validation - OpenAI keys start with 'sk-'
-      if (!apiKey.startsWith('sk-')) {
-        throw new AIError('Invalid OpenAI API key format', 401, 'AUTH_ERROR', 'openai');
+      if (!apiKey.startsWith("sk-")) {
+        throw new AIError(
+          "Invalid OpenAI API key format",
+          401,
+          "AUTH_ERROR",
+          "openai",
+        );
       }
-      
-      this.client = new OpenAI({ 
+
+      this.client = new OpenAI({
         apiKey,
-        baseURL: this.config.baseURL
+        baseURL: this.config.baseURL,
       });
-      ensureLogger().info('OpenAI client initialized');
+      ensureLogger().info("OpenAI client initialized");
     } catch (_error) {
-      ensureLogger().error('Failed to initialize OpenAI client:', _error);
+      ensureLogger().error("Failed to initialize OpenAI client:", _error);
       if (_error instanceof AIError) {
         throw _error;
       }
-      throw new AIError('Failed to initialize OpenAI client', 500, 'INIT_ERROR', 'openai');
+      throw new AIError(
+        "Failed to initialize OpenAI client",
+        500,
+        "INIT_ERROR",
+        "openai",
+      );
     }
   }
 
@@ -225,32 +251,42 @@ export class OpenAIProvider extends AIProvider {
     return !!this.config.apiKey;
   }
 
-  async analyze(prompt: string, options: AIAnalysisOptions = {}): Promise<AIResponse> {
+  async analyze(
+    prompt: string,
+    options: AIAnalysisOptions = {},
+  ): Promise<AIResponse> {
     const messages: AIMessage[] = [];
-    
+
     if (options.systemPrompt) {
-      messages.push({ role: 'system', content: options.systemPrompt });
+      messages.push({ role: "system", content: options.systemPrompt });
     }
-    
-    messages.push({ role: 'user', content: prompt });
-    
+
+    messages.push({ role: "user", content: prompt });
+
     return this.chat(messages, options);
   }
 
-  async chat(messages: AIMessage[], options: AIAnalysisOptions = {}): Promise<AIResponse> {
+  async chat(
+    messages: AIMessage[],
+    options: AIAnalysisOptions = {},
+  ): Promise<AIResponse> {
     try {
       if (!this.client) {
         this.initializeClient();
       }
 
-      const model = options.analysisType === 'template' ? this.models.template : 
-                    options.analysisType === 'fileAnalysis' ? this.models.fileAnalysis :
-                    options.analysisType === 'validation' ? this.models.validation :
-                    this.models.chat;
+      const model =
+        options.analysisType === "template"
+          ? this.models.template
+          : options.analysisType === "fileAnalysis"
+            ? this.models.fileAnalysis
+            : options.analysisType === "validation"
+              ? this.models.validation
+              : this.models.chat;
 
-      ensureLogger().debug('Sending request to OpenAI', {
+      ensureLogger().debug("Sending request to OpenAI", {
         model,
-        messageCount: messages.length
+        messageCount: messages.length,
       });
 
       const completion = await this.client!.chat.completions.create({
@@ -258,65 +294,89 @@ export class OpenAIProvider extends AIProvider {
         messages: messages as any,
         temperature: options.temperature ?? this.config.temperature ?? 0.7,
         max_tokens: options.maxTokens ?? this.config.maxTokens ?? 2000,
-        ...(options.responseFormat && { response_format: options.responseFormat as any })
+        ...(options.responseFormat && {
+          response_format: options.responseFormat as any,
+        }),
       });
 
-      const content = completion.choices[0].message.content || '';
+      const content = completion.choices[0].message.content || "";
       const cost = this.calculateCost(completion.usage, model);
 
       const response: AIResponse = {
         content,
         model,
-        usage: completion.usage ? {
-          promptTokens: completion.usage.prompt_tokens,
-          completionTokens: completion.usage.completion_tokens,
-          totalTokens: completion.usage.total_tokens
-        } : undefined,
-        cost
+        usage: completion.usage
+          ? {
+              promptTokens: completion.usage.prompt_tokens,
+              completionTokens: completion.usage.completion_tokens,
+              totalTokens: completion.usage.total_tokens,
+            }
+          : undefined,
+        cost,
       };
 
       if (this.config.enableLogging) {
-        ensureLogger().info('OpenAI request completed', {
+        ensureLogger().info("OpenAI request completed", {
           model,
           tokens: completion.usage?.total_tokens,
-          cost
+          cost,
         });
       }
 
       return response;
     } catch (_error: any) {
-      ensureLogger().error('OpenAI API error', _error);
+      ensureLogger().error("OpenAI API error", _error);
       throw this.handleOpenAIError(_error);
     }
   }
 
   private calculateCost(usage: any, model: string): number {
     if (!usage) return 0;
-    
-    const costs = MODEL_COSTS[model] || MODEL_COSTS['gpt-3.5-turbo'];
+
+    const costs = MODEL_COSTS[model] || MODEL_COSTS["gpt-3.5-turbo"];
     const inputCost = (usage.prompt_tokens / 1000) * costs.input;
     const outputCost = (usage.completion_tokens / 1000) * costs.output;
-    
+
     return Math.round((inputCost + outputCost) * 1000000) / 1000000;
   }
 
   private handleOpenAIError(error: any): AIError {
     if (error.response?.status === 401) {
-      return new AIError('Invalid API key', 401, 'AUTH_ERROR', 'openai');
+      return new AIError("Invalid API key", 401, "AUTH_ERROR", "openai");
     }
     if (error.response?.status === 429) {
-      return new AIError('Rate limit exceeded. Please try again later.', 429, 'RATE_LIMIT', 'openai');
+      return new AIError(
+        "Rate limit exceeded. Please try again later.",
+        429,
+        "RATE_LIMIT",
+        "openai",
+      );
     }
     if (error.response?.status === 503) {
-      return new AIError('OpenAI service temporarily unavailable', 503, 'SERVICE_UNAVAILABLE', 'openai');
+      return new AIError(
+        "OpenAI service temporarily unavailable",
+        503,
+        "SERVICE_UNAVAILABLE",
+        "openai",
+      );
     }
-    if (error.message?.includes('timeout')) {
-      return new AIError('Request timed out. Please try again.', 408, 'TIMEOUT', 'openai');
+    if (error.message?.includes("timeout")) {
+      return new AIError(
+        "Request timed out. Please try again.",
+        408,
+        "TIMEOUT",
+        "openai",
+      );
     }
     // Preserve original error info if not a known error type
     const statusCode = error.response?.status || error.statusCode || 500;
-    const errorType = error.type || 'UNKNOWN_ERROR';
-    return new AIError(error.message || 'Unknown error occurred', statusCode, errorType, 'openai');
+    const errorType = error.type || "UNKNOWN_ERROR";
+    return new AIError(
+      error.message || "Unknown error occurred",
+      statusCode,
+      errorType,
+      "openai",
+    );
   }
 }
 
@@ -328,29 +388,35 @@ export class MockAIProvider extends AIProvider {
     return true;
   }
 
-  async analyze(prompt: string, _options: AIAnalysisOptions = {}): Promise<AIResponse> {
+  async analyze(
+    prompt: string,
+    _options: AIAnalysisOptions = {},
+  ): Promise<AIResponse> {
     return {
       content: `Mock analysis for: ${prompt.substring(0, 50)}...`,
-      model: 'mock',
+      model: "mock",
       usage: {
         promptTokens: 10,
         completionTokens: 5,
-        totalTokens: 15
+        totalTokens: 15,
       },
-      cost: 0
+      cost: 0,
     };
   }
 
-  async chat(messages: AIMessage[], _options: AIAnalysisOptions = {}): Promise<AIResponse> {
+  async chat(
+    messages: AIMessage[],
+    _options: AIAnalysisOptions = {},
+  ): Promise<AIResponse> {
     return {
       content: `Mock chat response for ${messages.length} messages`,
-      model: 'mock',
+      model: "mock",
       usage: {
         promptTokens: 10,
         completionTokens: 5,
-        totalTokens: 15
+        totalTokens: 15,
       },
-      cost: 0
+      cost: 0,
     };
   }
 }
@@ -368,9 +434,9 @@ export class AIService extends EventEmitter {
     super();
     this.providers = new Map();
     this.cache = new LRUCache(1000); // Limit cache to 1000 entries to prevent memory leaks
-    this.defaultProvider = 'mock';
-    
-    ensureLogger().debug('AIService initialized');
+    this.defaultProvider = "mock";
+
+    ensureLogger().debug("AIService initialized");
   }
 
   /**
@@ -378,12 +444,12 @@ export class AIService extends EventEmitter {
    */
   registerProvider(name: string, config: AIConfig): void {
     let provider: AIProvider;
-    
+
     switch (config.provider) {
-      case 'openai':
+      case "openai":
         provider = new OpenAIProvider(config);
         break;
-      case 'mock':
+      case "mock":
         provider = new MockAIProvider(config);
         break;
       default:
@@ -395,7 +461,7 @@ export class AIService extends EventEmitter {
     }
 
     this.providers.set(name, provider);
-    
+
     if (!this.defaultProvider || this.providers.size === 1) {
       this.defaultProvider = name;
     }
@@ -419,11 +485,11 @@ export class AIService extends EventEmitter {
    */
   async analyze(
     prompt: string,
-    options: AIAnalysisOptions & { provider?: string; useCache?: boolean } = {}
+    options: AIAnalysisOptions & { provider?: string; useCache?: boolean } = {},
   ): Promise<AIResponse> {
     const providerName = options.provider || this.defaultProvider;
     const provider = this.providers.get(providerName);
-    
+
     if (!provider) {
       throw new Error(`Provider not found: ${providerName}`);
     }
@@ -432,29 +498,29 @@ export class AIService extends EventEmitter {
     const cacheKey = this.getCacheKey(prompt, options);
     if (options.useCache !== false && this.cache.has(cacheKey)) {
       const cached = this.cache.get(cacheKey)!;
-      ensureLogger().debug('Returning cached response', { cacheKey });
+      ensureLogger().debug("Returning cached response", { cacheKey });
       return { ...cached, cached: true };
     }
 
     // Log the analysis request
-    this.emit('analysis:start', { prompt, options, provider: providerName });
-    
+    this.emit("analysis:start", { prompt, options, provider: providerName });
+
     try {
       const response = await provider.analyze(prompt, options);
-      
+
       // Cache the response
       this.cache.set(cacheKey, response);
-      
+
       // Log usage for tracking
       if (response.usage) {
         await this.logUsage(providerName, response);
       }
 
-      this.emit('analysis:complete', { response, provider: providerName });
-      
+      this.emit("analysis:complete", { response, provider: providerName });
+
       return response;
     } catch (_error) {
-      this.emit('analysis:error', { error: _error, provider: providerName });
+      this.emit("analysis:error", { error: _error, provider: providerName });
       throw _error;
     }
   }
@@ -464,11 +530,11 @@ export class AIService extends EventEmitter {
    */
   async chat(
     messages: AIMessage[],
-    options: AIAnalysisOptions & { provider?: string; useCache?: boolean } = {}
+    options: AIAnalysisOptions & { provider?: string; useCache?: boolean } = {},
   ): Promise<AIResponse> {
     const providerName = options.provider || this.defaultProvider;
     const provider = this.providers.get(providerName);
-    
+
     if (!provider) {
       throw new Error(`Provider not found: ${providerName}`);
     }
@@ -477,28 +543,28 @@ export class AIService extends EventEmitter {
     const cacheKey = this.getCacheKey(JSON.stringify(messages), options);
     if (options.useCache !== false && this.cache.has(cacheKey)) {
       const cached = this.cache.get(cacheKey)!;
-      ensureLogger().debug('Returning cached response', { cacheKey });
+      ensureLogger().debug("Returning cached response", { cacheKey });
       return { ...cached, cached: true };
     }
 
-    this.emit('chat:start', { messages, options, provider: providerName });
-    
+    this.emit("chat:start", { messages, options, provider: providerName });
+
     try {
       const response = await provider.chat(messages, options);
-      
+
       // Cache the response
       this.cache.set(cacheKey, response);
-      
+
       // Log usage for tracking
       if (response.usage) {
         await this.logUsage(providerName, response);
       }
 
-      this.emit('chat:complete', { response, provider: providerName });
-      
+      this.emit("chat:complete", { response, provider: providerName });
+
       return response;
     } catch (_error) {
-      this.emit('chat:error', { error: _error, provider: providerName });
+      this.emit("chat:error", { error: _error, provider: providerName });
       throw _error;
     }
   }
@@ -508,39 +574,40 @@ export class AIService extends EventEmitter {
    */
   async generateTemplate(
     messages: AIMessage[],
-    options: AIAnalysisOptions & { provider?: string } = {}
+    options: AIAnalysisOptions & { provider?: string } = {},
   ): Promise<TemplateResponse> {
     const providerName = options.provider || this.defaultProvider;
-    
+
     // Add template generation request
     const generationRequest: AIMessage = {
-      role: 'user',
-      content: 'Based on our conversation, generate a template. Return ONLY the JSON template, no explanation.'
+      role: "user",
+      content:
+        "Based on our conversation, generate a template. Return ONLY the JSON template, no explanation.",
     };
-    
+
     const allMessages = [...messages, generationRequest];
-    
+
     // Use structured output for template generation
     const response = await this.chat(allMessages, {
       ...options,
-      analysisType: 'template',
+      analysisType: "template",
       temperature: options.temperature ?? 0.2,
       maxTokens: options.maxTokens ?? 4000,
-      responseFormat: { type: 'json_object' },
-      provider: providerName
+      responseFormat: { type: "json_object" },
+      provider: providerName,
     });
-    
+
     // Parse and validate the template
     let template;
     try {
       template = JSON.parse(response.content);
     } catch (_e) {
-      throw new Error('Generated template is not valid JSON');
+      throw new Error("Generated template is not valid JSON");
     }
-    
+
     return {
       ...response,
-      template
+      template,
     } as TemplateResponse;
   }
 
@@ -551,27 +618,29 @@ export class AIService extends EventEmitter {
     fileContent: string,
     fileType: string,
     deviceInfo: Record<string, any> = {},
-    options: AIAnalysisOptions & { provider?: string } = {}
+    options: AIAnalysisOptions & { provider?: string } = {},
   ): Promise<FileAnalysisResponse> {
     const messages: AIMessage[] = [
       {
-        role: 'system',
-        content: options.systemPrompt || 'You are an expert at analyzing device documentation and extracting data point information.'
+        role: "system",
+        content:
+          options.systemPrompt ||
+          "You are an expert at analyzing device documentation and extracting data point information.",
       },
       {
-        role: 'user',
-        content: `Analyze this ${fileType} file for device "${deviceInfo.name || 'Unknown'}" by ${deviceInfo.manufacturer || 'Unknown'}:\n\n${fileContent}\n\nExtract all data points, registers, and configuration information.`
-      }
+        role: "user",
+        content: `Analyze this ${fileType} file for device "${deviceInfo.name || "Unknown"}" by ${deviceInfo.manufacturer || "Unknown"}:\n\n${fileContent}\n\nExtract all data points, registers, and configuration information.`,
+      },
     ];
-    
+
     const response = await this.chat(messages, {
       ...options,
-      analysisType: 'fileAnalysis',
+      analysisType: "fileAnalysis",
       temperature: options.temperature ?? 0.3,
       maxTokens: options.maxTokens ?? 4000,
-      provider: options.provider
+      provider: options.provider,
     });
-    
+
     // Try to extract data points from the response
     let dataPoints: any[] = [];
     try {
@@ -582,13 +651,13 @@ export class AIService extends EventEmitter {
       }
     } catch (_e) {
       // If parsing fails, return empty array
-      ensureLogger().debug('Could not parse data points from file analysis');
+      ensureLogger().debug("Could not parse data points from file analysis");
     }
-    
+
     return {
       ...response,
       analysis: response.content,
-      dataPoints
+      dataPoints,
     } as FileAnalysisResponse;
   }
 
@@ -597,7 +666,7 @@ export class AIService extends EventEmitter {
    */
   selectModel(criteria: {
     contentLength?: number;
-    complexity?: 'low' | 'medium' | 'high';
+    complexity?: "low" | "medium" | "high";
     requiresReasoning?: boolean;
     requiresStructuredOutput?: boolean;
     costSensitive?: boolean;
@@ -605,32 +674,32 @@ export class AIService extends EventEmitter {
     // Simple model selection logic - can be enhanced
     if (criteria.costSensitive) {
       return {
-        provider: 'openai',
-        model: 'gpt-3.5-turbo',
-        reason: 'Cost-optimized model'
+        provider: "openai",
+        model: "gpt-3.5-turbo",
+        reason: "Cost-optimized model",
       };
     }
 
-    if (criteria.requiresReasoning || criteria.complexity === 'high') {
+    if (criteria.requiresReasoning || criteria.complexity === "high") {
       return {
-        provider: 'openai',
-        model: 'gpt-4',
-        reason: 'Advanced reasoning required'
+        provider: "openai",
+        model: "gpt-4",
+        reason: "Advanced reasoning required",
       };
     }
 
     if (criteria.contentLength && criteria.contentLength > 8000) {
       return {
-        provider: 'anthropic',
-        model: 'claude-3-opus',
-        reason: 'Long context window needed'
+        provider: "anthropic",
+        model: "claude-3-opus",
+        reason: "Long context window needed",
       };
     }
 
     return {
-      provider: 'openai',
-      model: 'gpt-4-turbo',
-      reason: 'Default balanced model'
+      provider: "openai",
+      model: "gpt-4-turbo",
+      reason: "Default balanced model",
     };
   }
 
@@ -639,33 +708,36 @@ export class AIService extends EventEmitter {
    */
   private getCacheKey(content: string, options: any): string {
     const hash = crypto
-      .createHash('sha256')
+      .createHash("sha256")
       .update(content + JSON.stringify(options))
-      .digest('hex');
+      .digest("hex");
     return hash.substring(0, 16);
   }
 
   /**
    * Log AI usage for tracking
    */
-  private async logUsage(provider: string, response: AIResponse): Promise<void> {
+  private async logUsage(
+    provider: string,
+    response: AIResponse,
+  ): Promise<void> {
     const usage = {
       provider,
       model: response.model,
       timestamp: new Date().toISOString(),
       tokens: response.usage,
-      cost: response.cost
+      cost: response.cost,
     };
 
     try {
       await this.fileHandler.saveFile(
         `ai_usage_${Date.now()}.json`,
         JSON.stringify(usage, null, 2),
-        'logs',
-        { overwrite: false }
+        "logs",
+        { overwrite: false },
       );
     } catch (_error) {
-      ensureLogger().error('Failed to log AI usage', _error);
+      ensureLogger().error("Failed to log AI usage", _error);
     }
   }
 
@@ -674,13 +746,16 @@ export class AIService extends EventEmitter {
    */
   clearCache(): void {
     this.cache.clear();
-    ensureLogger().info('AI response cache cleared');
+    ensureLogger().info("AI response cache cleared");
   }
 
   /**
    * Get usage statistics
    */
-  async getUsageStats(_startDate?: Date, _endDate?: Date): Promise<{
+  async getUsageStats(
+    _startDate?: Date,
+    _endDate?: Date,
+  ): Promise<{
     totalTokens: number;
     totalCost: number;
     byProvider: Record<string, { tokens: number; cost: number }>;
@@ -689,7 +764,7 @@ export class AIService extends EventEmitter {
     return {
       totalTokens: 0,
       totalCost: 0,
-      byProvider: {}
+      byProvider: {},
     };
   }
 }
@@ -708,7 +783,7 @@ export function getAIService(): AIService {
 export const aiService = new Proxy({} as AIService, {
   get(_target, prop) {
     return (getAIService() as any)[prop];
-  }
+  },
 });
 
 export default AIService;

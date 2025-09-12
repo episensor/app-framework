@@ -3,15 +3,15 @@
  * Based on patterns from mila-ai but enhanced with TypeScript and better error handling
  */
 
-import { EventEmitter } from 'events';
-import { createLogger } from '../core/index.js';
-import { getStorageService } from '../core/storageService.js';
+import { EventEmitter } from "events";
+import { createLogger } from "../core/index.js";
+import { getStorageService } from "../core/storageService.js";
 
 let logger: any; // Will be initialized when needed
 
 function ensureLogger() {
   if (!logger) {
-    logger = createLogger('QueueService');
+    logger = createLogger("QueueService");
   }
   return logger;
 }
@@ -20,7 +20,7 @@ export interface QueueJob {
   id: string;
   type: string;
   data: any;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
   priority: number;
   retries: number;
   maxRetries: number;
@@ -50,12 +50,12 @@ export class QueueService extends EventEmitter {
 
   constructor(config: QueueConfig = {}) {
     super();
-    
+
     this.config = {
       maxConcurrentJobs: config.maxConcurrentJobs || 3,
       pollingInterval: config.pollingInterval || 5000,
       maxRetries: config.maxRetries || 3,
-      enablePersistence: config.enablePersistence || false
+      enablePersistence: config.enablePersistence || false,
     };
 
     this.jobs = new Map();
@@ -63,7 +63,7 @@ export class QueueService extends EventEmitter {
     this.isRunning = false;
     this.activeJobs = 0;
 
-    ensureLogger().debug('QueueService initialized', this.config);
+    ensureLogger().debug("QueueService initialized", this.config);
   }
 
   /**
@@ -79,40 +79,43 @@ export class QueueService extends EventEmitter {
    */
   async addJob(type: string, data: any, priority: number = 0): Promise<string> {
     const jobId = `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const job: QueueJob = {
       id: jobId,
       type,
       data,
-      status: 'pending',
+      status: "pending",
       priority,
       retries: 0,
       maxRetries: this.config.maxRetries,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     this.jobs.set(jobId, job);
-    
+
     if (this.config.enablePersistence) {
       await this.persistJob(job);
     }
 
-    this.emit('job:added', job);
+    this.emit("job:added", job);
     ensureLogger().info(`Added job ${jobId} of type ${type}`);
 
     // Check if this is a high-priority job that should preempt current processing
     if (this.isRunning && priority > 5) {
       // Check if we have capacity and if new job has higher priority than any processing job
-      const processingJobs = Array.from(this.jobs.values())
-        .filter(j => j.status === 'processing');
-      
+      const processingJobs = Array.from(this.jobs.values()).filter(
+        (j) => j.status === "processing",
+      );
+
       if (this.activeJobs < this.config.maxConcurrentJobs) {
         // We have free workers, process immediately
         this.processNextJob();
-      } else if (processingJobs.some(j => j.priority < priority)) {
+      } else if (processingJobs.some((j) => j.priority < priority)) {
         // New job has higher priority than some processing jobs
-        ensureLogger().info(`High priority job ${jobId} added, triggering immediate processing`);
+        ensureLogger().info(
+          `High priority job ${jobId} added, triggering immediate processing`,
+        );
         this.processNextJob();
       }
     } else if (this.isRunning) {
@@ -128,19 +131,19 @@ export class QueueService extends EventEmitter {
    */
   async start(): Promise<void> {
     if (this.isRunning) {
-      ensureLogger().warn('Queue is already running');
+      ensureLogger().warn("Queue is already running");
       return;
     }
 
     this.isRunning = true;
-    ensureLogger().debug('Starting queue processing');
+    ensureLogger().debug("Starting queue processing");
 
     if (this.config.enablePersistence) {
       await this.loadPersistedJobs();
     }
 
     this.startPolling();
-    this.emit('queue:started');
+    this.emit("queue:started");
   }
 
   /**
@@ -148,26 +151,26 @@ export class QueueService extends EventEmitter {
    */
   async stop(): Promise<void> {
     if (!this.isRunning) {
-      ensureLogger().warn('Queue is not running');
+      ensureLogger().warn("Queue is not running");
       return;
     }
 
     this.isRunning = false;
-    
+
     if (this.pollingTimer) {
       clearInterval(this.pollingTimer);
       this.pollingTimer = undefined;
     }
 
-    ensureLogger().info('Stopping queue processing');
-    
+    ensureLogger().info("Stopping queue processing");
+
     // Wait for active jobs to complete
     while (this.activeJobs > 0) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    this.emit('queue:stopped');
-    ensureLogger().info('Queue processing stopped');
+    this.emit("queue:stopped");
+    ensureLogger().info("Queue processing stopped");
   }
 
   /**
@@ -175,32 +178,36 @@ export class QueueService extends EventEmitter {
    */
   private async processNextJob(): Promise<void> {
     if (!this.isRunning) return;
-    
+
     if (this.activeJobs >= this.config.maxConcurrentJobs) {
-      ensureLogger().debug(`Max concurrent jobs reached (${this.activeJobs}/${this.config.maxConcurrentJobs})`);
+      ensureLogger().debug(
+        `Max concurrent jobs reached (${this.activeJobs}/${this.config.maxConcurrentJobs})`,
+      );
       return;
     }
 
     const job = this.getNextPendingJob();
     if (!job) {
-      ensureLogger().debug('No pending jobs found');
+      ensureLogger().debug("No pending jobs found");
       return;
     }
 
     const handler = this.handlers.get(job.type);
     if (!handler) {
       ensureLogger().error(`No handler registered for job type: ${job.type}`);
-      await this.failJob(job, 'No handler registered');
+      await this.failJob(job, "No handler registered");
       return;
     }
 
     this.activeJobs++;
-    job.status = 'processing';
+    job.status = "processing";
     job.processedAt = new Date();
     job.updatedAt = new Date();
 
-    ensureLogger().info(`Processing job ${job.id} (${job.type}), Active: ${this.activeJobs}`);
-    this.emit('job:started', job);
+    ensureLogger().info(
+      `Processing job ${job.id} (${job.type}), Active: ${this.activeJobs}`,
+    );
+    this.emit("job:started", job);
 
     try {
       await handler(job);
@@ -209,7 +216,7 @@ export class QueueService extends EventEmitter {
       await this.handleJobError(job, _error);
     } finally {
       this.activeJobs--;
-      
+
       // Process next job immediately if available
       if (this.isRunning) {
         setImmediate(() => this.processNextJob());
@@ -222,7 +229,7 @@ export class QueueService extends EventEmitter {
    */
   private getNextPendingJob(): QueueJob | null {
     const pendingJobs = Array.from(this.jobs.values())
-      .filter(job => job.status === 'pending')
+      .filter((job) => job.status === "pending")
       .sort((a, b) => {
         // Higher priority first
         if (a.priority !== b.priority) {
@@ -239,11 +246,11 @@ export class QueueService extends EventEmitter {
    * Mark a job as completed
    */
   private async completeJob(job: QueueJob): Promise<void> {
-    job.status = 'completed';
+    job.status = "completed";
     job.updatedAt = new Date();
-    
+
     ensureLogger().info(`Job ${job.id} completed successfully`);
-    this.emit('job:completed', job);
+    this.emit("job:completed", job);
 
     if (this.config.enablePersistence) {
       await this.persistJob(job);
@@ -266,9 +273,11 @@ export class QueueService extends EventEmitter {
     ensureLogger().error(`Job ${job.id} failed: ${error.message}`, error);
 
     if (job.retries < job.maxRetries) {
-      job.status = 'pending'; // Retry
-      ensureLogger().info(`Job ${job.id} will be retried (${job.retries}/${job.maxRetries})`);
-      this.emit('job:retry', job);
+      job.status = "pending"; // Retry
+      ensureLogger().info(
+        `Job ${job.id} will be retried (${job.retries}/${job.maxRetries})`,
+      );
+      this.emit("job:retry", job);
     } else {
       await this.failJob(job, error.message);
     }
@@ -282,12 +291,12 @@ export class QueueService extends EventEmitter {
    * Mark a job as failed
    */
   private async failJob(job: QueueJob, reason: string): Promise<void> {
-    job.status = 'failed';
+    job.status = "failed";
     job.error = reason;
     job.updatedAt = new Date();
-    
+
     ensureLogger().error(`Job ${job.id} failed permanently: ${reason}`);
-    this.emit('job:failed', job);
+    this.emit("job:failed", job);
 
     if (this.config.enablePersistence) {
       // Move failed job to dead-letter queue directory
@@ -304,19 +313,16 @@ export class QueueService extends EventEmitter {
       await this.fileHandler.saveFile(
         `failed_${job.id}_${Date.now()}.json`,
         JSON.stringify(job, null, 2),
-        'data',
-        { overwrite: true }
+        "data",
+        { overwrite: true },
       );
-      
+
       // Remove original queue file from main queue directory
-      await this.fileHandler.deleteFile(
-        `queue_${job.id}.json`,
-        'data'
-      );
-      
+      await this.fileHandler.deleteFile(`queue_${job.id}.json`, "data");
+
       ensureLogger().info(`Moved failed job ${job.id} to dead-letter queue`);
     } catch (_error) {
-      ensureLogger().error('Failed to move job to dead-letter queue:', _error);
+      ensureLogger().error("Failed to move job to dead-letter queue:", _error);
     }
   }
 
@@ -340,11 +346,11 @@ export class QueueService extends EventEmitter {
       await this.fileHandler.saveFile(
         `queue_${job.id}.json`,
         JSON.stringify(job, null, 2),
-        'data',
-        { overwrite: true }
+        "data",
+        { overwrite: true },
       );
     } catch (_error) {
-      ensureLogger().error('Failed to persist job', _error);
+      ensureLogger().error("Failed to persist job", _error);
     }
   }
 
@@ -353,13 +359,16 @@ export class QueueService extends EventEmitter {
    */
   private async loadPersistedJobs(): Promise<void> {
     try {
-      const files = await this.fileHandler.listFiles('data', /^queue_.*\.json$/);
-      
+      const files = await this.fileHandler.listFiles(
+        "data",
+        /^queue_.*\.json$/,
+      );
+
       for (const file of files) {
         try {
-          const content = await this.fileHandler.readFile(file.name, 'data');
+          const content = await this.fileHandler.readFile(file.name, "data");
           const job = JSON.parse(content.toString());
-          
+
           // Convert date strings back to Date objects
           job.createdAt = new Date(job.createdAt);
           job.updatedAt = new Date(job.updatedAt);
@@ -368,8 +377,8 @@ export class QueueService extends EventEmitter {
           }
 
           // Reset processing jobs to pending
-          if (job.status === 'processing') {
-            job.status = 'pending';
+          if (job.status === "processing") {
+            job.status = "pending";
           }
 
           this.jobs.set(job.id, job);
@@ -380,7 +389,7 @@ export class QueueService extends EventEmitter {
 
       ensureLogger().debug(`Loaded ${this.jobs.size} persisted jobs`);
     } catch (_error) {
-      ensureLogger().error('Failed to load persisted jobs', _error);
+      ensureLogger().error("Failed to load persisted jobs", _error);
     }
   }
 
@@ -396,14 +405,14 @@ export class QueueService extends EventEmitter {
     activeJobs: number;
   } {
     const jobs = Array.from(this.jobs.values());
-    
+
     return {
       total: jobs.length,
-      pending: jobs.filter(j => j.status === 'pending').length,
-      processing: jobs.filter(j => j.status === 'processing').length,
-      completed: jobs.filter(j => j.status === 'completed').length,
-      failed: jobs.filter(j => j.status === 'failed').length,
-      activeJobs: this.activeJobs
+      pending: jobs.filter((j) => j.status === "pending").length,
+      processing: jobs.filter((j) => j.status === "processing").length,
+      completed: jobs.filter((j) => j.status === "completed").length,
+      failed: jobs.filter((j) => j.status === "failed").length,
+      activeJobs: this.activeJobs,
     };
   }
 
@@ -426,11 +435,11 @@ export class QueueService extends EventEmitter {
    */
   clearFinishedJobs(): void {
     for (const [id, job] of this.jobs) {
-      if (job.status === 'completed' || job.status === 'failed') {
+      if (job.status === "completed" || job.status === "failed") {
         this.jobs.delete(id);
       }
     }
-    ensureLogger().info('Cleared finished jobs');
+    ensureLogger().info("Cleared finished jobs");
   }
 }
 

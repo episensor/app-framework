@@ -3,17 +3,17 @@
  * Provides real-time updates for simulator data and events
  */
 
-import { Server, Socket } from 'socket.io';
-import { Server as HTTPServer } from 'http';
-import { createLogger } from '../core/index.js';
+import { Server, Socket } from "socket.io";
+import { Server as HTTPServer } from "http";
+import { createLogger } from "../core/index.js";
 import {
   WebSocketMessage,
   SimulatorUpdateMessage,
   TemplateUpdateMessage,
   DataUpdateMessage,
   Simulator,
-  Template
-} from '../types/index.js';
+  Template,
+} from "../types/index.js";
 
 let logger: any; // Will be initialized when needed
 
@@ -38,9 +38,9 @@ class WebSocketServer {
   constructor(httpServer: HTTPServer) {
     // Initialize logger if not already done
     if (!logger) {
-      logger = createLogger('WebSocket');
+      logger = createLogger("WebSocket");
     }
-    
+
     this.httpServer = httpServer;
     this.clients = new Map();
     this.simulatorSubscriptions = new Map();
@@ -50,55 +50,55 @@ class WebSocketServer {
     this.io = new Server(this.httpServer, {
       cors: {
         origin: "*", // Allow all origins for local development
-        methods: ["GET", "POST"]
+        methods: ["GET", "POST"],
       },
-      transports: ['websocket', 'polling']
+      transports: ["websocket", "polling"],
     });
 
     this.setupEventHandlers();
-    logger.info('WebSocket server initialized');
+    logger.info("WebSocket server initialized");
   }
 
   private setupEventHandlers(): void {
     if (!this.io) return;
 
-    this.io.on('connection', (socket: Socket) => {
+    this.io.on("connection", (socket: Socket) => {
       // Only log in debug mode to avoid spam
-      if (process.env.LOG_LEVEL?.toLowerCase() === 'debug') {
+      if (process.env.LOG_LEVEL?.toLowerCase() === "debug") {
         logger.debug(`Client connected: ${socket.id}`);
       }
       this.clients.set(socket.id, {
         id: socket.id,
         connectedAt: new Date(),
-        subscriptions: new Set()
+        subscriptions: new Set(),
       });
 
       // Send initial connection confirmation
-      socket.emit('connected', { 
+      socket.emit("connected", {
         id: socket.id,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       // Handle simulator subscriptions
-      socket.on('subscribe:simulator', (simulatorId: string) => {
+      socket.on("subscribe:simulator", (simulatorId: string) => {
         this.subscribeToSimulator(socket, simulatorId);
       });
 
-      socket.on('unsubscribe:simulator', (simulatorId: string) => {
+      socket.on("unsubscribe:simulator", (simulatorId: string) => {
         this.unsubscribeFromSimulator(socket, simulatorId);
       });
 
       // Handle disconnection
-      socket.on('disconnect', () => {
+      socket.on("disconnect", () => {
         // Only log in debug mode to avoid spam
-        if (process.env.LOG_LEVEL?.toLowerCase() === 'debug') {
+        if (process.env.LOG_LEVEL?.toLowerCase() === "debug") {
           logger.debug(`Client disconnected: ${socket.id}`);
         }
         this.handleDisconnect(socket);
       });
 
       // Handle errors
-      socket.on('error', (_error: Error) => {
+      socket.on("error", (_error: Error) => {
         logger.error(`Socket error for ${socket.id}:`, _error);
       });
     });
@@ -145,7 +145,9 @@ class WebSocketServer {
     // Leave socket.io room
     socket.leave(`simulator:${simulatorId}`);
 
-    logger.debug(`Client ${socket.id} unsubscribed from simulator ${simulatorId}`);
+    logger.debug(
+      `Client ${socket.id} unsubscribed from simulator ${simulatorId}`,
+    );
   }
 
   private handleDisconnect(socket: Socket): void {
@@ -153,7 +155,7 @@ class WebSocketServer {
     if (!client) return;
 
     // Clean up all subscriptions
-    client.subscriptions.forEach(simulatorId => {
+    client.subscriptions.forEach((simulatorId) => {
       const subscribers = this.simulatorSubscriptions.get(simulatorId);
       if (subscribers) {
         subscribers.delete(socket.id);
@@ -178,38 +180,44 @@ class WebSocketServer {
     // Timestamp removed - not needed in simplified message structure
 
     switch (event) {
-      case 'simulator:started':
-      case 'simulator:stopped':
-      case 'simulator:update':
+      case "simulator:started":
+      case "simulator:stopped":
+      case "simulator:update":
         message = {
-          type: event as 'simulator:started' | 'simulator:stopped' | 'simulator:data',
-          data: data as Simulator
+          type: event as
+            | "simulator:started"
+            | "simulator:stopped"
+            | "simulator:data",
+          data: data as Simulator,
         } as SimulatorUpdateMessage;
         break;
 
-      case 'template:created':
-      case 'template:updated':
-      case 'template:deleted':
+      case "template:created":
+      case "template:updated":
+      case "template:deleted":
         message = {
-          type: event as 'template:created' | 'template:updated' | 'template:deleted',
-          data: data as Template
+          type: event as
+            | "template:created"
+            | "template:updated"
+            | "template:deleted",
+          data: data as Template,
         } as TemplateUpdateMessage;
         break;
 
-      case 'simulator:data':
+      case "simulator:data":
         message = {
-          type: 'data:update',
+          type: "data:update",
           data: {
             simulatorId: data.simulatorId!,
-            values: data.values || { [data.address]: data.value }
-          }
+            values: data.values || { [data.address]: data.value },
+          },
         } as DataUpdateMessage;
         break;
 
       default:
         message = {
           type: event,
-          data: data
+          data: data,
         } as WebSocketMessage;
     }
 
@@ -231,17 +239,20 @@ class WebSocketServer {
     if (!this.io) return;
 
     const message: DataUpdateMessage = {
-      type: 'data:update',
+      type: "data:update",
       data: {
         simulatorId,
-        values: data
-      }
+        values: data,
+      },
     };
 
     this.io.to(`simulator:${simulatorId}`).emit(event, message.data);
 
-    const subscriberCount = this.simulatorSubscriptions.get(simulatorId)?.size || 0;
-    logger.debug(`Broadcast ${event} to ${subscriberCount} subscribers of simulator ${simulatorId}`);
+    const subscriberCount =
+      this.simulatorSubscriptions.get(simulatorId)?.size || 0;
+    logger.debug(
+      `Broadcast ${event} to ${subscriberCount} subscribers of simulator ${simulatorId}`,
+    );
   }
 
   /**
@@ -255,11 +266,11 @@ class WebSocketServer {
     const stats = {
       totalClients: this.clients.size,
       totalSubscriptions: 0,
-      simulatorSubscriptions: {} as Record<string, number>
+      simulatorSubscriptions: {} as Record<string, number>,
     };
 
     // Count total subscriptions
-    this.clients.forEach(client => {
+    this.clients.forEach((client) => {
       stats.totalSubscriptions += client.subscriptions.size;
     });
 
@@ -292,18 +303,18 @@ class WebSocketServer {
     if (this.io) {
       // Disconnect all clients
       this.io.disconnectSockets();
-      
+
       // Close the server
       await new Promise<void>((resolve) => {
         this.io!.close(() => {
-          logger.info('WebSocket server shut down');
+          logger.info("WebSocket server shut down");
           resolve();
         });
       });
-      
+
       this.io = null;
     }
-    
+
     // Clear all data
     this.clients.clear();
     this.simulatorSubscriptions.clear();
@@ -319,9 +330,9 @@ let wsServer: WebSocketServer | null = null;
 export function createWebSocketServer(httpServer: HTTPServer): WebSocketServer {
   // Initialize logger if not already done
   if (!logger) {
-    logger = createLogger('WebSocket');
+    logger = createLogger("WebSocket");
   }
-  
+
   if (!wsServer) {
     wsServer = new WebSocketServer(httpServer);
     wsServer.initialize();

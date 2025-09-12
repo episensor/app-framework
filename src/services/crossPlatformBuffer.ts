@@ -1,12 +1,19 @@
 /**
  * Cross-Platform Buffer Handling Module
- * 
+ *
  * Ensures consistent data representation across ARM and x86 architectures
  * by using explicit buffer operations that are not affected by processor endianness.
  */
 
-export type Endianness = 'LE' | 'BE';
-export type DataType = 'uint16' | 'int16' | 'uint32' | 'int32' | 'float32' | 'float64' | 'bool';
+export type Endianness = "LE" | "BE";
+export type DataType =
+  | "uint16"
+  | "int16"
+  | "uint32"
+  | "int32"
+  | "float32"
+  | "float64"
+  | "bool";
 
 export interface BufferOptions {
   endian?: Endianness;
@@ -29,13 +36,13 @@ export class CrossPlatformBuffer {
     const arrayBuffer = new ArrayBuffer(2);
     const uint8Array = new Uint8Array(arrayBuffer);
     const uint16Array = new Uint16Array(arrayBuffer);
-    
+
     uint16Array[0] = 0x1234;
-    
+
     if (uint8Array[0] === 0x12) {
-      return 'BE'; // Big Endian
+      return "BE"; // Big Endian
     } else {
-      return 'LE'; // Little Endian
+      return "LE"; // Little Endian
     }
   }
 
@@ -51,22 +58,22 @@ export class CrossPlatformBuffer {
    */
   float32ToRegisters(
     value: number,
-    endian: Endianness = 'LE',
+    endian: Endianness = "LE",
     wordSwap: boolean = false,
-    byteSwap: boolean = false
+    byteSwap: boolean = false,
   ): [number, number] {
     // Create a buffer to hold the float32
     const buffer = new ArrayBuffer(4);
     const float32View = new Float32Array(buffer);
     const dataView = new DataView(buffer);
-    
+
     // Write the float32 value
     float32View[0] = value;
-    
+
     // Read as two 16-bit values with specified endianness
     let reg1: number, reg2: number;
-    
-    if (endian === 'BE') {
+
+    if (endian === "BE") {
       // Big Endian: most significant word first
       reg1 = dataView.getUint16(0, false); // Big endian read
       reg2 = dataView.getUint16(2, false);
@@ -75,18 +82,18 @@ export class CrossPlatformBuffer {
       reg1 = dataView.getUint16(0, true); // Little endian read
       reg2 = dataView.getUint16(2, true);
     }
-    
+
     // Apply word swap if needed
     if (wordSwap) {
       [reg1, reg2] = [reg2, reg1];
     }
-    
+
     // Apply byte swap within each word if needed
     if (byteSwap) {
-      reg1 = ((reg1 & 0xFF) << 8) | ((reg1 >> 8) & 0xFF);
-      reg2 = ((reg2 & 0xFF) << 8) | ((reg2 >> 8) & 0xFF);
+      reg1 = ((reg1 & 0xff) << 8) | ((reg1 >> 8) & 0xff);
+      reg2 = ((reg2 & 0xff) << 8) | ((reg2 >> 8) & 0xff);
     }
-    
+
     return [reg1, reg2];
   }
 
@@ -96,26 +103,26 @@ export class CrossPlatformBuffer {
   registersToFloat32(
     reg1: number,
     reg2: number,
-    endian: Endianness = 'LE',
+    endian: Endianness = "LE",
     wordSwap: boolean = false,
-    byteSwap: boolean = false
+    byteSwap: boolean = false,
   ): number {
     // Apply byte swap within each word if needed
     if (byteSwap) {
-      reg1 = ((reg1 & 0xFF) << 8) | ((reg1 >> 8) & 0xFF);
-      reg2 = ((reg2 & 0xFF) << 8) | ((reg2 >> 8) & 0xFF);
+      reg1 = ((reg1 & 0xff) << 8) | ((reg1 >> 8) & 0xff);
+      reg2 = ((reg2 & 0xff) << 8) | ((reg2 >> 8) & 0xff);
     }
-    
+
     // Apply word swap if needed
     if (wordSwap) {
       [reg1, reg2] = [reg2, reg1];
     }
-    
+
     // Create a buffer and write the registers
     const buffer = new ArrayBuffer(4);
     const dataView = new DataView(buffer);
-    
-    if (endian === 'BE') {
+
+    if (endian === "BE") {
       // Big Endian: write as big endian
       dataView.setUint16(0, reg1, false);
       dataView.setUint16(2, reg2, false);
@@ -124,7 +131,7 @@ export class CrossPlatformBuffer {
       dataView.setUint16(0, reg1, true);
       dataView.setUint16(2, reg2, true);
     }
-    
+
     // Read as float32
     const float32View = new Float32Array(buffer);
     return float32View[0];
@@ -135,23 +142,23 @@ export class CrossPlatformBuffer {
    */
   int32ToRegisters(
     value: number,
-    endian: Endianness = 'LE',
-    wordSwap: boolean = false
+    endian: Endianness = "LE",
+    wordSwap: boolean = false,
   ): [number, number] {
     const buffer = new ArrayBuffer(4);
     const dataView = new DataView(buffer);
-    
+
     // Write the int32 value
-    dataView.setInt32(0, value, endian === 'LE');
-    
+    dataView.setInt32(0, value, endian === "LE");
+
     // Read as two 16-bit values
-    let reg1 = dataView.getUint16(0, endian === 'LE');
-    let reg2 = dataView.getUint16(2, endian === 'LE');
-    
+    let reg1 = dataView.getUint16(0, endian === "LE");
+    let reg2 = dataView.getUint16(2, endian === "LE");
+
     if (wordSwap) {
       [reg1, reg2] = [reg2, reg1];
     }
-    
+
     return [reg1, reg2];
   }
 
@@ -161,20 +168,20 @@ export class CrossPlatformBuffer {
   registersToInt32(
     reg1: number,
     reg2: number,
-    endian: Endianness = 'LE',
-    wordSwap: boolean = false
+    endian: Endianness = "LE",
+    wordSwap: boolean = false,
   ): number {
     if (wordSwap) {
       [reg1, reg2] = [reg2, reg1];
     }
-    
+
     const buffer = new ArrayBuffer(4);
     const dataView = new DataView(buffer);
-    
-    dataView.setUint16(0, reg1, endian === 'LE');
-    dataView.setUint16(2, reg2, endian === 'LE');
-    
-    return dataView.getInt32(0, endian === 'LE');
+
+    dataView.setUint16(0, reg1, endian === "LE");
+    dataView.setUint16(2, reg2, endian === "LE");
+
+    return dataView.getInt32(0, endian === "LE");
   }
 
   /**
@@ -182,23 +189,23 @@ export class CrossPlatformBuffer {
    */
   uint32ToRegisters(
     value: number,
-    endian: Endianness = 'LE',
-    wordSwap: boolean = false
+    endian: Endianness = "LE",
+    wordSwap: boolean = false,
   ): [number, number] {
     const buffer = new ArrayBuffer(4);
     const dataView = new DataView(buffer);
-    
+
     // Write the uint32 value
-    dataView.setUint32(0, value, endian === 'LE');
-    
+    dataView.setUint32(0, value, endian === "LE");
+
     // Read as two 16-bit values
-    let reg1 = dataView.getUint16(0, endian === 'LE');
-    let reg2 = dataView.getUint16(2, endian === 'LE');
-    
+    let reg1 = dataView.getUint16(0, endian === "LE");
+    let reg2 = dataView.getUint16(2, endian === "LE");
+
     if (wordSwap) {
       [reg1, reg2] = [reg2, reg1];
     }
-    
+
     return [reg1, reg2];
   }
 
@@ -208,20 +215,20 @@ export class CrossPlatformBuffer {
   registersToUint32(
     reg1: number,
     reg2: number,
-    endian: Endianness = 'LE',
-    wordSwap: boolean = false
+    endian: Endianness = "LE",
+    wordSwap: boolean = false,
   ): number {
     if (wordSwap) {
       [reg1, reg2] = [reg2, reg1];
     }
-    
+
     const buffer = new ArrayBuffer(4);
     const dataView = new DataView(buffer);
-    
-    dataView.setUint16(0, reg1, endian === 'LE');
-    dataView.setUint16(2, reg2, endian === 'LE');
-    
-    return dataView.getUint32(0, endian === 'LE');
+
+    dataView.setUint16(0, reg1, endian === "LE");
+    dataView.setUint16(2, reg2, endian === "LE");
+
+    return dataView.getUint32(0, endian === "LE");
   }
 
   /**
@@ -244,7 +251,7 @@ export class CrossPlatformBuffer {
   int16ToRegister(value: number): number {
     // Ensure value is within int16 range
     value = Math.max(-32768, Math.min(32767, value));
-    
+
     // Convert to unsigned representation
     if (value < 0) {
       return 0x10000 + value; // Two's complement
@@ -269,17 +276,17 @@ export class CrossPlatformBuffer {
    */
   stringToRegisters(str: string, maxLength: number = 32): number[] {
     const registers: number[] = [];
-    const buffer = Buffer.from(str, 'utf8');
-    
+    const buffer = Buffer.from(str, "utf8");
+
     // Pad with zeros to ensure even number of bytes
     const paddedLength = Math.min(maxLength, Math.ceil(buffer.length / 2) * 2);
-    
+
     for (let i = 0; i < paddedLength; i += 2) {
       const byte1 = buffer[i] || 0;
       const byte2 = buffer[i + 1] || 0;
       registers.push((byte1 << 8) | byte2);
     }
-    
+
     return registers;
   }
 
@@ -288,25 +295,25 @@ export class CrossPlatformBuffer {
    */
   registersToString(registers: number[]): string {
     const bytes: number[] = [];
-    
+
     for (const reg of registers) {
-      bytes.push((reg >> 8) & 0xFF); // High byte
-      bytes.push(reg & 0xFF); // Low byte
+      bytes.push((reg >> 8) & 0xff); // High byte
+      bytes.push(reg & 0xff); // Low byte
     }
-    
+
     // Remove trailing zeros
     while (bytes.length > 0 && bytes[bytes.length - 1] === 0) {
       bytes.pop();
     }
-    
-    return Buffer.from(bytes).toString('utf8');
+
+    return Buffer.from(bytes).toString("utf8");
   }
 
   /**
    * Validate register value is within 16-bit range
    */
   validateRegisterValue(value: number): boolean {
-    return Number.isInteger(value) && value >= 0 && value <= 0xFFFF;
+    return Number.isInteger(value) && value >= 0 && value <= 0xffff;
   }
 
   /**
@@ -314,9 +321,9 @@ export class CrossPlatformBuffer {
    */
   createBufferConfig(options: BufferOptions = {}): Required<BufferOptions> {
     return {
-      endian: options.endian || 'LE',
+      endian: options.endian || "LE",
       wordSwap: options.wordSwap || false,
-      byteSwap: options.byteSwap || false
+      byteSwap: options.byteSwap || false,
     };
   }
 }

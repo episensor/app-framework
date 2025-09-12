@@ -1,14 +1,14 @@
 /**
  * Tauri Sidecar Support for Node.js Server Bundling
- * 
+ *
  * This module provides utilities for bundling Node.js servers as Tauri sidecars,
  * allowing desktop apps to include their backend servers as standalone binaries.
  */
 
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import fs from 'fs-extra';
-import path from 'path';
+import { exec } from "child_process";
+import { promisify } from "util";
+import fs from "fs-extra";
+import path from "path";
 
 const execAsync = promisify(exec);
 
@@ -17,22 +17,22 @@ export interface SidecarBuildOptions {
    * Path to the compiled server entry file (e.g., dist/server/index.js)
    */
   entryFile: string;
-  
+
   /**
    * Output directory for the sidecar binaries (default: src-tauri/binaries)
    */
   outputDir?: string;
-  
+
   /**
    * Target platforms to build for
    */
   targets?: SidecarTarget[];
-  
+
   /**
    * Whether to compress the output
    */
   compress?: boolean;
-  
+
   /**
    * Node.js version to target (default: node20)
    */
@@ -40,97 +40,103 @@ export interface SidecarBuildOptions {
 }
 
 export interface SidecarTarget {
-  platform: 'macos' | 'windows' | 'linux';
-  arch: 'x64' | 'arm64';
+  platform: "macos" | "windows" | "linux";
+  arch: "x64" | "arm64";
 }
 
 /**
  * Default targets for common platforms
  */
 export const DEFAULT_TARGETS: SidecarTarget[] = [
-  { platform: 'macos', arch: 'arm64' },
-  { platform: 'macos', arch: 'x64' },
-  { platform: 'windows', arch: 'x64' },
-  { platform: 'linux', arch: 'x64' }
+  { platform: "macos", arch: "arm64" },
+  { platform: "macos", arch: "x64" },
+  { platform: "windows", arch: "x64" },
+  { platform: "linux", arch: "x64" },
 ];
 
 /**
  * Map platform/arch combinations to pkg target strings
  */
 const TARGET_MAP: Record<string, string> = {
-  'macos-arm64': 'node20-macos-arm64',
-  'macos-x64': 'node20-macos-x64',
-  'windows-x64': 'node20-win-x64',
-  'linux-x64': 'node20-linux-x64'
+  "macos-arm64": "node20-macos-arm64",
+  "macos-x64": "node20-macos-x64",
+  "windows-x64": "node20-win-x64",
+  "linux-x64": "node20-linux-x64",
 };
 
 /**
  * Map platform/arch combinations to Tauri binary names
  */
 const BINARY_NAME_MAP: Record<string, string> = {
-  'macos-arm64': 'server-aarch64-apple-darwin',
-  'macos-x64': 'server-x86_64-apple-darwin',
-  'windows-x64': 'server-x86_64-pc-windows-gnu.exe',
-  'linux-x64': 'server-x86_64-unknown-linux-gnu'
+  "macos-arm64": "server-aarch64-apple-darwin",
+  "macos-x64": "server-x86_64-apple-darwin",
+  "windows-x64": "server-x86_64-pc-windows-gnu.exe",
+  "linux-x64": "server-x86_64-unknown-linux-gnu",
 };
 
 /**
  * Build a Node.js server as a Tauri sidecar binary
  */
-export async function buildSidecar(options: SidecarBuildOptions): Promise<void> {
+export async function buildSidecar(
+  options: SidecarBuildOptions,
+): Promise<void> {
   const {
     entryFile,
-    outputDir = 'src-tauri/binaries',
+    outputDir = "src-tauri/binaries",
     targets = DEFAULT_TARGETS,
     compress = true,
-    nodeVersion = 'node20'
+    nodeVersion = "node20",
   } = options;
-  
+
   // Ensure output directory exists
   await fs.ensureDir(outputDir);
-  
+
   // Check if pkg is installed
   try {
-    await execAsync('npx pkg --version');
+    await execAsync("npx pkg --version");
   } catch (_error) {
     throw new Error(
-      'pkg is not installed. Install it with: npm install --save-dev @yao-pkg/pkg'
+      "pkg is not installed. Install it with: npm install --save-dev @yao-pkg/pkg",
     );
   }
-  
+
   // Build for each target
   for (const target of targets) {
     const targetKey = `${target.platform}-${target.arch}`;
     const pkgTarget = TARGET_MAP[targetKey];
     const outputName = BINARY_NAME_MAP[targetKey];
-    
+
     if (!pkgTarget || !outputName) {
       console.warn(`Unsupported target: ${targetKey}`);
       continue;
     }
-    
+
     const outputPath = path.join(outputDir, outputName);
-    
+
     console.log(`Building sidecar for ${targetKey}...`);
-    
+
     const pkgCommand = [
-      'npx pkg',
+      "npx pkg",
       entryFile,
-      '--target', pkgTarget.replace('node20', nodeVersion),
-      '--output', outputPath,
-      compress ? '--compress GZip' : ''
-    ].filter(Boolean).join(' ');
-    
+      "--target",
+      pkgTarget.replace("node20", nodeVersion),
+      "--output",
+      outputPath,
+      compress ? "--compress GZip" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
     try {
       const { stdout, stderr } = await execAsync(pkgCommand);
       if (stdout) console.log(stdout);
       if (stderr) console.warn(stderr);
-      
+
       // Make the binary executable on Unix systems
-      if (target.platform !== 'windows') {
+      if (target.platform !== "windows") {
         await fs.chmod(outputPath, 0o755);
       }
-      
+
       console.log(`✅ Built ${outputName} (${targetKey})`);
     } catch (_error: any) {
       console.error(`❌ Failed to build ${targetKey}: ${_error.message}`);
@@ -145,9 +151,9 @@ export function generateTauriConfig(): any {
   return {
     bundle: {
       resources: {
-        'binaries/server-*': './server'
-      }
-    }
+        "binaries/server-*": "./server",
+      },
+    },
   };
 }
 
@@ -266,7 +272,7 @@ pub fn init<R: tauri::Runtime>() -> TauriPlugin<R> {
  */
 export async function createServerWrapper(
   inputFile: string,
-  outputFile: string
+  outputFile: string,
 ): Promise<void> {
   const wrapperCode = `
 // Auto-generated server wrapper for Tauri sidecar
@@ -283,7 +289,7 @@ async function main() {
 
 main().catch(console.error);
 `;
-  
+
   await fs.writeFile(outputFile, wrapperCode);
 }
 
@@ -292,46 +298,48 @@ main().catch(console.error);
  */
 export async function buildSidecarCLI(args: string[]): Promise<void> {
   const projectRoot = process.cwd();
-  const packageJson = await fs.readJson(path.join(projectRoot, 'package.json'));
-  
+  const packageJson = await fs.readJson(path.join(projectRoot, "package.json"));
+
   // Default configuration
   const config: SidecarBuildOptions = {
-    entryFile: 'dist/server/index.js',
-    outputDir: 'src-tauri/binaries',
+    entryFile: "dist/server/index.js",
+    outputDir: "src-tauri/binaries",
     compress: true,
-    targets: DEFAULT_TARGETS
+    targets: DEFAULT_TARGETS,
   };
-  
+
   // Override with package.json configuration
   if (packageJson.sidecar) {
     Object.assign(config, packageJson.sidecar);
   }
-  
+
   // Parse CLI arguments
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
-      case '--entry':
+      case "--entry":
         config.entryFile = args[++i];
         break;
-      case '--output':
+      case "--output":
         config.outputDir = args[++i];
         break;
-      case '--no-compress':
+      case "--no-compress":
         config.compress = false;
         break;
-      case '--target': {
-        const [platform, arch] = args[++i].split('-') as [string, string];
-        config.targets = [{
-          platform: platform as any,
-          arch: arch as any
-        }];
+      case "--target": {
+        const [platform, arch] = args[++i].split("-") as [string, string];
+        config.targets = [
+          {
+            platform: platform as any,
+            arch: arch as any,
+          },
+        ];
         break;
       }
     }
   }
-  
-  console.log('Building Tauri sidecar with configuration:');
+
+  console.log("Building Tauri sidecar with configuration:");
   console.log(JSON.stringify(config, null, 2));
-  
+
   await buildSidecar(config);
 }

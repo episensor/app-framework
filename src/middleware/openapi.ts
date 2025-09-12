@@ -3,9 +3,9 @@
  * Provides automatic API documentation generation
  */
 
-import swaggerJsdoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
-import { Express } from 'express';
+import swaggerJsdoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
+import { Express } from "express";
 
 export interface OpenAPIConfig {
   title: string;
@@ -35,185 +35,188 @@ export interface OpenAPIConfig {
  * @param config OpenAPI configuration
  * @param apis Array of file patterns for API routes
  */
-export function generateOpenAPISpec(config: OpenAPIConfig, apis: string[]): object {
+export function generateOpenAPISpec(
+  config: OpenAPIConfig,
+  apis: string[],
+): object {
   const options: swaggerJsdoc.Options = {
     definition: {
-      openapi: '3.0.0',
+      openapi: "3.0.0",
       info: {
         title: config.title,
         version: config.version,
         description: config.description,
         contact: config.contact,
-        license: config.license
+        license: config.license,
       },
       servers: config.servers || [
         {
-          url: 'http://localhost:3000',
-          description: 'Development server'
-        }
+          url: "http://localhost:3000",
+          description: "Development server",
+        },
       ],
       tags: config.tags,
       components: {
         schemas: {
           ApiResponse: {
-            type: 'object',
+            type: "object",
             properties: {
               success: {
-                type: 'boolean',
-                description: 'Indicates if the request was successful'
+                type: "boolean",
+                description: "Indicates if the request was successful",
               },
               data: {
-                type: 'object',
-                description: 'Response data payload'
+                type: "object",
+                description: "Response data payload",
               },
               error: {
-                type: 'object',
+                type: "object",
                 properties: {
                   code: {
-                    type: 'string',
-                    description: 'Error code'
+                    type: "string",
+                    description: "Error code",
                   },
                   message: {
-                    type: 'string',
-                    description: 'Error message'
+                    type: "string",
+                    description: "Error message",
                   },
                   details: {
-                    type: 'object',
-                    description: 'Additional error details'
-                  }
-                }
+                    type: "object",
+                    description: "Additional error details",
+                  },
+                },
               },
               message: {
-                type: 'string',
-                description: 'Optional success message'
+                type: "string",
+                description: "Optional success message",
               },
               metadata: {
-                type: 'object',
+                type: "object",
                 properties: {
                   timestamp: {
-                    type: 'string',
-                    format: 'date-time',
-                    description: 'Response timestamp'
+                    type: "string",
+                    format: "date-time",
+                    description: "Response timestamp",
                   },
                   version: {
-                    type: 'string',
-                    description: 'API version'
+                    type: "string",
+                    description: "API version",
                   },
                   pagination: {
-                    type: 'object',
+                    type: "object",
                     properties: {
-                      page: { type: 'integer' },
-                      limit: { type: 'integer' },
-                      total: { type: 'integer' },
-                      hasMore: { type: 'boolean' }
-                    }
-                  }
-                }
-              }
-            }
+                      page: { type: "integer" },
+                      limit: { type: "integer" },
+                      total: { type: "integer" },
+                      hasMore: { type: "boolean" },
+                    },
+                  },
+                },
+              },
+            },
           },
           ValidationError: {
-            type: 'object',
+            type: "object",
             properties: {
               field: {
-                type: 'string',
-                description: 'Field that failed validation'
+                type: "string",
+                description: "Field that failed validation",
               },
               message: {
-                type: 'string',
-                description: 'Validation error message'
-              }
-            }
+                type: "string",
+                description: "Validation error message",
+              },
+            },
           },
           ErrorResponse: {
-            type: 'object',
+            type: "object",
             properties: {
               success: {
-                type: 'boolean',
-                enum: [false]
+                type: "boolean",
+                enum: [false],
               },
               error: {
-                type: 'object',
+                type: "object",
                 properties: {
-                  code: { type: 'string' },
-                  message: { type: 'string' },
-                  details: { type: 'object' }
+                  code: { type: "string" },
+                  message: { type: "string" },
+                  details: { type: "object" },
                 },
-                required: ['code', 'message']
-              }
+                required: ["code", "message"],
+              },
             },
-            required: ['success', 'error']
-          }
+            required: ["success", "error"],
+          },
         },
         securitySchemes: {
           sessionAuth: {
-            type: 'apiKey',
-            in: 'cookie',
-            name: 'connect.sid',
-            description: 'Session-based authentication'
+            type: "apiKey",
+            in: "cookie",
+            name: "connect.sid",
+            description: "Session-based authentication",
           },
           bearerAuth: {
-            type: 'http',
-            scheme: 'bearer',
-            bearerFormat: 'JWT',
-            description: 'JWT bearer token authentication'
-          }
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT",
+            description: "JWT bearer token authentication",
+          },
         },
         responses: {
           BadRequest: {
-            description: 'Bad request',
+            description: "Bad request",
             content: {
-              'application/json': {
+              "application/json": {
                 schema: {
-                  $ref: '#/components/schemas/ErrorResponse'
-                }
-              }
-            }
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
           },
           Unauthorized: {
-            description: 'Authentication required',
+            description: "Authentication required",
             content: {
-              'application/json': {
+              "application/json": {
                 schema: {
-                  $ref: '#/components/schemas/ErrorResponse'
-                }
-              }
-            }
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
           },
           Forbidden: {
-            description: 'Access denied',
+            description: "Access denied",
             content: {
-              'application/json': {
+              "application/json": {
                 schema: {
-                  $ref: '#/components/schemas/ErrorResponse'
-                }
-              }
-            }
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
           },
           NotFound: {
-            description: 'Resource not found',
+            description: "Resource not found",
             content: {
-              'application/json': {
+              "application/json": {
                 schema: {
-                  $ref: '#/components/schemas/ErrorResponse'
-                }
-              }
-            }
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
           },
           InternalError: {
-            description: 'Internal server error',
+            description: "Internal server error",
             content: {
-              'application/json': {
+              "application/json": {
                 schema: {
-                  $ref: '#/components/schemas/ErrorResponse'
-                }
-              }
-            }
-          }
-        }
-      }
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
+          },
+        },
+      },
     },
-    apis
+    apis,
   };
 
   return swaggerJsdoc(options);
@@ -230,22 +233,22 @@ export function setupOpenAPIDocumentation(
   app: Express,
   config: OpenAPIConfig,
   apis: string[],
-  path: string = '/api-docs'
+  path: string = "/api-docs",
 ): void {
   const swaggerSpec = generateOpenAPISpec(config, apis);
-  
+
   // Serve OpenAPI spec as JSON
   app.get(`${path}/spec.json`, (_req, res) => {
     res.json(swaggerSpec);
   });
-  
+
   // Serve Swagger UI
   app.use(
     path,
     swaggerUi.serve,
     swaggerUi.setup(swaggerSpec, {
       customSiteTitle: `${config.title} - API Documentation`,
-      customfavIcon: '/favicon.ico',
+      customfavIcon: "/favicon.ico",
       customCss: `
         .swagger-ui .topbar { display: none }
         .swagger-ui .info { margin-bottom: 40px }
@@ -254,19 +257,19 @@ export function setupOpenAPIDocumentation(
       swaggerOptions: {
         persistAuthorization: true,
         displayRequestDuration: true,
-        docExpansion: 'none',
+        docExpansion: "none",
         filter: true,
         showExtensions: true,
         showCommonExtensions: true,
-        displayOperationId: false
-      }
-    })
+        displayOperationId: false,
+      },
+    }),
   );
 }
 
 /**
  * Example JSDoc annotation for OpenAPI
- * 
+ *
  * @swagger
  * /api/resource:
  *   get:
@@ -287,7 +290,11 @@ export function setupOpenAPIDocumentation(
  * OpenAPI operation decorator (for future TypeScript decorator support)
  */
 export function ApiOperation(operation: any) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor,
+  ) {
     // Store OpenAPI metadata for later processing
     if (!target._openapi) {
       target._openapi = {};

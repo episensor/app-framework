@@ -5,16 +5,16 @@
  * Simple, practical file handling for desktop applications
  */
 
-import fs from 'fs';
-import path from 'path';
-import crypto from 'crypto';
-import { createLogger } from '../core/index.js';
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
+import { createLogger } from "../core/index.js";
 
 let logger: any; // Will be initialized when needed
 
 function ensureLogger() {
   if (!logger) {
-    logger = createLogger('FileHandler');
+    logger = createLogger("FileHandler");
   }
   return logger;
 }
@@ -43,9 +43,9 @@ export class FileHandler {
   private maxFileSize: number;
 
   constructor(
-    uploadDir: string = './uploads',
-    tempDir: string = './temp',
-    maxFileSize: number = 50 * 1024 * 1024 // 50MB default
+    uploadDir: string = "./uploads",
+    tempDir: string = "./temp",
+    maxFileSize: number = 50 * 1024 * 1024, // 50MB default
   ) {
     this.uploadDir = path.resolve(uploadDir);
     this.tempDir = path.resolve(tempDir);
@@ -62,19 +62,21 @@ export class FileHandler {
   async saveUpload(
     fileBuffer: Buffer,
     originalName: string,
-    options: FileUploadOptions = {}
+    options: FileUploadOptions = {},
   ): Promise<UploadedFile> {
     const {
       maxSize = this.maxFileSize,
       allowedTypes = [],
       destination = this.uploadDir,
       generateUniqueName = true,
-      preserveExtension = true
+      preserveExtension = true,
     } = options;
 
     // Validate size
     if (fileBuffer.length > maxSize) {
-      throw new Error(`File size (${fileBuffer.length} bytes) exceeds maximum allowed (${maxSize} bytes)`);
+      throw new Error(
+        `File size (${fileBuffer.length} bytes) exceeds maximum allowed (${maxSize} bytes)`,
+      );
     }
 
     // Get file extension
@@ -83,14 +85,16 @@ export class FileHandler {
 
     // Validate file type
     if (allowedTypes.length > 0 && !allowedTypes.includes(extension)) {
-      throw new Error(`File type ${extension} not allowed. Allowed types: ${allowedTypes.join(', ')}`);
+      throw new Error(
+        `File type ${extension} not allowed. Allowed types: ${allowedTypes.join(", ")}`,
+      );
     }
 
     // Generate filename
     let filename: string;
     if (generateUniqueName) {
-      const uniqueId = crypto.randomBytes(8).toString('hex');
-      filename = `${this.sanitizeFilename(nameWithoutExt)}_${uniqueId}${preserveExtension ? extension : ''}`;
+      const uniqueId = crypto.randomBytes(8).toString("hex");
+      filename = `${this.sanitizeFilename(nameWithoutExt)}_${uniqueId}${preserveExtension ? extension : ""}`;
     } else {
       filename = this.sanitizeFilename(originalName);
     }
@@ -102,7 +106,7 @@ export class FileHandler {
     const filePath = path.join(destination, filename);
 
     // Calculate file hash
-    const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+    const hash = crypto.createHash("sha256").update(fileBuffer).digest("hex");
 
     // Save file
     await fs.promises.writeFile(filePath, fileBuffer);
@@ -115,7 +119,7 @@ export class FileHandler {
       path: filePath,
       size: fileBuffer.length,
       extension,
-      hash
+      hash,
     };
   }
 
@@ -124,7 +128,7 @@ export class FileHandler {
    */
   async readFile(filePath: string): Promise<Buffer> {
     const resolvedPath = path.resolve(filePath);
-    
+
     // Check if file exists
     if (!fs.existsSync(resolvedPath)) {
       throw new Error(`File not found: ${filePath}`);
@@ -144,7 +148,7 @@ export class FileHandler {
    */
   async deleteFile(filePath: string): Promise<void> {
     const resolvedPath = path.resolve(filePath);
-    
+
     if (fs.existsSync(resolvedPath)) {
       await fs.promises.unlink(resolvedPath);
       ensureLogger().info(`File deleted: ${filePath}`);
@@ -184,15 +188,17 @@ export class FileHandler {
    */
   async listFiles(dirPath: string, extension?: string): Promise<string[]> {
     const resolvedPath = path.resolve(dirPath);
-    
+
     if (!fs.existsSync(resolvedPath)) {
       return [];
     }
 
     const files = await fs.promises.readdir(resolvedPath);
-    
+
     if (extension) {
-      return files.filter(file => path.extname(file).toLowerCase() === extension.toLowerCase());
+      return files.filter(
+        (file) => path.extname(file).toLowerCase() === extension.toLowerCase(),
+      );
     }
 
     return files;
@@ -201,17 +207,19 @@ export class FileHandler {
   /**
    * Clean temporary files older than specified age
    */
-  async cleanTempFiles(maxAgeMs: number = 24 * 60 * 60 * 1000): Promise<number> {
+  async cleanTempFiles(
+    maxAgeMs: number = 24 * 60 * 60 * 1000,
+  ): Promise<number> {
     const now = Date.now();
     let deletedCount = 0;
 
     try {
       const files = await fs.promises.readdir(this.tempDir);
-      
+
       for (const file of files) {
         const filePath = path.join(this.tempDir, file);
         const stats = await fs.promises.stat(filePath);
-        
+
         if (now - stats.mtimeMs > maxAgeMs) {
           await fs.promises.unlink(filePath);
           deletedCount++;
@@ -222,7 +230,7 @@ export class FileHandler {
         ensureLogger().info(`Cleaned ${deletedCount} temporary files`);
       }
     } catch (_error: any) {
-      ensureLogger().error('Error cleaning temp files:', _error);
+      ensureLogger().error("Error cleaning temp files:", _error);
     }
 
     return deletedCount;
@@ -251,7 +259,7 @@ export class FileHandler {
       size: stats.size,
       created: stats.birthtime,
       modified: stats.mtime,
-      isDirectory: stats.isDirectory()
+      isDirectory: stats.isDirectory(),
     };
   }
 
@@ -270,12 +278,12 @@ export class FileHandler {
   private sanitizeFilename(filename: string): string {
     // Remove any path components
     const name = path.basename(filename);
-    
+
     // Replace problematic characters
     return name
-      .replace(/[^a-zA-Z0-9._-]/g, '_')
-      .replace(/_{2,}/g, '_')
-      .replace(/^_+|_+$/g, '');
+      .replace(/[^a-zA-Z0-9._-]/g, "_")
+      .replace(/_{2,}/g, "_")
+      .replace(/^_+|_+$/g, "");
   }
 }
 
@@ -286,24 +294,24 @@ export class CSVHandler {
   /**
    * Parse CSV string to array of objects
    */
-  static parse(csvString: string, delimiter: string = ','): any[] {
-    const lines = csvString.trim().split('\n');
+  static parse(csvString: string, delimiter: string = ","): any[] {
+    const lines = csvString.trim().split("\n");
     if (lines.length === 0) return [];
 
-    const headers = lines[0].split(delimiter).map(h => h.trim());
+    const headers = lines[0].split(delimiter).map((h) => h.trim());
     const data: any[] = [];
 
     for (let i = 1; i < lines.length; i++) {
       const values = lines[i].split(delimiter);
       const row: any = {};
-      
+
       headers.forEach((header, index) => {
         const value = values[index]?.trim();
         // Try to parse numbers
         const num = Number(value);
-        row[header] = !isNaN(num) && value !== '' ? num : value;
+        row[header] = !isNaN(num) && value !== "" ? num : value;
       });
-      
+
       data.push(row);
     }
 
@@ -313,8 +321,8 @@ export class CSVHandler {
   /**
    * Generate CSV string from array of objects
    */
-  static generate(data: any[], delimiter: string = ','): string {
-    if (data.length === 0) return '';
+  static generate(data: any[], delimiter: string = ","): string {
+    if (data.length === 0) return "";
 
     const headers = Object.keys(data[0]);
     const csvLines: string[] = [];
@@ -324,34 +332,44 @@ export class CSVHandler {
 
     // Add data rows
     for (const row of data) {
-      const values = headers.map(header => {
+      const values = headers.map((header) => {
         const value = row[header];
         // Quote strings containing delimiter or quotes
-        if (typeof value === 'string' && (value.includes(delimiter) || value.includes('"'))) {
+        if (
+          typeof value === "string" &&
+          (value.includes(delimiter) || value.includes('"'))
+        ) {
           return `"${value.replace(/"/g, '""')}"`;
         }
-        return value ?? '';
+        return value ?? "";
       });
       csvLines.push(values.join(delimiter));
     }
 
-    return csvLines.join('\n');
+    return csvLines.join("\n");
   }
 
   /**
    * Parse CSV file
    */
-  static async parseFile(filePath: string, delimiter: string = ','): Promise<any[]> {
-    const content = await fs.promises.readFile(filePath, 'utf-8');
+  static async parseFile(
+    filePath: string,
+    delimiter: string = ",",
+  ): Promise<any[]> {
+    const content = await fs.promises.readFile(filePath, "utf-8");
     return this.parse(content, delimiter);
   }
 
   /**
    * Save data to CSV file
    */
-  static async saveFile(filePath: string, data: any[], delimiter: string = ','): Promise<void> {
+  static async saveFile(
+    filePath: string,
+    data: any[],
+    delimiter: string = ",",
+  ): Promise<void> {
     const csv = this.generate(data, delimiter);
-    await fs.promises.writeFile(filePath, csv, 'utf-8');
+    await fs.promises.writeFile(filePath, csv, "utf-8");
   }
 }
 
@@ -374,30 +392,34 @@ export class JSONHandler {
    * Read JSON file
    */
   static async readFile<T = any>(filePath: string): Promise<T> {
-    const content = await fs.promises.readFile(filePath, 'utf-8');
+    const content = await fs.promises.readFile(filePath, "utf-8");
     return this.parse<T>(content);
   }
 
   /**
    * Save JSON file
    */
-  static async saveFile(filePath: string, data: any, pretty: boolean = true): Promise<void> {
+  static async saveFile(
+    filePath: string,
+    data: any,
+    pretty: boolean = true,
+  ): Promise<void> {
     const json = pretty ? JSON.stringify(data, null, 2) : JSON.stringify(data);
-    await fs.promises.writeFile(filePath, json, 'utf-8');
+    await fs.promises.writeFile(filePath, json, "utf-8");
   }
 
   /**
    * Validate JSON against a simple schema
    */
   static validate(data: any, requiredFields: string[]): boolean {
-    if (!data || typeof data !== 'object') return false;
-    
+    if (!data || typeof data !== "object") return false;
+
     for (const field of requiredFields) {
       if (!(field in data)) {
         return false;
       }
     }
-    
+
     return true;
   }
 }
@@ -411,13 +433,13 @@ export class TemplateProcessor {
    */
   static process(template: string, data: Record<string, any>): string {
     let result = template;
-    
+
     // Replace {{key}} with values
     for (const [key, value] of Object.entries(data)) {
-      const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-      result = result.replace(regex, String(value ?? ''));
+      const regex = new RegExp(`{{\\s*${key}\\s*}}`, "g");
+      result = result.replace(regex, String(value ?? ""));
     }
-    
+
     return result;
   }
 
@@ -427,15 +449,15 @@ export class TemplateProcessor {
   static async processFile(
     templatePath: string,
     data: Record<string, any>,
-    outputPath?: string
+    outputPath?: string,
   ): Promise<string> {
-    const template = await fs.promises.readFile(templatePath, 'utf-8');
+    const template = await fs.promises.readFile(templatePath, "utf-8");
     const processed = this.process(template, data);
-    
+
     if (outputPath) {
-      await fs.promises.writeFile(outputPath, processed, 'utf-8');
+      await fs.promises.writeFile(outputPath, processed, "utf-8");
     }
-    
+
     return processed;
   }
 }
@@ -455,7 +477,7 @@ export function getFileHandler(): FileHandler {
 export const fileHandler = new Proxy({} as FileHandler, {
   get(_target, prop) {
     return (getFileHandler() as any)[prop];
-  }
+  },
 });
 
 export default {
@@ -463,5 +485,5 @@ export default {
   CSVHandler,
   JSONHandler,
   TemplateProcessor,
-  fileHandler
+  fileHandler,
 };

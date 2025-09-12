@@ -15,16 +15,29 @@ export interface SettingDefinition {
   label: string;
   description?: string;
   defaultValue?: any;
-  
+
   // Type system - comprehensive list
-  type: 'string' | 'number' | 'boolean' | 'select' | 'multiselect' | 
-        'password' | 'textarea' | 'email' | 'url' | 'color' | 
-        'date' | 'time' | 'datetime' | 'json' | 'ipaddress' | 
-        'network-interface';
-  
+  type:
+    | "string"
+    | "number"
+    | "boolean"
+    | "select"
+    | "multiselect"
+    | "password"
+    | "textarea"
+    | "email"
+    | "url"
+    | "color"
+    | "date"
+    | "time"
+    | "datetime"
+    | "json"
+    | "ipaddress"
+    | "network-interface";
+
   // Options for select/multiselect
   options?: SettingOption[];
-  
+
   // Validation
   required?: boolean;
   validation?: {
@@ -36,39 +49,39 @@ export interface SettingDefinition {
     custom?: (value: any) => string | null;
   };
   validationMessage?: string; // Custom validation message
-  
+
   // Transforms
   transform?: {
     fromStorage?: (value: any) => any;
     toStorage?: (value: any) => any;
   };
-  
+
   // UI hints
   help?: string; // Detailed help text for tooltips
   hint?: string; // Hint text below input
   placeholder?: string;
   prefix?: string; // Text before input
   suffix?: string; // Text after input
-  inputWidth?: 'small' | 'medium' | 'large' | 'full';
+  inputWidth?: "small" | "medium" | "large" | "full";
   rows?: number; // For textarea
-  
+
   // Behavior
   readOnly?: boolean;
   hidden?: boolean; // For config-only settings
   sensitive?: boolean; // For passwords, API keys, etc.
   requiresRestart?: boolean;
-  
+
   // Organization
   category: string;
   subcategory?: string;
   group?: string; // Group related fields together
   order?: number; // Display order within category
   icon?: string; // Icon to display with field
-  
+
   // Conditional logic
   showIf?: (settings: Record<string, any>) => boolean;
   confirmMessage?: string; // Confirmation before applying
-  
+
   // Number-specific
   min?: number;
   max?: number;
@@ -87,7 +100,11 @@ export interface SettingsCategory {
 export interface SettingsSchema {
   categories: SettingsCategory[];
   version: string;
-  onSettingChange?: (key: string, value: any, oldValue: any) => void | Promise<void>;
+  onSettingChange?: (
+    key: string,
+    value: any,
+    oldValue: any,
+  ) => void | Promise<void>;
   onValidate?: (settings: Record<string, any>) => Record<string, string> | null;
 }
 
@@ -109,49 +126,59 @@ export interface SettingsValidationResult {
  * Built-in validation functions
  */
 export const Validators = {
-  required: (message = 'This field is required') => (value: any) => {
-    if (!value || (typeof value === 'string' && !value.trim())) {
-      return message;
-    }
-    return null;
-  },
-
-  email: (message = 'Invalid email address') => (value: string) => {
-    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      return message;
-    }
-    return null;
-  },
-
-  url: (message = 'Invalid URL') => (value: string) => {
-    if (value) {
-      try {
-        new URL(value);
-      } catch {
+  required:
+    (message = "This field is required") =>
+    (value: any) => {
+      if (!value || (typeof value === "string" && !value.trim())) {
         return message;
       }
-    }
-    return null;
-  },
+      return null;
+    },
 
-  ipAddress: (message = 'Invalid IP address') => (value: string) => {
-    if (value) {
-      const parts = value.split('.');
-      if (parts.length !== 4) return message;
-      for (const part of parts) {
-        const num = parseInt(part, 10);
-        if (isNaN(num) || num < 0 || num > 255) return message;
+  email:
+    (message = "Invalid email address") =>
+    (value: string) => {
+      if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        return message;
       }
-    }
-    return null;
-  },
+      return null;
+    },
 
-  port: (message = 'Invalid port number') => (value: number) => {
-    if (value < 1 || value > 65535) {
-      return message;
-    }
-    return null;
-  },
+  url:
+    (message = "Invalid URL") =>
+    (value: string) => {
+      if (value) {
+        try {
+          new URL(value);
+        } catch {
+          return message;
+        }
+      }
+      return null;
+    },
+
+  ipAddress:
+    (message = "Invalid IP address") =>
+    (value: string) => {
+      if (value) {
+        const parts = value.split(".");
+        if (parts.length !== 4) return message;
+        for (const part of parts) {
+          const num = parseInt(part, 10);
+          if (isNaN(num) || num < 0 || num > 255) return message;
+        }
+      }
+      return null;
+    },
+
+  port:
+    (message = "Invalid port number") =>
+    (value: number) => {
+      if (value < 1 || value > 65535) {
+        return message;
+      }
+      return null;
+    },
 
   range: (min: number, max: number, message?: string) => (value: number) => {
     if (value < min || value > max) {
@@ -160,12 +187,14 @@ export const Validators = {
     return null;
   },
 
-  pattern: (pattern: RegExp, message = 'Invalid format') => (value: string) => {
-    if (value && !pattern.test(value)) {
-      return message;
-    }
-    return null;
-  },
+  pattern:
+    (pattern: RegExp, message = "Invalid format") =>
+    (value: string) => {
+      if (value && !pattern.test(value)) {
+        return message;
+      }
+      return null;
+    },
 
   minLength: (min: number, message?: string) => (value: string) => {
     if (value && value.length < min) {
@@ -179,7 +208,7 @@ export const Validators = {
       return message || `Must be at most ${max} characters`;
     }
     return null;
-  }
+  },
 };
 
 /**
@@ -195,11 +224,11 @@ export function createSettingsSchema(schema: SettingsSchema): SettingsSchema {
  * Get setting by key from categories
  */
 export function getSettingByKey(
-  categories: SettingsCategory[], 
-  key: string
+  categories: SettingsCategory[],
+  key: string,
 ): SettingDefinition | undefined {
   for (const category of categories) {
-    const setting = category.settings.find(s => s.key === key);
+    const setting = category.settings.find((s) => s.key === key);
     if (setting) return setting;
   }
   return undefined;
@@ -208,72 +237,105 @@ export function getSettingByKey(
 /**
  * Validate a single setting
  */
-export function validateSetting(setting: SettingDefinition, value: any): string | null {
+export function validateSetting(
+  setting: SettingDefinition,
+  value: any,
+): string | null {
   // Check required
-  if (setting.required && (!value || (typeof value === 'string' && !value.trim()))) {
-    return setting.validationMessage || 'This field is required';
+  if (
+    setting.required &&
+    (!value || (typeof value === "string" && !value.trim()))
+  ) {
+    return setting.validationMessage || "This field is required";
   }
 
   // Type-specific validation
   switch (setting.type) {
-    case 'string':
-    case 'password':
-    case 'textarea':
-      if (value && typeof value !== 'string') {
-        return setting.validationMessage || 'Must be a string';
+    case "string":
+    case "password":
+    case "textarea":
+      if (value && typeof value !== "string") {
+        return setting.validationMessage || "Must be a string";
       }
       if (setting.validation) {
-        if (setting.validation.minLength !== undefined && value.length < setting.validation.minLength) {
-          return setting.validationMessage || `Must be at least ${setting.validation.minLength} characters`;
+        if (
+          setting.validation.minLength !== undefined &&
+          value.length < setting.validation.minLength
+        ) {
+          return (
+            setting.validationMessage ||
+            `Must be at least ${setting.validation.minLength} characters`
+          );
         }
-        if (setting.validation.maxLength !== undefined && value.length > setting.validation.maxLength) {
-          return setting.validationMessage || `Must be at most ${setting.validation.maxLength} characters`;
+        if (
+          setting.validation.maxLength !== undefined &&
+          value.length > setting.validation.maxLength
+        ) {
+          return (
+            setting.validationMessage ||
+            `Must be at most ${setting.validation.maxLength} characters`
+          );
         }
-        if (setting.validation.pattern && !new RegExp(setting.validation.pattern).test(value)) {
-          return setting.validationMessage || 'Invalid format';
+        if (
+          setting.validation.pattern &&
+          !new RegExp(setting.validation.pattern).test(value)
+        ) {
+          return setting.validationMessage || "Invalid format";
         }
       }
       break;
-      
-    case 'email':
+
+    case "email":
       if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-        return setting.validationMessage || 'Invalid email address';
+        return setting.validationMessage || "Invalid email address";
       }
       break;
-      
-    case 'url':
+
+    case "url":
       try {
         if (value) new URL(value);
       } catch {
-        return setting.validationMessage || 'Invalid URL';
+        return setting.validationMessage || "Invalid URL";
       }
       break;
-      
-    case 'ipaddress':
+
+    case "ipaddress":
       if (value) {
-        const parts = value.split('.');
+        const parts = value.split(".");
         if (parts.length !== 4) {
-          return setting.validationMessage || 'Invalid IP address';
+          return setting.validationMessage || "Invalid IP address";
         }
         for (const part of parts) {
           const num = parseInt(part, 10);
           if (isNaN(num) || num < 0 || num > 255) {
-            return setting.validationMessage || 'Invalid IP address';
+            return setting.validationMessage || "Invalid IP address";
           }
         }
       }
       break;
-      
-    case 'number':
-      if (typeof value !== 'number' || isNaN(value)) {
-        return setting.validationMessage || 'Must be a valid number';
+
+    case "number":
+      if (typeof value !== "number" || isNaN(value)) {
+        return setting.validationMessage || "Must be a valid number";
       }
       if (setting.validation) {
-        if (setting.validation.min !== undefined && value < setting.validation.min) {
-          return setting.validationMessage || `Must be at least ${setting.validation.min}`;
+        if (
+          setting.validation.min !== undefined &&
+          value < setting.validation.min
+        ) {
+          return (
+            setting.validationMessage ||
+            `Must be at least ${setting.validation.min}`
+          );
         }
-        if (setting.validation.max !== undefined && value > setting.validation.max) {
-          return setting.validationMessage || `Must be at most ${setting.validation.max}`;
+        if (
+          setting.validation.max !== undefined &&
+          value > setting.validation.max
+        ) {
+          return (
+            setting.validationMessage ||
+            `Must be at most ${setting.validation.max}`
+          );
         }
       }
       // Also check min/max at root level for backward compatibility
@@ -284,39 +346,44 @@ export function validateSetting(setting: SettingDefinition, value: any): string 
         return setting.validationMessage || `Must be at most ${setting.max}`;
       }
       break;
-      
-    case 'boolean':
-      if (typeof value !== 'boolean') {
-        return setting.validationMessage || 'Must be true or false';
+
+    case "boolean":
+      if (typeof value !== "boolean") {
+        return setting.validationMessage || "Must be true or false";
       }
       break;
-      
-    case 'select':
-    case 'multiselect':
+
+    case "select":
+    case "multiselect":
       if (setting.options) {
-        if (setting.type === 'select' && !setting.options.some(opt => opt.value === value)) {
-          return setting.validationMessage || 'Must select a valid option';
+        if (
+          setting.type === "select" &&
+          !setting.options.some((opt) => opt.value === value)
+        ) {
+          return setting.validationMessage || "Must select a valid option";
         }
-        if (setting.type === 'multiselect' && Array.isArray(value)) {
-          const validValues = setting.options.map(opt => opt.value);
-          if (!value.every(v => validValues.includes(v))) {
-            return setting.validationMessage || 'Invalid selection';
+        if (setting.type === "multiselect" && Array.isArray(value)) {
+          const validValues = setting.options.map((opt) => opt.value);
+          if (!value.every((v) => validValues.includes(v))) {
+            return setting.validationMessage || "Invalid selection";
           }
         }
       }
       break;
-      
-    case 'date':
-    case 'time':
-    case 'datetime':
+
+    case "date":
+    case "time":
+    case "datetime":
       if (value && !Date.parse(value)) {
-        return setting.validationMessage || 'Invalid date/time';
+        return setting.validationMessage || "Invalid date/time";
       }
       break;
-      
-    case 'color':
+
+    case "color":
       if (value && !/^#[0-9A-Fa-f]{6}$/.test(value)) {
-        return setting.validationMessage || 'Invalid color (must be hex format)';
+        return (
+          setting.validationMessage || "Invalid color (must be hex format)"
+        );
       }
       break;
   }
@@ -335,14 +402,14 @@ export function validateSetting(setting: SettingDefinition, value: any): string 
  */
 export function validateSettings(
   schema: SettingsSchema,
-  settings: Record<string, any>
+  settings: Record<string, any>,
 ): Record<string, string> {
   const errors: Record<string, string> = {};
-  
+
   for (const category of schema.categories) {
     for (const setting of category.settings) {
       if (setting.hidden) continue;
-      
+
       const value = settings[setting.key];
       const error = validateSetting(setting, value);
       if (error) {
@@ -350,7 +417,7 @@ export function validateSettings(
       }
     }
   }
-  
+
   // Run custom validation
   if (schema.onValidate) {
     const customErrors = schema.onValidate(settings);
@@ -358,7 +425,7 @@ export function validateSettings(
       Object.assign(errors, customErrors);
     }
   }
-  
+
   return errors;
 }
 
@@ -366,15 +433,15 @@ export function validateSettings(
  * Validate all settings (returns result object)
  */
 export function validateAllSettings(
-  categories: SettingsCategory[], 
-  values: Record<string, any>
+  categories: SettingsCategory[],
+  values: Record<string, any>,
 ): SettingsValidationResult {
   const errors: Record<string, string> = {};
-  
+
   for (const category of categories) {
     for (const setting of category.settings) {
       if (setting.hidden) continue;
-      
+
       const value = values[setting.key];
       const error = validateSetting(setting, value);
       if (error) {
@@ -385,26 +452,34 @@ export function validateAllSettings(
 
   return {
     isValid: Object.keys(errors).length === 0,
-    errors
+    errors,
   };
 }
 
 /**
  * Helper to flatten nested settings for storage
  */
-export function flattenSettings(settings: any, prefix = ''): Record<string, any> {
+export function flattenSettings(
+  settings: any,
+  prefix = "",
+): Record<string, any> {
   const flattened: Record<string, any> = {};
-  
+
   for (const [key, value] of Object.entries(settings)) {
     const fullKey = prefix ? `${prefix}.${key}` : key;
-    
-    if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+
+    if (
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      !(value instanceof Date)
+    ) {
       Object.assign(flattened, flattenSettings(value, fullKey));
     } else {
       flattened[fullKey] = value;
     }
   }
-  
+
   return flattened;
 }
 
@@ -416,11 +491,11 @@ export const flattenSettingsValues = flattenSettings;
  */
 export function unflattenSettings(flattened: Record<string, any>): any {
   const settings: any = {};
-  
+
   for (const [key, value] of Object.entries(flattened)) {
-    const parts = key.split('.');
+    const parts = key.split(".");
     let current = settings;
-    
+
     for (let i = 0; i < parts.length - 1; i++) {
       const part = parts[i];
       if (!part) continue;
@@ -429,13 +504,13 @@ export function unflattenSettings(flattened: Record<string, any>): any {
       }
       current = current[part];
     }
-    
+
     const lastPart = parts[parts.length - 1];
     if (lastPart) {
       current[lastPart] = value;
     }
   }
-  
+
   return settings;
 }
 
@@ -447,18 +522,18 @@ export const unflattenSettingsValues = unflattenSettings;
  */
 export function getRestartRequiredSettings(
   schema: SettingsSchema | SettingsCategory[],
-  changedSettings: Record<string, any> | string[]
+  changedSettings: Record<string, any> | string[],
 ): string[] {
   const restartRequired: string[] = [];
-  
+
   // Handle both schema and categories array
   const categories = Array.isArray(schema) ? schema : schema.categories;
-  
+
   // Handle both changed settings object and array of keys
-  const changedKeys = Array.isArray(changedSettings) 
-    ? changedSettings 
+  const changedKeys = Array.isArray(changedSettings)
+    ? changedSettings
     : Object.keys(changedSettings);
-  
+
   for (const category of categories) {
     for (const setting of category.settings) {
       if (setting.requiresRestart && changedKeys.includes(setting.key)) {
@@ -466,16 +541,18 @@ export function getRestartRequiredSettings(
       }
     }
   }
-  
+
   return restartRequired;
 }
 
 /**
  * Get default values from settings
  */
-export function getDefaultSettingsValues(categories: SettingsCategory[]): Record<string, any> {
+export function getDefaultSettingsValues(
+  categories: SettingsCategory[],
+): Record<string, any> {
   const defaults: Record<string, any> = {};
-  
+
   for (const category of categories) {
     for (const setting of category.settings) {
       if (!setting.hidden && setting.defaultValue !== undefined) {
@@ -483,7 +560,7 @@ export function getDefaultSettingsValues(categories: SettingsCategory[]): Record
       }
     }
   }
-  
+
   return defaults;
 }
 
@@ -492,12 +569,12 @@ export function getDefaultSettingsValues(categories: SettingsCategory[]): Record
  */
 export function evaluateFieldVisibility(
   field: SettingDefinition,
-  currentValues: Record<string, any>
+  currentValues: Record<string, any>,
 ): boolean {
   if (!field.showIf) {
     return true;
   }
-  
+
   try {
     return field.showIf(currentValues);
   } catch (_error) {
@@ -509,31 +586,33 @@ export function evaluateFieldVisibility(
 /**
  * Group fields by their group property
  */
-export function groupFields(fields: SettingDefinition[]): Map<string, SettingDefinition[]> {
+export function groupFields(
+  fields: SettingDefinition[],
+): Map<string, SettingDefinition[]> {
   const groups = new Map<string, SettingDefinition[]>();
-  
+
   // First, add ungrouped fields
-  const ungrouped = fields.filter(f => !f.group);
+  const ungrouped = fields.filter((f) => !f.group);
   if (ungrouped.length > 0) {
-    groups.set('_default', ungrouped);
+    groups.set("_default", ungrouped);
   }
-  
+
   // Then, group the rest
   fields
-    .filter(f => f.group)
-    .forEach(field => {
+    .filter((f) => f.group)
+    .forEach((field) => {
       const group = field.group!;
       if (!groups.has(group)) {
         groups.set(group, []);
       }
       groups.get(group)!.push(field);
     });
-  
+
   // Sort fields within each group by order
-  groups.forEach(groupFields => {
+  groups.forEach((groupFields) => {
     groupFields.sort((a, b) => (a.order || 999) - (b.order || 999));
   });
-  
+
   return groups;
 }
 
@@ -542,7 +621,7 @@ export function groupFields(fields: SettingDefinition[]): Map<string, SettingDef
  */
 export function applyToStorageTransform(
   field: SettingDefinition,
-  value: any
+  value: any,
 ): any {
   if (field.transform?.toStorage) {
     return field.transform.toStorage(value);
@@ -555,7 +634,7 @@ export function applyToStorageTransform(
  */
 export function applyFromStorageTransform(
   field: SettingDefinition,
-  value: any
+  value: any,
 ): any {
   if (field.transform?.fromStorage) {
     return field.transform.fromStorage(value);
@@ -567,19 +646,19 @@ export function applyFromStorageTransform(
  * Create settings form state
  */
 export function createSettingsFormState(
-  categories: SettingsCategory[], 
-  initialValues?: Record<string, any>
+  categories: SettingsCategory[],
+  initialValues?: Record<string, any>,
 ): SettingsFormState {
   const defaults = getDefaultSettingsValues(categories);
   const values = { ...defaults, ...initialValues };
   const validation = validateAllSettings(categories, values);
-  
+
   return {
     values,
     errors: validation.errors,
     touched: {},
     dirty: {},
     isValid: validation.isValid,
-    isSubmitting: false
+    isSubmitting: false,
   };
 }

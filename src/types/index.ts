@@ -18,12 +18,14 @@ export interface FieldValidationError {
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
-  error?: string | {
-    code: string;
-    message: string;
-    details?: any;
-    stack?: string; // Only in development
-  };
+  error?:
+    | string
+    | {
+        code: string;
+        message: string;
+        details?: any;
+        stack?: string; // Only in development
+      };
   message?: string; // Optional success message
   errors?: FieldValidationError[]; // For validation errors
   metadata?: {
@@ -67,7 +69,7 @@ export interface ConfigOptions {
 export interface NetworkInterface {
   name: string;
   address: string;
-  family: 'IPv4' | 'IPv6';
+  family: "IPv4" | "IPv6";
   internal: boolean;
   mac?: string;
 }
@@ -113,17 +115,17 @@ export interface WebSocketMessage {
 }
 
 export interface SimulatorUpdateMessage extends WebSocketMessage {
-  type: 'simulator:started' | 'simulator:stopped' | 'simulator:data';
+  type: "simulator:started" | "simulator:stopped" | "simulator:data";
   data: Simulator;
 }
 
 export interface TemplateUpdateMessage extends WebSocketMessage {
-  type: 'template:created' | 'template:updated' | 'template:deleted';
+  type: "template:created" | "template:updated" | "template:deleted";
   data: Template;
 }
 
 export interface DataUpdateMessage extends WebSocketMessage {
-  type: 'data:update';
+  type: "data:update";
   data: {
     simulatorId: string;
     values: Record<string, any>;

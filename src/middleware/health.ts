@@ -3,8 +3,8 @@
  * Provides consistent health monitoring across all applications
  */
 
-import { Request, Response, Router } from 'express';
-import os from 'os';
+import { Request, Response, Router } from "express";
+import os from "os";
 
 export interface HealthCheckOptions {
   includeDetails?: boolean;
@@ -15,14 +15,14 @@ export interface HealthCheckOptions {
 
 export interface ComponentHealth {
   [key: string]: {
-    status: 'healthy' | 'degraded' | 'unhealthy';
+    status: "healthy" | "degraded" | "unhealthy";
     message?: string;
     latency?: number;
   };
 }
 
 export interface HealthResponse {
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: "healthy" | "degraded" | "unhealthy";
   timestamp: string;
   version: string;
   uptime: number;
@@ -48,53 +48,55 @@ function getSystemResources() {
   const totalMem = os.totalmem();
   const freeMem = os.freemem();
   const usedMem = totalMem - freeMem;
-  
+
   // Simplified CPU usage calculation
   const cpus = os.cpus();
   let totalIdle = 0;
   let totalTick = 0;
-  
-  cpus.forEach(cpu => {
+
+  cpus.forEach((cpu) => {
     for (const type in cpu.times) {
       totalTick += cpu.times[type as keyof typeof cpu.times];
     }
     totalIdle += cpu.times.idle;
   });
-  
+
   const idle = totalIdle / cpus.length;
   const total = totalTick / cpus.length;
-  const usage = Math.round(100 - (100 * idle / total));
-  
+  const usage = Math.round(100 - (100 * idle) / total);
+
   return {
     memory: {
       used: usedMem,
       total: totalMem,
-      percentage: Math.round((usedMem / totalMem) * 100)
+      percentage: Math.round((usedMem / totalMem) * 100),
     },
     cpu: {
       usage,
-      cores: cpus.length
-    }
+      cores: cpus.length,
+    },
   };
 }
 
 /**
  * Determine overall health status based on components
  */
-function determineOverallHealth(components?: ComponentHealth): 'healthy' | 'degraded' | 'unhealthy' {
-  if (!components) return 'healthy';
-  
-  const statuses = Object.values(components).map(c => c.status);
-  
-  if (statuses.some(s => s === 'unhealthy')) {
-    return 'unhealthy';
+function determineOverallHealth(
+  components?: ComponentHealth,
+): "healthy" | "degraded" | "unhealthy" {
+  if (!components) return "healthy";
+
+  const statuses = Object.values(components).map((c) => c.status);
+
+  if (statuses.some((s) => s === "unhealthy")) {
+    return "unhealthy";
   }
-  
-  if (statuses.some(s => s === 'degraded')) {
-    return 'degraded';
+
+  if (statuses.some((s) => s === "degraded")) {
+    return "degraded";
   }
-  
-  return 'healthy';
+
+  return "healthy";
 }
 
 /**
@@ -107,25 +109,25 @@ export function createHealthCheck(options: HealthCheckOptions = {}): Router {
   const {
     includeDetails = true,
     checkComponents,
-    version = process.env.npm_package_version || '1.0.0',
-    serviceName
+    version = process.env.npm_package_version || "1.0.0",
+    serviceName,
   } = options;
 
   /**
    * GET /health
    * Standard health check endpoint
    */
-  router.get('/health', async (_req: Request, res: Response) => {
+  router.get("/health", async (_req: Request, res: Response) => {
     try {
       // Check component health if provided
       const components = checkComponents ? await checkComponents() : undefined;
-      
+
       // Build health response
       const health: HealthResponse = {
         status: determineOverallHealth(components),
         timestamp: new Date().toISOString(),
         version,
-        uptime: process.uptime()
+        uptime: process.uptime(),
       };
 
       if (serviceName) {
@@ -141,16 +143,20 @@ export function createHealthCheck(options: HealthCheckOptions = {}): Router {
       }
 
       // Set appropriate status code
-      const statusCode = health.status === 'healthy' ? 200 : 
-                        health.status === 'degraded' ? 200 : 503;
+      const statusCode =
+        health.status === "healthy"
+          ? 200
+          : health.status === "degraded"
+            ? 200
+            : 503;
 
       res.status(statusCode).json(health);
     } catch (_error: any) {
       res.status(503).json({
-        status: 'unhealthy',
+        status: "unhealthy",
         timestamp: new Date().toISOString(),
         version,
-        error: _error.message
+        error: _error.message,
       });
     }
   });
@@ -159,12 +165,12 @@ export function createHealthCheck(options: HealthCheckOptions = {}): Router {
    * GET /health/ready
    * Readiness check (for k8s)
    */
-  router.get('/health/ready', async (_req: Request, res: Response) => {
+  router.get("/health/ready", async (_req: Request, res: Response) => {
     try {
       const components = checkComponents ? await checkComponents() : undefined;
       const status = determineOverallHealth(components);
-      
-      if (status === 'healthy') {
+
+      if (status === "healthy") {
         res.status(200).json({ ready: true });
       } else {
         res.status(503).json({ ready: false, status });
@@ -178,7 +184,7 @@ export function createHealthCheck(options: HealthCheckOptions = {}): Router {
    * GET /health/live
    * Liveness check (for k8s)
    */
-  router.get('/health/live', (_req: Request, res: Response) => {
+  router.get("/health/live", (_req: Request, res: Response) => {
     res.status(200).json({ alive: true });
   });
 
@@ -190,11 +196,11 @@ export function createHealthCheck(options: HealthCheckOptions = {}): Router {
  */
 export function healthCheck(_req: Request, res: Response) {
   const health: HealthResponse = {
-    status: 'healthy',
+    status: "healthy",
     timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version || '1.0.0',
-    uptime: process.uptime()
+    version: process.env.npm_package_version || "1.0.0",
+    uptime: process.uptime(),
   };
-  
+
   res.json(health);
 }

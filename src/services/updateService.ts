@@ -3,27 +3,27 @@
  * Checks for application updates via GitHub releases
  */
 
-import { createLogger } from '../core/index.js';
-import fs from 'fs-extra';
-import path from 'path';
+import { createLogger } from "../core/index.js";
+import fs from "fs-extra";
+import path from "path";
 
 let pkg: any;
 try {
-  const pkgPath = path.join(process.cwd(), 'package.json');
+  const pkgPath = path.join(process.cwd(), "package.json");
   if (fs.existsSync(pkgPath)) {
-    pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
   } else {
-    pkg = { version: '3.6.0', name: '@episensor/app-framework' };
+    pkg = { version: "3.6.0", name: "@episensor/app-framework" };
   }
 } catch {
-  pkg = { version: '3.6.0', name: '@episensor/app-framework' };
+  pkg = { version: "3.6.0", name: "@episensor/app-framework" };
 }
 
 let logger: any; // Will be initialized when needed
 
 function ensureLogger() {
   if (!logger) {
-    logger = createLogger('UpdateService');
+    logger = createLogger("UpdateService");
   }
   return logger;
 }
@@ -74,7 +74,7 @@ class UpdateService {
 
   constructor() {
     this.currentVersion = pkg.version;
-    this.githubRepo = 'episensor/device-simulator'; // Update with actual repo
+    this.githubRepo = "episensor/device-simulator"; // Update with actual repo
     this.checkInterval = 24 * 60 * 60 * 1000; // Check daily
     this.lastCheck = null;
     this.updateAvailable = false;
@@ -90,41 +90,44 @@ class UpdateService {
       if (!force && this.lastCheck) {
         const timeSinceCheck = Date.now() - this.lastCheck;
         if (timeSinceCheck < this.checkInterval) {
-          ensureLogger().debug('Skipping update check (too recent)');
+          ensureLogger().debug("Skipping update check (too recent)");
           return this.getUpdateInfo();
         }
       }
 
-      ensureLogger().info('Checking for updates...');
-      
+      ensureLogger().info("Checking for updates...");
+
       // Fetch latest release from GitHub API
       const response = await fetch(
         `https://api.github.com/repos/${this.githubRepo}/releases/latest`,
         {
           headers: {
-            'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': `device-simulator/${this.currentVersion}`
-          }
-        }
+            Accept: "application/vnd.github.v3+json",
+            "User-Agent": `device-simulator/${this.currentVersion}`,
+          },
+        },
       );
 
       if (!response.ok) {
         if (response.status === 404) {
-          ensureLogger().debug('No releases found');
+          ensureLogger().debug("No releases found");
           return this.getUpdateInfo();
         }
         throw new Error(`GitHub API error: ${response.status}`);
       }
 
-      const release = await response.json() as any;
+      const release = (await response.json()) as any;
       this.lastCheck = Date.now();
-      
+
       // Parse version from tag (remove 'v' prefix if present)
-      const latestVersion = release.tag_name.replace(/^v/, '');
-      
+      const latestVersion = release.tag_name.replace(/^v/, "");
+
       // Compare versions
-      this.updateAvailable = this.isNewerVersion(latestVersion, this.currentVersion);
-      
+      this.updateAvailable = this.isNewerVersion(
+        latestVersion,
+        this.currentVersion,
+      );
+
       if (this.updateAvailable) {
         this.latestRelease = {
           version: latestVersion,
@@ -135,19 +138,21 @@ class UpdateService {
           assets: release.assets.map((asset: any) => ({
             name: asset.name,
             size: asset.size,
-            downloadUrl: asset.browser_download_url
-          }))
+            downloadUrl: asset.browser_download_url,
+          })),
         };
-        
-        ensureLogger().info(`Update available: ${latestVersion} (current: ${this.currentVersion})`);
+
+        ensureLogger().info(
+          `Update available: ${latestVersion} (current: ${this.currentVersion})`,
+        );
       } else {
-        ensureLogger().info('Application is up to date');
+        ensureLogger().info("Application is up to date");
         this.latestRelease = null;
       }
 
       return this.getUpdateInfo();
     } catch (_error: any) {
-      ensureLogger().error('Failed to check for updates:', _error);
+      ensureLogger().error("Failed to check for updates:", _error);
       throw _error;
     }
   }
@@ -157,11 +162,11 @@ class UpdateService {
    */
   private isNewerVersion(latest: string, current: string): boolean {
     const parseVersion = (v: string): Version => {
-      const parts = v.split('.').map(p => parseInt(p) || 0);
+      const parts = v.split(".").map((p) => parseInt(p) || 0);
       return {
         major: parts[0] || 0,
         minor: parts[1] || 0,
-        patch: parts[2] || 0
+        patch: parts[2] || 0,
       };
     };
 
@@ -170,10 +175,10 @@ class UpdateService {
 
     if (latestParsed.major > currentParsed.major) return true;
     if (latestParsed.major < currentParsed.major) return false;
-    
+
     if (latestParsed.minor > currentParsed.minor) return true;
     if (latestParsed.minor < currentParsed.minor) return false;
-    
+
     return latestParsed.patch > currentParsed.patch;
   }
 
@@ -185,35 +190,37 @@ class UpdateService {
       currentVersion: this.currentVersion,
       updateAvailable: this.updateAvailable,
       latestRelease: this.latestRelease,
-      lastCheck: this.lastCheck
+      lastCheck: this.lastCheck,
     };
   }
 
   /**
    * Get changelog between versions
    */
-  async getChangelog(fromVersion: string = this.currentVersion): Promise<ChangelogEntry[]> {
+  async getChangelog(
+    fromVersion: string = this.currentVersion,
+  ): Promise<ChangelogEntry[]> {
     try {
       const response = await fetch(
         `https://api.github.com/repos/${this.githubRepo}/releases`,
         {
           headers: {
-            'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': `device-simulator/${this.currentVersion}`
-          }
-        }
+            Accept: "application/vnd.github.v3+json",
+            "User-Agent": `device-simulator/${this.currentVersion}`,
+          },
+        },
       );
 
       if (!response.ok) {
         throw new Error(`GitHub API error: ${response.status}`);
       }
 
-      const releases = await response.json() as any;
+      const releases = (await response.json()) as any;
       const changelog: ChangelogEntry[] = [];
-      
+
       for (const release of releases) {
-        const version = release.tag_name.replace(/^v/, '');
-        
+        const version = release.tag_name.replace(/^v/, "");
+
         // Only include versions newer than fromVersion
         if (this.isNewerVersion(version, fromVersion)) {
           changelog.push({
@@ -221,14 +228,14 @@ class UpdateService {
             name: release.name,
             body: release.body,
             publishedAt: release.published_at,
-            url: release.html_url
+            url: release.html_url,
           });
         }
       }
 
       return changelog;
     } catch (_error: any) {
-      ensureLogger().error('Failed to fetch changelog:', _error);
+      ensureLogger().error("Failed to fetch changelog:", _error);
       throw _error;
     }
   }
@@ -241,13 +248,13 @@ class UpdateService {
 
     const platform = process.platform;
     const arch = process.arch;
-    
+
     // Map platform/arch to expected asset names
     const assetPatterns: Record<string, RegExp> = {
-      'darwin-x64': /mac.*x64|darwin.*x64|osx/i,
-      'darwin-arm64': /mac.*arm|darwin.*arm|apple.*silicon/i,
-      'win32-x64': /win.*x64|windows.*64/i,
-      'linux-x64': /linux.*x64|linux.*amd64/i
+      "darwin-x64": /mac.*x64|darwin.*x64|osx/i,
+      "darwin-arm64": /mac.*arm|darwin.*arm|apple.*silicon/i,
+      "win32-x64": /win.*x64|windows.*64/i,
+      "linux-x64": /linux.*x64|linux.*amd64/i,
     };
 
     const key = `${platform}-${arch}`;
@@ -258,7 +265,7 @@ class UpdateService {
       return this.latestRelease.url; // Return release page URL as fallback
     }
 
-    const asset = this.latestRelease.assets.find(a => pattern.test(a.name));
+    const asset = this.latestRelease.assets.find((a) => pattern.test(a.name));
     return asset ? asset.downloadUrl : this.latestRelease.url;
   }
 
@@ -267,14 +274,14 @@ class UpdateService {
    */
   startAutoCheck(): void {
     // Initial check
-    this.checkForUpdates().catch(err => {
-      ensureLogger().error('Auto update check failed:', err);
+    this.checkForUpdates().catch((err) => {
+      ensureLogger().error("Auto update check failed:", err);
     });
 
     // Schedule periodic checks
     setInterval(() => {
-      this.checkForUpdates().catch(err => {
-        ensureLogger().error('Auto update check failed:', err);
+      this.checkForUpdates().catch((err) => {
+        ensureLogger().error("Auto update check failed:", err);
       });
     }, this.checkInterval);
   }
@@ -284,7 +291,7 @@ class UpdateService {
    */
   stopAutoCheck(): void {
     // Would need to store interval ID to properly clear
-    ensureLogger().info('Auto update checks stopped');
+    ensureLogger().info("Auto update checks stopped");
   }
 
   /**
@@ -297,7 +304,7 @@ class UpdateService {
       nodeVersion: process.version,
       appVersion: this.currentVersion,
       memory: process.memoryUsage(),
-      uptime: process.uptime()
+      uptime: process.uptime(),
     };
   }
 

@@ -4,15 +4,15 @@
  * Data is informational only - no automatic service stops based on metrics
  */
 
-import os from 'os';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import { Request, Response, Router } from 'express';
+import os from "os";
+import { exec } from "child_process";
+import { promisify } from "util";
+import { Request, Response, Router } from "express";
 
 const execAsync = promisify(exec);
 
 export interface SystemHealth {
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: "healthy" | "degraded" | "unhealthy";
   timestamp: string;
   uptime: number;
   environment: string;
@@ -78,14 +78,14 @@ export interface CustomHealthCheck {
 
 export interface HealthCheckResult {
   name: string;
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: "healthy" | "degraded" | "unhealthy";
   message?: string;
   data?: any;
 }
 
 export interface DependencyHealth {
   name: string;
-  status: 'connected' | 'disconnected' | 'error';
+  status: "connected" | "disconnected" | "error";
   responseTime?: number;
   error?: string;
 }
@@ -115,17 +115,17 @@ class HealthCheckService {
   async getHealth(appVersion?: string): Promise<SystemHealth> {
     // Health status is 'healthy' by default - system metrics are informational only
     // Actual health is determined by custom checks (database, websocket, etc.)
-    const status: SystemHealth['status'] = 'healthy';
+    const status: SystemHealth["status"] = "healthy";
 
     return {
       status,
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
-      version: appVersion || process.env.npm_package_version || 'unknown',
+      environment: process.env.NODE_ENV || "development",
+      version: appVersion || process.env.npm_package_version || "unknown",
       pid: process.pid,
       platform: process.platform,
-      nodeVersion: process.version
+      nodeVersion: process.version,
     };
   }
 
@@ -139,7 +139,7 @@ class HealthCheckService {
       includeDisk = true,
       includeNetwork = true,
       includeProcess = true,
-      diskPath = process.cwd()
+      diskPath = process.cwd(),
     } = options;
 
     const metrics: SystemMetrics = {} as SystemMetrics;
@@ -170,9 +170,9 @@ class HealthCheckService {
   /**
    * Get CPU metrics with real usage calculation
    */
-  private async getCpuMetrics(): Promise<SystemMetrics['cpu']> {
+  private async getCpuMetrics(): Promise<SystemMetrics["cpu"]> {
     const cpus = os.cpus();
-    const cpuModel = cpus[0]?.model || 'Unknown';
+    const cpuModel = cpus[0]?.model || "Unknown";
     const cpuSpeed = cpus[0]?.speed || 0;
     const cpuCount = cpus.length;
     const loadAverage = os.loadavg();
@@ -185,7 +185,7 @@ class HealthCheckService {
       count: cpuCount,
       model: cpuModel,
       speed: cpuSpeed,
-      loadAverage
+      loadAverage,
     };
   }
 
@@ -194,12 +194,12 @@ class HealthCheckService {
    */
   private async calculateCpuUsage(): Promise<number> {
     const cpus = os.cpus();
-    
+
     // Calculate total and idle times
     let totalIdle = 0;
     let totalTick = 0;
-    
-    cpus.forEach(cpu => {
+
+    cpus.forEach((cpu) => {
       for (const type in cpu.times) {
         totalTick += cpu.times[type as keyof typeof cpu.times];
       }
@@ -213,15 +213,15 @@ class HealthCheckService {
     if (this.lastCpuInfo) {
       const idleDiff = idle - this.lastCpuInfo.idle;
       const totalDiff = total - this.lastCpuInfo.total;
-      const usage = 100 - (100 * idleDiff / totalDiff);
-      
+      const usage = 100 - (100 * idleDiff) / totalDiff;
+
       this.lastCpuInfo = { idle, total };
       return Math.min(100, Math.max(0, usage));
     }
 
     // First measurement - store for next time
     this.lastCpuInfo = { idle, total };
-    
+
     // Fallback: use load average as approximation
     const loadAvg = os.loadavg()[0]; // 1-minute load average
     const approximateUsage = (loadAvg / cpus.length) * 100;
@@ -231,7 +231,7 @@ class HealthCheckService {
   /**
    * Get memory metrics
    */
-  private getMemoryMetrics(): SystemMetrics['memory'] {
+  private getMemoryMetrics(): SystemMetrics["memory"] {
     const totalMemory = os.totalmem();
     const freeMemory = os.freemem();
     const usedMemory = totalMemory - freeMemory;
@@ -241,61 +241,66 @@ class HealthCheckService {
       total: totalMemory,
       used: usedMemory,
       free: freeMemory,
-      percentage: parseFloat(memoryPercentage.toFixed(2))
+      percentage: parseFloat(memoryPercentage.toFixed(2)),
     };
   }
 
   /**
    * Get disk metrics for specified path
    */
-  private async getDiskMetrics(diskPath: string): Promise<SystemMetrics['disk']> {
+  private async getDiskMetrics(
+    diskPath: string,
+  ): Promise<SystemMetrics["disk"]> {
     try {
       // Platform-specific disk usage check
-      if (process.platform === 'win32') {
+      if (process.platform === "win32") {
         // Windows: use wmic command
-        const { stdout } = await execAsync('wmic logicaldisk get size,freespace,caption');
-        const lines = stdout.split('\n').filter(line => line.trim());
-        
+        const { stdout } = await execAsync(
+          "wmic logicaldisk get size,freespace,caption",
+        );
+        const lines = stdout.split("\n").filter((line) => line.trim());
+
         // Parse the output (this is simplified - may need adjustment)
-        const total = parseInt(lines[1]?.split(/\s+/)[2] || '0');
-        const free = parseInt(lines[1]?.split(/\s+/)[1] || '0');
+        const total = parseInt(lines[1]?.split(/\s+/)[2] || "0");
+        const free = parseInt(lines[1]?.split(/\s+/)[1] || "0");
         const used = total - free;
-        
+
         return {
           total,
           used,
           free,
-          percentage: total > 0 ? parseFloat(((used / total) * 100).toFixed(2)) : 0,
-          path: diskPath
+          percentage:
+            total > 0 ? parseFloat(((used / total) * 100).toFixed(2)) : 0,
+          path: diskPath,
         };
       } else {
         // Unix-like systems: use df command
         const { stdout } = await execAsync(`df -k "${diskPath}" | tail -1`);
         const parts = stdout.trim().split(/\s+/);
-        
+
         // df output: filesystem 1K-blocks used available use% mounted
-        const total = parseInt(parts[1] || '0') * 1024;
-        const used = parseInt(parts[2] || '0') * 1024;
-        const available = parseInt(parts[3] || '0') * 1024;
-        const percentage = parseInt(parts[4]?.replace('%', '') || '0');
-        
+        const total = parseInt(parts[1] || "0") * 1024;
+        const used = parseInt(parts[2] || "0") * 1024;
+        const available = parseInt(parts[3] || "0") * 1024;
+        const percentage = parseInt(parts[4]?.replace("%", "") || "0");
+
         return {
           total,
           used,
           free: available,
           percentage,
-          path: diskPath
+          path: diskPath,
         };
       }
     } catch (_error) {
-      console.error('Failed to get disk metrics:', _error);
+      console.error("Failed to get disk metrics:", _error);
       // Return zeros if we can't get disk stats
       return {
         total: 0,
         used: 0,
         free: 0,
         percentage: 0,
-        path: diskPath
+        path: diskPath,
       };
     }
   }
@@ -303,7 +308,7 @@ class HealthCheckService {
   /**
    * Get network interface information
    */
-  private getNetworkMetrics(): SystemMetrics['network'] {
+  private getNetworkMetrics(): SystemMetrics["network"] {
     const networkInterfaces = os.networkInterfaces();
     const interfaces: NetworkInterface[] = [];
 
@@ -314,7 +319,7 @@ class HealthCheckService {
             name,
             address: net.address,
             family: net.family,
-            internal: net.internal
+            internal: net.internal,
           });
         }
       }
@@ -326,22 +331,24 @@ class HealthCheckService {
   /**
    * Get current process metrics
    */
-  private getProcessMetrics(): SystemMetrics['process'] {
+  private getProcessMetrics(): SystemMetrics["process"] {
     return {
       pid: process.pid,
       memory: process.memoryUsage(),
       cpuUsage: process.cpuUsage(),
-      uptime: process.uptime()
+      uptime: process.uptime(),
     };
   }
 
   /**
    * Check dependency health (database, Redis, external APIs, etc.)
    */
-  async checkDependencies(dependencies: {
-    name: string;
-    check: () => Promise<boolean>;
-  }[]): Promise<DependencyHealth[]> {
+  async checkDependencies(
+    dependencies: {
+      name: string;
+      check: () => Promise<boolean>;
+    }[],
+  ): Promise<DependencyHealth[]> {
     const results: DependencyHealth[] = [];
 
     for (const dep of dependencies) {
@@ -350,15 +357,15 @@ class HealthCheckService {
         const isHealthy = await dep.check();
         results.push({
           name: dep.name,
-          status: isHealthy ? 'connected' : 'disconnected',
-          responseTime: Date.now() - startTime
+          status: isHealthy ? "connected" : "disconnected",
+          responseTime: Date.now() - startTime,
         });
       } catch (_error) {
         results.push({
           name: dep.name,
-          status: 'error',
+          status: "error",
           responseTime: Date.now() - startTime,
-          error: _error instanceof Error ? _error.message : 'Unknown error'
+          error: _error instanceof Error ? _error.message : "Unknown error",
         });
       }
     }
@@ -369,7 +376,9 @@ class HealthCheckService {
   /**
    * Run custom health checks
    */
-  async runCustomChecks(checks: CustomHealthCheck[]): Promise<HealthCheckResult[]> {
+  async runCustomChecks(
+    checks: CustomHealthCheck[],
+  ): Promise<HealthCheckResult[]> {
     const results: HealthCheckResult[] = [];
 
     for (const check of checks) {
@@ -379,8 +388,8 @@ class HealthCheckService {
       } catch (_error) {
         results.push({
           name: check.name,
-          status: 'unhealthy',
-          message: _error instanceof Error ? _error.message : 'Check failed'
+          status: "unhealthy",
+          message: _error instanceof Error ? _error.message : "Check failed",
         });
       }
     }
@@ -397,7 +406,7 @@ class HealthCheckService {
   } {
     return {
       cpu: [...this.cpuUsageHistory],
-      memory: [...this.memoryUsageHistory]
+      memory: [...this.memoryUsageHistory],
     };
   }
 
@@ -409,7 +418,7 @@ class HealthCheckService {
     this.metricsInterval = setInterval(async () => {
       try {
         const metrics = await this.getMetrics();
-        
+
         // Add to history
         this.cpuUsageHistory.push(metrics.cpu.usage);
         this.memoryUsageHistory.push(metrics.memory.percentage);
@@ -422,7 +431,7 @@ class HealthCheckService {
           this.memoryUsageHistory.shift();
         }
       } catch (_error) {
-        console.error('Failed to collect metrics:', _error);
+        console.error("Failed to collect metrics:", _error);
       }
     }, 5000);
   }
@@ -450,70 +459,78 @@ export function createHealthCheckRouter(options?: {
   const healthService = HealthCheckService.getInstance();
 
   // Basic health endpoint
-  router.get('/health', async (_req: Request, res: Response) => {
+  router.get("/health", async (_req: Request, res: Response) => {
     try {
       const health = await healthService.getHealth(options?.version);
-      
+
       // Run custom checks if provided
       if (options?.customChecks && options.customChecks.length > 0) {
         const customResults = await Promise.all(
-          options.customChecks.map(check => check.check())
+          options.customChecks.map((check) => check.check()),
         );
-        
+
         // Add custom check results to health object
         (health as any).checks = customResults;
-        
+
         // Update overall status based ONLY on custom checks
-        const hasUnhealthy = customResults.some(r => r.status === 'unhealthy');
-        const hasDegraded = customResults.some(r => r.status === 'degraded');
-        
+        const hasUnhealthy = customResults.some(
+          (r) => r.status === "unhealthy",
+        );
+        const hasDegraded = customResults.some((r) => r.status === "degraded");
+
         if (hasUnhealthy) {
-          health.status = 'unhealthy';
+          health.status = "unhealthy";
         } else if (hasDegraded) {
-          health.status = 'degraded';
+          health.status = "degraded";
         }
         // Otherwise keep default 'healthy' status
       }
-      
-      const statusCode = health.status === 'healthy' ? 200 : 
-                        health.status === 'degraded' ? 200 : 503;
+
+      const statusCode =
+        health.status === "healthy"
+          ? 200
+          : health.status === "degraded"
+            ? 200
+            : 503;
       res.status(statusCode).json(health);
     } catch (_error) {
       res.status(503).json({
-        status: 'unhealthy',
-        error: 'Failed to get health status'
+        status: "unhealthy",
+        error: "Failed to get health status",
       });
     }
   });
 
   // Detailed metrics endpoint
-  router.get('/metrics', async (_req: Request, res: Response) => {
+  router.get("/metrics", async (_req: Request, res: Response) => {
     try {
       const metrics = await healthService.getMetrics();
       res.json(metrics);
     } catch (_error) {
       res.status(500).json({
-        error: 'Failed to get metrics'
+        error: "Failed to get metrics",
       });
     }
   });
 
   // Metrics history for graphs
-  router.get('/metrics/history', (_req: Request, res: Response) => {
+  router.get("/metrics/history", (_req: Request, res: Response) => {
     const history = healthService.getMetricsHistory();
     res.json(history);
   });
 
   // Dependency health checks
   if (options?.dependencies) {
-    router.get('/health/dependencies', async (_req: Request, res: Response) => {
+    router.get("/health/dependencies", async (_req: Request, res: Response) => {
       try {
-        const results = await healthService.checkDependencies(options.dependencies!);
-        const allHealthy = results.every(r => r.status === 'connected');
+        const results = await healthService.checkDependencies(
+          options.dependencies!,
+        );
+        const allHealthy = results.every((r) => r.status === "connected");
         res.status(allHealthy ? 200 : 503).json(results);
       } catch (_error) {
         res.status(500).json({
-          error: 'Failed to check dependencies'
+          error: "Failed to check dependencies",
         });
       }
     });
@@ -521,14 +538,16 @@ export function createHealthCheckRouter(options?: {
 
   // Custom health checks
   if (options?.customChecks) {
-    router.get('/health/custom', async (_req: Request, res: Response) => {
+    router.get("/health/custom", async (_req: Request, res: Response) => {
       try {
-        const results = await healthService.runCustomChecks(options.customChecks!);
-        const allHealthy = results.every(r => r.status === 'healthy');
+        const results = await healthService.runCustomChecks(
+          options.customChecks!,
+        );
+        const allHealthy = results.every((r) => r.status === "healthy");
         res.status(allHealthy ? 200 : 503).json(results);
       } catch (_error) {
         res.status(500).json({
-          error: 'Failed to run custom checks'
+          error: "Failed to run custom checks",
         });
       }
     });

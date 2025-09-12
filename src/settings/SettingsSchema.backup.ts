@@ -14,7 +14,19 @@ export interface SettingDefinition {
   label: string;
   description?: string;
   help?: string;
-  type: 'string' | 'password' | 'number' | 'boolean' | 'select' | 'multiselect' | 'json' | 'color' | 'email' | 'url' | 'ipaddress' | 'network-interface';
+  type:
+    | "string"
+    | "password"
+    | "number"
+    | "boolean"
+    | "select"
+    | "multiselect"
+    | "json"
+    | "color"
+    | "email"
+    | "url"
+    | "ipaddress"
+    | "network-interface";
   options?: SettingOption[];
   defaultValue?: any;
   required?: boolean;
@@ -36,7 +48,7 @@ export interface SettingDefinition {
   placeholder?: string;
   prefix?: string;
   suffix?: string;
-  inputWidth?: 'small' | 'medium' | 'large' | 'full';
+  inputWidth?: "small" | "medium" | "large" | "full";
   showIf?: (settings: Record<string, any>) => boolean;
   confirmMessage?: string;
 }
@@ -53,7 +65,11 @@ export interface SettingsCategory {
 export interface SettingsSchema {
   categories: SettingsCategory[];
   version: string;
-  onSettingChange?: (key: string, value: any, oldValue: any) => void | Promise<void>;
+  onSettingChange?: (
+    key: string,
+    value: any,
+    oldValue: any,
+  ) => void | Promise<void>;
   onValidate?: (settings: Record<string, any>) => Record<string, string> | null;
 }
 
@@ -61,44 +77,54 @@ export interface SettingsSchema {
  * Built-in validation functions
  */
 export const Validators = {
-  required: (message = 'This field is required') => (value: any) => {
-    if (!value || (typeof value === 'string' && !value.trim())) {
-      return message;
-    }
-    return null;
-  },
-
-  email: (message = 'Invalid email address') => (value: string) => {
-    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      return message;
-    }
-    return null;
-  },
-
-  url: (message = 'Invalid URL') => (value: string) => {
-    if (value) {
-      try {
-        new URL(value);
-      } catch {
+  required:
+    (message = "This field is required") =>
+    (value: any) => {
+      if (!value || (typeof value === "string" && !value.trim())) {
         return message;
       }
-    }
-    return null;
-  },
+      return null;
+    },
 
-  ipAddress: (message = 'Invalid IP address') => (value: string) => {
-    if (value && !/^(\d{1,3}\.){3}\d{1,3}$/.test(value)) {
-      return message;
-    }
-    return null;
-  },
+  email:
+    (message = "Invalid email address") =>
+    (value: string) => {
+      if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        return message;
+      }
+      return null;
+    },
 
-  port: (message = 'Invalid port number') => (value: number) => {
-    if (value < 1 || value > 65535) {
-      return message;
-    }
-    return null;
-  },
+  url:
+    (message = "Invalid URL") =>
+    (value: string) => {
+      if (value) {
+        try {
+          new URL(value);
+        } catch {
+          return message;
+        }
+      }
+      return null;
+    },
+
+  ipAddress:
+    (message = "Invalid IP address") =>
+    (value: string) => {
+      if (value && !/^(\d{1,3}\.){3}\d{1,3}$/.test(value)) {
+        return message;
+      }
+      return null;
+    },
+
+  port:
+    (message = "Invalid port number") =>
+    (value: number) => {
+      if (value < 1 || value > 65535) {
+        return message;
+      }
+      return null;
+    },
 
   range: (min: number, max: number, message?: string) => (value: number) => {
     if (value < min || value > max) {
@@ -107,12 +133,14 @@ export const Validators = {
     return null;
   },
 
-  pattern: (pattern: RegExp, message = 'Invalid format') => (value: string) => {
-    if (value && !pattern.test(value)) {
-      return message;
-    }
-    return null;
-  }
+  pattern:
+    (pattern: RegExp, message = "Invalid format") =>
+    (value: string) => {
+      if (value && !pattern.test(value)) {
+        return message;
+      }
+      return null;
+    },
 };
 
 /**
@@ -127,19 +155,27 @@ export function createSettingsSchema(schema: SettingsSchema): SettingsSchema {
 /**
  * Helper to flatten nested settings for storage
  */
-export function flattenSettings(settings: any, prefix = ''): Record<string, any> {
+export function flattenSettings(
+  settings: any,
+  prefix = "",
+): Record<string, any> {
   const flattened: Record<string, any> = {};
-  
+
   for (const [key, value] of Object.entries(settings)) {
     const fullKey = prefix ? `${prefix}.${key}` : key;
-    
-    if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+
+    if (
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      !(value instanceof Date)
+    ) {
       Object.assign(flattened, flattenSettings(value, fullKey));
     } else {
       flattened[fullKey] = value;
     }
   }
-  
+
   return flattened;
 }
 
@@ -148,11 +184,11 @@ export function flattenSettings(settings: any, prefix = ''): Record<string, any>
  */
 export function unflattenSettings(flattened: Record<string, any>): any {
   const settings: any = {};
-  
+
   for (const [key, value] of Object.entries(flattened)) {
-    const parts = key.split('.');
+    const parts = key.split(".");
     let current = settings;
-    
+
     for (let i = 0; i < parts.length - 1; i++) {
       const part = parts[i];
       if (!part) continue;
@@ -161,13 +197,13 @@ export function unflattenSettings(flattened: Record<string, any>): any {
       }
       current = current[part];
     }
-    
+
     const lastPart = parts[parts.length - 1];
     if (lastPart) {
       current[lastPart] = value;
     }
   }
-  
+
   return settings;
 }
 
@@ -176,18 +212,21 @@ export function unflattenSettings(flattened: Record<string, any>): any {
  */
 export function getRestartRequiredSettings(
   schema: SettingsSchema,
-  changedSettings: Record<string, any>
+  changedSettings: Record<string, any>,
 ): string[] {
   const restartRequired: string[] = [];
-  
+
   for (const category of schema.categories) {
     for (const setting of category.settings) {
-      if (setting.requiresRestart && Object.prototype.hasOwnProperty.call(changedSettings, setting.key)) {
+      if (
+        setting.requiresRestart &&
+        Object.prototype.hasOwnProperty.call(changedSettings, setting.key)
+      ) {
         restartRequired.push(setting.key);
       }
     }
   }
-  
+
   return restartRequired;
 }
 
@@ -196,20 +235,23 @@ export function getRestartRequiredSettings(
  */
 export function validateSettings(
   schema: SettingsSchema,
-  settings: Record<string, any>
+  settings: Record<string, any>,
 ): Record<string, string> {
   const errors: Record<string, string> = {};
-  
+
   for (const category of schema.categories) {
     for (const setting of category.settings) {
       const value = settings[setting.key];
-      
+
       // Check required
-      if (setting.required && (!value || (typeof value === 'string' && !value.trim()))) {
-        errors[setting.key] = 'This field is required';
+      if (
+        setting.required &&
+        (!value || (typeof value === "string" && !value.trim()))
+      ) {
+        errors[setting.key] = "This field is required";
         continue;
       }
-      
+
       // Check validation
       if (setting.validation) {
         if (setting.validation.custom) {
@@ -218,26 +260,34 @@ export function validateSettings(
             errors[setting.key] = error;
           }
         }
-        
-        if (typeof value === 'number') {
-          if (setting.validation.min !== undefined && value < setting.validation.min) {
-            errors[setting.key] = `Value must be at least ${setting.validation.min}`;
+
+        if (typeof value === "number") {
+          if (
+            setting.validation.min !== undefined &&
+            value < setting.validation.min
+          ) {
+            errors[setting.key] =
+              `Value must be at least ${setting.validation.min}`;
           }
-          if (setting.validation.max !== undefined && value > setting.validation.max) {
-            errors[setting.key] = `Value must be at most ${setting.validation.max}`;
+          if (
+            setting.validation.max !== undefined &&
+            value > setting.validation.max
+          ) {
+            errors[setting.key] =
+              `Value must be at most ${setting.validation.max}`;
           }
         }
-        
-        if (typeof value === 'string' && setting.validation.pattern) {
+
+        if (typeof value === "string" && setting.validation.pattern) {
           const pattern = new RegExp(setting.validation.pattern);
           if (!pattern.test(value)) {
-            errors[setting.key] = 'Invalid format';
+            errors[setting.key] = "Invalid format";
           }
         }
       }
     }
   }
-  
+
   // Run custom validation
   if (schema.onValidate) {
     const customErrors = schema.onValidate(settings);
@@ -245,6 +295,6 @@ export function validateSettings(
       Object.assign(errors, customErrors);
     }
   }
-  
+
   return errors;
 }

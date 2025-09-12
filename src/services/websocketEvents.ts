@@ -3,14 +3,14 @@
  * Standardized event patterns for real-time communication
  */
 
-import { Server as SocketIOServer, Socket } from 'socket.io';
-import { createLogger } from '../core/index.js';
+import { Server as SocketIOServer, Socket } from "socket.io";
+import { createLogger } from "../core/index.js";
 
 let logger: any; // Will be initialized when needed
 
 function ensureLogger() {
   if (!logger) {
-    logger = createLogger('WebSocketEvents');
+    logger = createLogger("WebSocketEvents");
   }
   return logger;
 }
@@ -20,36 +20,36 @@ function ensureLogger() {
  */
 export enum EventTypes {
   // Connection events
-  CONNECT = 'connect',
-  DISCONNECT = 'disconnect',
-  ERROR = 'error',
-  
+  CONNECT = "connect",
+  DISCONNECT = "disconnect",
+  ERROR = "error",
+
   // Data events
-  DATA_UPDATE = 'data:update',
-  DATA_CREATE = 'data:create',
-  DATA_DELETE = 'data:delete',
-  DATA_SYNC = 'data:sync',
-  
+  DATA_UPDATE = "data:update",
+  DATA_CREATE = "data:create",
+  DATA_DELETE = "data:delete",
+  DATA_SYNC = "data:sync",
+
   // Status events
-  STATUS_CHANGE = 'status:change',
-  STATUS_HEALTH = 'status:health',
-  STATUS_METRICS = 'status:metrics',
-  
+  STATUS_CHANGE = "status:change",
+  STATUS_HEALTH = "status:health",
+  STATUS_METRICS = "status:metrics",
+
   // Control events
-  CONTROL_START = 'control:start',
-  CONTROL_STOP = 'control:stop',
-  CONTROL_RESTART = 'control:restart',
-  CONTROL_CONFIG = 'control:config',
-  
+  CONTROL_START = "control:start",
+  CONTROL_STOP = "control:stop",
+  CONTROL_RESTART = "control:restart",
+  CONTROL_CONFIG = "control:config",
+
   // Subscription events
-  SUBSCRIBE = 'subscribe',
-  UNSUBSCRIBE = 'unsubscribe',
-  
+  SUBSCRIBE = "subscribe",
+  UNSUBSCRIBE = "unsubscribe",
+
   // System events
-  SYSTEM_PING = 'system:ping',
-  SYSTEM_PONG = 'system:pong',
-  SYSTEM_INFO = 'system:info',
-  SYSTEM_ALERT = 'system:alert'
+  SYSTEM_PING = "system:ping",
+  SYSTEM_PONG = "system:pong",
+  SYSTEM_INFO = "system:info",
+  SYSTEM_ALERT = "system:alert",
 }
 
 /**
@@ -92,14 +92,14 @@ export class WebSocketEventManager {
    * Setup default event handlers
    */
   private setupDefaultHandlers(): void {
-    this.io.on('connection', (socket: Socket) => {
+    this.io.on("connection", (socket: Socket) => {
       ensureLogger().info(`Client connected: ${socket.id}`);
-      
+
       // Handle ping/pong for keepalive
       socket.on(EventTypes.SYSTEM_PING, () => {
         socket.emit(EventTypes.SYSTEM_PONG, {
           timestamp: new Date().toISOString(),
-          latency: 0
+          latency: 0,
         });
       });
 
@@ -122,8 +122,8 @@ export class WebSocketEventManager {
       socket.emit(EventTypes.SYSTEM_INFO, {
         id: socket.id,
         timestamp: new Date().toISOString(),
-        server: 'framework-websocket',
-        version: '1.0.0'
+        server: "framework-websocket",
+        version: "1.0.0",
       });
     });
   }
@@ -133,18 +133,18 @@ export class WebSocketEventManager {
    */
   subscribe(socket: Socket, channel: string): void {
     socket.join(channel);
-    
+
     if (!this.subscriptions.has(channel)) {
       this.subscriptions.set(channel, new Set());
     }
     this.subscriptions.get(channel)!.add(socket.id);
-    
+
     ensureLogger().debug(`Socket ${socket.id} subscribed to ${channel}`);
-    
+
     socket.emit(EventTypes.SUBSCRIBE, {
       success: true,
       channel,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -153,7 +153,7 @@ export class WebSocketEventManager {
    */
   unsubscribe(socket: Socket, channel: string): void {
     socket.leave(channel);
-    
+
     const subs = this.subscriptions.get(channel);
     if (subs) {
       subs.delete(socket.id);
@@ -161,13 +161,13 @@ export class WebSocketEventManager {
         this.subscriptions.delete(channel);
       }
     }
-    
+
     ensureLogger().debug(`Socket ${socket.id} unsubscribed from ${channel}`);
-    
+
     socket.emit(EventTypes.UNSUBSCRIBE, {
       success: true,
       channel,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -215,18 +215,18 @@ export class WebSocketEventManager {
   on(event: string, handler: (socket: Socket, data: any) => void): void {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, new Set());
-      
+
       // Register with socket.io
-      this.io.on('connection', (socket: Socket) => {
+      this.io.on("connection", (socket: Socket) => {
         socket.on(event, (data: any) => {
           const handlers = this.eventHandlers.get(event);
           if (handlers) {
-            handlers.forEach(h => h(socket, data));
+            handlers.forEach((h) => h(socket, data));
           }
         });
       });
     }
-    
+
     this.eventHandlers.get(event)!.add(handler);
   }
 
@@ -241,7 +241,7 @@ export class WebSocketEventManager {
     const stats = {
       connections: this.io.sockets.sockets.size,
       channels: this.subscriptions.size,
-      subscriptions: {} as Record<string, number>
+      subscriptions: {} as Record<string, number>,
     };
 
     for (const [channel, subs] of this.subscriptions.entries()) {
@@ -272,9 +272,9 @@ export class TypedEventEmitter<T extends Record<string, any>> {
       timestamp: new Date().toISOString(),
       type: String(event),
       source: this.namespace,
-      data
+      data,
     };
-    
+
     this.manager.broadcast(`${this.namespace}:${String(event)}`, payload);
   }
 
@@ -287,9 +287,9 @@ export class TypedEventEmitter<T extends Record<string, any>> {
       type: String(event),
       source: this.namespace,
       target: channel,
-      data
+      data,
     };
-    
+
     this.manager.emit(channel, `${this.namespace}:${String(event)}`, payload);
   }
 }
@@ -304,20 +304,24 @@ export const EventPatterns = {
   crud: <T>(namespace: string) => ({
     created: (data: T) => ({
       event: `${namespace}:created`,
-      payload: { timestamp: new Date().toISOString(), type: 'created', data }
+      payload: { timestamp: new Date().toISOString(), type: "created", data },
     }),
     updated: (data: T) => ({
       event: `${namespace}:updated`,
-      payload: { timestamp: new Date().toISOString(), type: 'updated', data }
+      payload: { timestamp: new Date().toISOString(), type: "updated", data },
     }),
     deleted: (id: string) => ({
       event: `${namespace}:deleted`,
-      payload: { timestamp: new Date().toISOString(), type: 'deleted', data: { id } }
+      payload: {
+        timestamp: new Date().toISOString(),
+        type: "deleted",
+        data: { id },
+      },
     }),
     list: (data: T[]) => ({
       event: `${namespace}:list`,
-      payload: { timestamp: new Date().toISOString(), type: 'list', data }
-    })
+      payload: { timestamp: new Date().toISOString(), type: "list", data },
+    }),
   }),
 
   /**
@@ -326,20 +330,36 @@ export const EventPatterns = {
   status: (namespace: string) => ({
     online: () => ({
       event: `${namespace}:online`,
-      payload: { timestamp: new Date().toISOString(), type: 'online', data: { status: 'online' } }
+      payload: {
+        timestamp: new Date().toISOString(),
+        type: "online",
+        data: { status: "online" },
+      },
     }),
     offline: () => ({
       event: `${namespace}:offline`,
-      payload: { timestamp: new Date().toISOString(), type: 'offline', data: { status: 'offline' } }
+      payload: {
+        timestamp: new Date().toISOString(),
+        type: "offline",
+        data: { status: "offline" },
+      },
     }),
     error: (error: string) => ({
       event: `${namespace}:error`,
-      payload: { timestamp: new Date().toISOString(), type: 'error', data: { error } }
+      payload: {
+        timestamp: new Date().toISOString(),
+        type: "error",
+        data: { error },
+      },
     }),
     health: (health: any) => ({
       event: `${namespace}:health`,
-      payload: { timestamp: new Date().toISOString(), type: 'health', data: health }
-    })
+      payload: {
+        timestamp: new Date().toISOString(),
+        type: "health",
+        data: health,
+      },
+    }),
   }),
 
   /**
@@ -348,26 +368,42 @@ export const EventPatterns = {
   stream: <T>(namespace: string) => ({
     start: () => ({
       event: `${namespace}:stream:start`,
-      payload: { timestamp: new Date().toISOString(), type: 'stream:start', data: {} }
+      payload: {
+        timestamp: new Date().toISOString(),
+        type: "stream:start",
+        data: {},
+      },
     }),
     data: (data: T) => ({
       event: `${namespace}:stream:data`,
-      payload: { timestamp: new Date().toISOString(), type: 'stream:data', data }
+      payload: {
+        timestamp: new Date().toISOString(),
+        type: "stream:data",
+        data,
+      },
     }),
     end: () => ({
       event: `${namespace}:stream:end`,
-      payload: { timestamp: new Date().toISOString(), type: 'stream:end', data: {} }
+      payload: {
+        timestamp: new Date().toISOString(),
+        type: "stream:end",
+        data: {},
+      },
     }),
     error: (error: string) => ({
       event: `${namespace}:stream:error`,
-      payload: { timestamp: new Date().toISOString(), type: 'stream:error', data: { error } }
-    })
-  })
+      payload: {
+        timestamp: new Date().toISOString(),
+        type: "stream:error",
+        data: { error },
+      },
+    }),
+  }),
 };
 
 export default {
   WebSocketEventManager,
   TypedEventEmitter,
   EventTypes,
-  EventPatterns
+  EventPatterns,
 };

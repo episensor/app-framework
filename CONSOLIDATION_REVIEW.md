@@ -5,12 +5,14 @@
 ### 1. LOGGING SYSTEM
 
 #### Files:
+
 - `src/core/enhancedLogger.ts` - Main logger implementation (should be renamed to `logger.ts`)
 - `src/api/logsRouter.ts` - API endpoints for logs
 - `src/logging/LogCategories.ts` - Log category definitions
 - `src/utils/startupLogger.ts` - Startup logging utility
 
 #### EnhancedLogger Class Methods:
+
 1. `constructor()` - Initializes logger
 2. `initialize(options)` - Sets up logger with options
 3. `isInitialized()` - Check initialization status
@@ -29,6 +31,7 @@
 16. `getLoggers()` ✅ - NEW from VPP (Get logger instances for rotation)
 
 #### Logs Router Endpoints:
+
 1. GET `/entries` - Get recent log entries
 2. GET `/files` - Get log files list
 3. GET `/download/:filename` - Download specific log file
@@ -48,23 +51,25 @@
 ### 2. SETTINGS SYSTEM
 
 #### Files:
+
 - `src/settings/SettingsSchema.ts` - Original settings schema
 - `src/settings/EnhancedSettingsSchema.ts` - Enhanced settings schema (duplicate)
 - `src/services/settingsService.ts` - Settings service implementation
 
 #### Comparison of Settings Schemas:
 
-| Feature | SettingsSchema.ts | EnhancedSettingsSchema.ts | Action Needed |
-|---------|------------------|---------------------------|---------------|
-| Basic fields (key, label, description) | ✅ | ✅ | Keep |
-| Type system | Comprehensive | Similar but different | Merge types |
-| Validation | Structured object | Function-based | Merge approaches |
-| Transform | In object | Direct properties | Merge |
-| showIf | ✅ | ✅ | Keep |
-| confirmMessage | ✅ | ✅ | Keep |
-| Additional VPP fields | Some | All | Ensure all included |
+| Feature                                | SettingsSchema.ts | EnhancedSettingsSchema.ts | Action Needed       |
+| -------------------------------------- | ----------------- | ------------------------- | ------------------- |
+| Basic fields (key, label, description) | ✅                | ✅                        | Keep                |
+| Type system                            | Comprehensive     | Similar but different     | Merge types         |
+| Validation                             | Structured object | Function-based            | Merge approaches    |
+| Transform                              | In object         | Direct properties         | Merge               |
+| showIf                                 | ✅                | ✅                        | Keep                |
+| confirmMessage                         | ✅                | ✅                        | Keep                |
+| Additional VPP fields                  | Some              | All                       | Ensure all included |
 
 #### Missing from Original SettingsSchema.ts:
+
 - `hint` field
 - `validationMessage` field
 - `minLength`/`maxLength` fields
@@ -77,6 +82,7 @@
 ### 3. NAMING ISSUES
 
 **Must Rename:**
+
 - `enhancedLogger.ts` → `logger.ts`
 - `EnhancedLogger` class → `Logger` class
 - `EnhancedSettingsSchema.ts` → Should be merged into `SettingsSchema.ts`
@@ -85,6 +91,7 @@
 ### 4. MISSING TESTS
 
 Need test coverage for:
+
 - All new log methods (compact, cleanup, purge, export, etc.)
 - Settings validation with new fields
 - Settings transforms (toStorage/fromStorage)
@@ -101,30 +108,35 @@ Need test coverage for:
 ## CONSOLIDATION PLAN
 
 ### Phase 1: Merge Settings
+
 1. Combine SettingsSchema.ts and EnhancedSettingsSchema.ts into single SettingsSchema.ts
 2. Keep all fields from both
 3. Merge validation approaches
 4. Add all helper functions
 
 ### Phase 2: Clean Logger
+
 1. Rename enhancedLogger.ts to logger.ts
 2. Rename EnhancedLogger class to Logger
 3. Update all imports
 4. Remove "enhanced" from all names
 
 ### Phase 3: Add Tests
+
 1. Create tests/unit/logger.test.ts
 2. Create tests/unit/settings.test.ts
 3. Test all new methods
 4. Test edge cases
 
 ### Phase 4: Fix Types
+
 1. Run tsc --noEmit to find all type errors
 2. Fix import paths
 3. Add missing type annotations
 4. Ensure consistent types
 
 ### Phase 5: Documentation
+
 1. Update API documentation
 2. Add JSDoc comments
 3. Create migration guide for apps
