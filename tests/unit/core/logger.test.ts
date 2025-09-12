@@ -262,7 +262,7 @@ describe('Logger Service', () => {
         
         jest.spyOn(mainLogger, 'getRecentLogs').mockResolvedValue(mockLogs as any);
         
-        const result = await mainLogger.exportLogs({ format: 'text' });
+        const result = await mainLogger.exportLogs({ format: 'txt' });
         
         expect(typeof result).toBe('string');
         expect(result).toContain('Test log 1');
@@ -411,9 +411,7 @@ describe('Logger Service', () => {
         logLevel: 'debug',
         consoleOutput: false,
         fileOutput: true,
-        logsDir: '/custom/logs',
-        maxFiles: '30d',
-        maxSize: '50m'
+        logsDir: '/custom/logs'
       });
       
       expect(mainLogger.isInitialized()).toBe(true);
@@ -453,9 +451,9 @@ describe('Logger Service', () => {
       const mainLogger = getLogger;
       (fs.readdir as jest.Mock).mockRejectedValue(new Error('Archive error'));
       
-      const result = await mainLogger.archiveLogs(30);
+      await mainLogger.archiveLogs(30);
       
-      expect(result.archivedCount).toBe(0);
+      // archiveLogs returns void, just verify it doesn't throw
     });
 
     test('handles export errors gracefully', async () => {

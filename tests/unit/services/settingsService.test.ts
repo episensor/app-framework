@@ -2,7 +2,8 @@
  * Unit tests for Settings Service
  */
 
-import SettingsService, { 
+import { 
+  SettingsService,
   SettingsCategory, 
   SettingsField, 
   SettingsOptions,

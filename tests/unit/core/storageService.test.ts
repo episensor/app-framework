@@ -187,7 +187,7 @@ describe('StorageService', () => {
     
     test('saves file content', async () => {
       (fs.pathExists as jest.Mock).mockResolvedValueOnce(false); // File doesn't exist yet
-      const content = Buffer.from('test content');
+      const content = 'test content';
       const info = await handler.saveFile('test.txt', content, 'data');
       
       expect(fs.writeFile).toHaveBeenCalledWith(

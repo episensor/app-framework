@@ -51,6 +51,7 @@ interface LogStats {
   files: LogFileInfo[];
   oldestLog?: Date;
   newestLog?: Date;
+  archivedCount?: number;
 }
 
 interface LogFileInfo {
