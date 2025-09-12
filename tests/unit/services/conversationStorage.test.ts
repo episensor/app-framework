@@ -18,8 +18,16 @@ jest.mock('winston-daily-rotate-file', () => {
 
 // Mock dependencies
 jest.mock('lowdb');
-jest.mock('lowdb/node');
-jest.mock('fs-extra');
+jest.mock('lowdb/node', () => ({
+  JSONFile: jest.fn()
+}));
+jest.mock('fs-extra', () => ({
+  ensureDir: jest.fn(),
+  readFile: jest.fn(),
+  writeFile: jest.fn(),
+  remove: jest.fn(),
+  pathExists: jest.fn()
+}));
 jest.mock('../../../src/core', () => ({
   ...jest.requireActual('../../../src/core'),
   createLogger: jest.fn(() => ({

@@ -234,7 +234,7 @@ describe('StorageService', () => {
     
     test('enforces max file size', async () => {
       (fs.pathExists as jest.Mock).mockResolvedValueOnce(false); // File doesn't exist yet
-      const largeContent = Buffer.alloc(200 * 1024 * 1024); // 200MB
+      const largeContent = Buffer.alloc(200 * 1024 * 1024).toString(); // 200MB
       
       await expect(handler.saveFile('large.txt', largeContent, 'data'))
         .rejects.toThrow('File size exceeds maximum allowed size');

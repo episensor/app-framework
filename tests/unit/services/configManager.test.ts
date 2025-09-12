@@ -42,7 +42,6 @@ describe('ConfigManager', () => {
   
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.resetModules();
     
     // Default mock behaviors
     mockExistsSync.mockReturnValue(false);
@@ -52,6 +51,10 @@ describe('ConfigManager', () => {
     
     // Mock fs.promises.readFile
     (fs.promises.readFile as jest.Mock).mockResolvedValue('{}');
+    
+    // Reset dotenv mock
+    const dotenv = require('dotenv');
+    (dotenv.config as jest.Mock).mockReset();
     
     // Clear environment variables
     delete process.env.NODE_ENV;
@@ -178,7 +181,7 @@ describe('ConfigManager', () => {
 
     test('loads environment file when specified', async () => {
       const dotenv = require('dotenv');
-      dotenv.config = jest.fn().mockReturnValue({ parsed: { ENV_KEY: 'envValue' } });
+      (dotenv.config as jest.Mock).mockReturnValue({ parsed: { ENV_KEY: 'envValue' } });
       
       const options: ConfigOptions = {
         envPath: '.env.test'
@@ -192,7 +195,7 @@ describe('ConfigManager', () => {
 
     test('handles missing environment file gracefully', async () => {
       const dotenv = require('dotenv');
-      dotenv.config = jest.fn().mockReturnValue({ error: new Error('File not found') });
+      (dotenv.config as jest.Mock).mockReturnValue({ error: new Error('File not found') });
       
       const options: ConfigOptions = {
         envPath: '.env.missing'
@@ -305,7 +308,7 @@ describe('ConfigManager', () => {
       
       expect(mockWriteFileSync).toHaveBeenCalledWith(
         './config.json',
-        expect.stringContaining('"key":"value"'),
+        expect.stringContaining('"key": "value"'),
         'utf-8'
       );
     });
@@ -348,7 +351,7 @@ describe('ConfigManager', () => {
         close: jest.fn()
       };
       
-      (fs.watch as jest.Mock) = jest.fn().mockReturnValue(mockWatcher);
+      (fs.watch as jest.Mock).mockReturnValue(mockWatcher);
       
       configManager = new ConfigManager({
         configPath: './config.json',
@@ -364,9 +367,9 @@ describe('ConfigManager', () => {
 
     test('reloads on file change', async () => {
       mockExistsSync.mockReturnValue(true);
-      mockReadFileSync
-        .mockReturnValueOnce(JSON.stringify({ initial: 'value' }))
-        .mockReturnValueOnce(JSON.stringify({ updated: 'value' }));
+      (fs.promises.readFile as jest.Mock)
+        .mockResolvedValueOnce(JSON.stringify({ initial: 'value' }))
+        .mockResolvedValueOnce(JSON.stringify({ updated: 'value' }));
       
       await configManager.load();
       // File watching starts automatically
@@ -378,7 +381,7 @@ describe('ConfigManager', () => {
       // Allow async reload to complete
       await new Promise(resolve => setImmediate(resolve));
       
-      expect(mockReadFileSync).toHaveBeenCalledTimes(2);
+      expect(fs.promises.readFile).toHaveBeenCalledTimes(2);
     });
 
     test('stops watching when dispose called', async () => {
