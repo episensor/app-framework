@@ -8,8 +8,20 @@ import * as fs from 'fs';
 import { z } from 'zod';
 
 // Mock dependencies
-jest.mock('fs');
-jest.mock('dotenv');
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  existsSync: jest.fn(),
+  readFileSync: jest.fn(),
+  writeFileSync: jest.fn(),
+  mkdirSync: jest.fn(),
+  watch: jest.fn(),
+  promises: {
+    readFile: jest.fn()
+  }
+}));
+jest.mock('dotenv', () => ({
+  config: jest.fn()
+}));
 jest.mock('../../../src/core', () => ({
   ...jest.requireActual('../../../src/core'),
   createLogger: jest.fn(() => ({
@@ -37,6 +49,9 @@ describe('ConfigManager', () => {
     mockReadFileSync.mockReturnValue('{}');
     mockWriteFileSync.mockReturnValue(undefined);
     mockMkdirSync.mockReturnValue(undefined);
+    
+    // Mock fs.promises.readFile
+    (fs.promises.readFile as jest.Mock).mockResolvedValue('{}');
     
     // Clear environment variables
     delete process.env.NODE_ENV;
@@ -97,7 +112,7 @@ describe('ConfigManager', () => {
 
     test('loads configuration from file', async () => {
       mockExistsSync.mockReturnValue(true);
-      mockReadFileSync.mockReturnValue(JSON.stringify({
+      (fs.promises.readFile as jest.Mock).mockResolvedValue(JSON.stringify({
         loaded: 'fromFile'
       }));
       

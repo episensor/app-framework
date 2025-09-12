@@ -135,8 +135,13 @@ export const Validators = {
   },
 
   ipAddress: (message = 'Invalid IP address') => (value: string) => {
-    if (value && !/^(\d{1,3}\.){3}\d{1,3}$/.test(value)) {
-      return message;
+    if (value) {
+      const parts = value.split('.');
+      if (parts.length !== 4) return message;
+      for (const part of parts) {
+        const num = parseInt(part, 10);
+        if (isNaN(num) || num < 0 || num > 255) return message;
+      }
     }
     return null;
   },
@@ -245,8 +250,17 @@ export function validateSetting(setting: SettingDefinition, value: any): string 
       break;
       
     case 'ipaddress':
-      if (value && !/^(\d{1,3}\.){3}\d{1,3}$/.test(value)) {
-        return setting.validationMessage || 'Invalid IP address';
+      if (value) {
+        const parts = value.split('.');
+        if (parts.length !== 4) {
+          return setting.validationMessage || 'Invalid IP address';
+        }
+        for (const part of parts) {
+          const num = parseInt(part, 10);
+          if (isNaN(num) || num < 0 || num > 255) {
+            return setting.validationMessage || 'Invalid IP address';
+          }
+        }
       }
       break;
       

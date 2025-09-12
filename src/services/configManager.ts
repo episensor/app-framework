@@ -131,6 +131,11 @@ export class ConfigManager<T = any> {
    */
   private mergeEnvironmentVariables(config: any): any {
     const result = { ...config };
+    
+    // Also include raw environment variables for mergeEnv option
+    if (this.options.mergeEnv) {
+      Object.assign(result, process.env);
+    }
 
     // Map common environment variables to config paths
     const envMappings: Record<string, string[]> = {
@@ -227,6 +232,9 @@ export class ConfigManager<T = any> {
   get<K extends keyof T>(key: K): T[K];
   get(path: string): any;
   get(keyOrPath: any): any {
+    if (keyOrPath === '') {
+      return this.config;
+    }
     if (typeof keyOrPath === 'string' && keyOrPath.includes('.')) {
       return this.getNestedValue(this.config, keyOrPath);
     }
@@ -277,12 +285,19 @@ export class ConfigManager<T = any> {
   async save(filePath?: string): Promise<void> {
     const targetPath = filePath || this.configPath;
     if (!targetPath) {
-      throw new Error('No file path specified for saving configuration');
+      // Just return silently if no path
+      return;
     }
 
     try {
+      // Ensure directory exists
+      const dir = path.dirname(targetPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      
       const content = JSON.stringify(this.config, null, 2);
-      await fs.promises.writeFile(targetPath, content, 'utf-8');
+      fs.writeFileSync(targetPath, content, 'utf-8');
       ensureLogger().info(`Configuration saved to ${targetPath}`);
     } catch (_error: any) {
       ensureLogger().error(`Failed to save configuration:`, _error);
