@@ -234,78 +234,11 @@ jobs:
         path: '*.tgz'
         retention-days: 30
 
-  # Integration tests disabled - consumer apps not in this repo
-  # integration-test:
-  #   name: Integration Test with Consumer Apps
-  #   runs-on: ${{ matrix.os }}
-  #   needs: [build]
-  #   strategy:
-  #     matrix:
-  #       os: [ubuntu-latest, windows-latest]
-  #       app: [modbus-simulator, bacnet-gateway]
-  #   
-  #   steps:
-  #   - name: Checkout framework
-  #     uses: actions/checkout@v4
-  #     with:
-  #       path: framework
-  #     
-  #   - name: Checkout consumer app
-  #     uses: actions/checkout@v4
-  #     with:
-  #       repository: episensor/${{ matrix.app }}
-  #       path: ${{ matrix.app }}
-  #       token: ${{ secrets.GITHUB_TOKEN }}
-  #     
-  #   - name: Setup Node.js
-  #     uses: actions/setup-node@v4
-  #     with:
-  #       node-version: ${{ env.NODE_VERSION }}
-  #       cache: 'npm'
-  #       
-  #   - name: Install framework dependencies
-  #     run: |
-  #       cd framework
-  #       npm ci
-  #     
-  #   - name: Install Linux-specific binaries for framework
-  #     if: matrix.os == 'ubuntu-latest'
-  #     run: |
-  #       cd framework
-  #       npm install @rollup/rollup-linux-x64-gnu @tauri-apps/cli-linux-x64-gnu --save-dev
-  #     
-  #   - name: Install macOS-specific binaries for framework
-  #     if: matrix.os == 'macos-latest'
-  #     run: |
-  #       cd framework
-  #       npm install @rollup/rollup-darwin-arm64 @tauri-apps/cli-darwin-arm64 --save-dev
-  #     
-  #   - name: Install Windows-specific binaries for framework
-  #     if: matrix.os == 'windows-latest'
-  #     run: |
-  #       cd framework
-  #       npm install @rollup/rollup-win32-x64-msvc @tauri-apps/cli-win32-x64-msvc --save-dev
-  #     
-  #   - name: Link framework to consumer app
-  #     run: |
-  #       cd framework
-  #       npm rebuild
-  #       npm link
-  #       cd ../${{ matrix.app }}
-  #       npm ci
-  #       npm rebuild
-  #       npm link @episensor/app-framework
-  #       
-  #   - name: Test consumer app with framework
-  #     run: |
-  #       cd ${{ matrix.app }}
-  #       npm test
-  #       npm run test:integration
 
   release:
     name: Release
     runs-on: ubuntu-latest
-    needs: [build]  # integration-test disabled
+    needs: [build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
