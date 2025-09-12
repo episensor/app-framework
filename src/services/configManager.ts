@@ -51,9 +51,9 @@ export class ConfigManager<T = any> {
       // Load environment variables
       if (this.options.envPath) {
         const result = dotenv.config({ path: this.options.envPath });
-        if (result.error) {
+        if (result && result.error) {
           ensureLogger().warn(`Failed to load env file: ${result.error.message}`);
-        } else {
+        } else if (result) {
           ensureLogger().debug(`Loaded environment from ${this.options.envPath}`);
         }
       }

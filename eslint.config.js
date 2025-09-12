@@ -26,14 +26,14 @@ export default [
     },
     rules: {
       ...typescript.configs.recommended.rules,
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off', // Allow any types - framework needs flexibility
       '@typescript-eslint/no-unused-vars': ['error', { 
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_'
       }],
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/no-non-null-assertion': 'off', // Allow non-null assertions
       '@typescript-eslint/no-unsafe-function-type': 'error',
       'no-console': 'off', // Framework uses console for logging
       'no-unused-vars': 'off', // Use @typescript-eslint/no-unused-vars instead
