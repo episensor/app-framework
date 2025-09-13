@@ -19,6 +19,7 @@ export interface SocketIOState {
   connecting: boolean;
   error: Error | null;
   retryCount: number;
+  transport: 'websocket' | 'polling' | null;
 }
 
 export interface SocketIOActions {
@@ -85,7 +86,8 @@ export function useSocketIO(config: SocketIOConfig = {}): [SocketIOState, Socket
     connected: false,
     connecting: false,
     error: null,
-    retryCount: 0
+    retryCount: 0,
+    transport: null
   });
 
   // Initialize socket
@@ -106,11 +108,13 @@ export function useSocketIO(config: SocketIOConfig = {}): [SocketIOState, Socket
 
     // Setup event listeners
     socket.on('connect', () => {
+      const transport = socket.io?.engine?.transport?.name || null;
       setState({
         connected: true,
         connecting: false,
         error: null,
-        retryCount: reconnectCountRef.current
+        retryCount: reconnectCountRef.current,
+        transport
       });
       reconnectCountRef.current = 0;
     });
@@ -119,7 +123,8 @@ export function useSocketIO(config: SocketIOConfig = {}): [SocketIOState, Socket
       setState(prev => ({
         ...prev,
         connected: false,
-        connecting: false
+        connecting: false,
+        transport: null
       }));
     });
 
@@ -141,11 +146,13 @@ export function useSocketIO(config: SocketIOConfig = {}): [SocketIOState, Socket
     });
 
     socket.io.on('reconnect', (_attemptNumber) => {
+      const transport = socket.io?.engine?.transport?.name || null;
       setState(prev => ({
         ...prev,
         connected: true,
         connecting: false,
-        retryCount: 0
+        retryCount: 0,
+        transport
       }));
     });
 
