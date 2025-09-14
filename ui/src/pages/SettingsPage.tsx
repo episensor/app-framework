@@ -12,7 +12,7 @@ import {
   SelectValue 
 } from '../../components/base/select';
 import { Alert, AlertDescription } from '../../components/base/alert';
-import { RestartBanner } from '../components/RestartBanner';
+import { RestartBanner } from '../../components/base/RestartBanner';
 import { 
   Save, 
   RotateCcw, 

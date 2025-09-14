@@ -19,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '../../components/base/tooltip';
-import { RestartBanner } from '../components/RestartBanner';
+import { RestartBanner } from '../../components/base/RestartBanner';
 import { 
   Save, 
   RotateCcw, 

@@ -33,7 +33,7 @@ export { ProtectedRoute } from '../components/auth/ProtectedRoute';
 export { LogsPage } from './pages/LogsPage';
 export type { LogsPageProps } from './pages/LogsPage';
 export { EnhancedLogsPage } from './pages/EnhancedLogsPage';
-export type { EnhancedLogsPageProps, LogEntry as PageLogEntry, LogFile as PageLogFile, LogCategory } from './pages/EnhancedLogsPage';
+export type { EnhancedLogsPageProps, LogEntry as PageLogEntry, LogFile as PageLogFile, LogCategory as PageLogCategory } from './pages/EnhancedLogsPage';
 export { SettingsPage } from './pages/SettingsPage';
 export type { SettingsPageProps, SettingsCategory, SettingDefinition } from './pages/SettingsPage';
 export { EnhancedSettingsPage } from './pages/EnhancedSettingsPage';
@@ -45,23 +45,23 @@ export type {
 } from './pages/EnhancedSettingsPage';
 
 // Status components
-export { ConnectionStatus } from './components/ConnectionStatus';
-export { ConnectionLostOverlay } from './components/ConnectionLostOverlay';
+export { ConnectionStatus } from '../components/connections/ConnectionStatus';
+export { ConnectionLostOverlay } from '../components/connections/ConnectionLostOverlay';
 export { ConnectionStatusBanner } from '../components/base/ConnectionStatusBanner';
-export { useConnectionStatus } from '../hooks/useConnectionStatus';
-export { RestartBanner } from './components/RestartBanner';
-export { TestModeIndicator } from './components/TestModeIndicator';
-export { ConnectionIndicator } from './components/ConnectionIndicator';
+// useConnectionStatus will be exported later with other hooks
+export { RestartBanner } from '../components/base/RestartBanner';
+export { TestModeIndicator } from '../components/base/TestModeIndicator';
+export { ConnectionIndicator } from '../components/connections/ConnectionIndicator';
 
 // UI components
-export { DeviceIcon } from './components/DeviceIcon';
-export { DogEarBadge } from './components/DogEarBadge';
-export { EmptyState } from './components/EmptyState';
-export { EmptyStates } from './components/EmptyStates';
-export { LoadingState, CardSkeleton, TableSkeleton } from './components/LoadingState';
-export { HelpTooltip } from './components/HelpTooltip';
-export { NetworkInterfaceSelect } from './components/NetworkInterfaceSelect';
-export { MarkdownViewer, MarkdownCard, MarkdownScrollArea } from './components/MarkdownViewer';
+export { DeviceIcon } from '../components/base/DeviceIcon';
+export { DogEarBadge } from '../components/base/DogEarBadge';
+export { EmptyState } from '../components/base/EmptyState';
+export { EmptyStates } from '../components/base/EmptyStates';
+export { LoadingState, CardSkeleton, TableSkeleton } from '../components/base/LoadingState';
+export { HelpTooltip } from '../components/base/HelpTooltip';
+export { NetworkInterfaceSelect } from '../components/connections/NetworkInterfaceSelect';
+export { MarkdownViewer, MarkdownCard, MarkdownScrollArea } from '../components/base/MarkdownViewer';
 
 // Utilities
 export * from './utils/dateFormat';
@@ -76,8 +76,9 @@ export type { UseFormStateOptions, FormState } from './hooks/useFormState';
 // Layout components
 export { AppLayout, SidebarLayout } from '../components/layout/AppLayout';
 export type { AppLayoutProps, SidebarLayoutProps, NavItem } from '../components/layout/AppLayout';
-export { AppShell } from './components/layout/AppShell';
-export type { AppShellProps, NavItem as AppShellNavItem } from './components/layout/AppShell';
+// AppShell component not found
+// export { AppShell } from '../components/layout/AppShell';
+// export type { AppShellProps, NavItem as AppShellNavItem } from '../components/layout/AppShell';
 
 // Activity components
 export { ActivityLED } from '../components/activity/ActivityLED';
@@ -92,22 +93,26 @@ export { DashboardStats, CompactStat } from '../components/data/DashboardStats';
 export type { DashboardStatsProps, StatCard, CompactStatProps } from '../components/data/DashboardStats';
 
 // Log components
-export { TerminalLogViewer } from './components/logs/TerminalLogViewer';
-export type { TerminalLogViewerProps } from './components/logs/TerminalLogViewer';
-export { LogViewer } from './components/logs/LogViewer';
-export type { LogViewerProps } from './components/logs/LogViewer';
-export { EnhancedLogViewer } from './components/logs/EnhancedLogViewer';
-export type { EnhancedLogViewerProps, LogEntry, LogFile, LogCategory } from './components/logs/EnhancedLogViewer';
+// TerminalLogViewer component not found
+// export { TerminalLogViewer } from '../components/logs/TerminalLogViewer';
+// export type { TerminalLogViewerProps } from '../components/logs/TerminalLogViewer';
+export { LogViewer } from '../components/logs/LogViewer';
+export type { LogViewerProps } from '../components/logs/LogViewer';
+// EnhancedLogViewer component not found
+// export { EnhancedLogViewer } from '../components/logs/EnhancedLogViewer';
+// export type { EnhancedLogViewerProps, LogEntry, LogFile, LogCategory } from '../components/logs/EnhancedLogViewer';
 
 
 // Settings components
 export { SettingsFramework } from '../components/settings/SettingsFramework';
 export { ThemeToggle, CompactThemeToggle } from '../components/settings/ThemeToggle';
 export type { ThemeToggleProps } from '../components/settings/ThemeToggle';
-export { Settings } from './components/settings/Settings';
-export type { SettingsProps } from './components/settings/Settings';
-export { EnhancedSettings } from './components/settings/EnhancedSettings';
-export type { EnhancedSettingsProps } from './components/settings/EnhancedSettings';
+// Settings component not found
+// export { Settings } from '../components/settings/Settings';
+// export type { SettingsProps } from '../components/settings/Settings';
+// EnhancedSettings component not found
+// export { EnhancedSettings } from '../components/settings/EnhancedSettings';
+// export type { EnhancedSettingsProps } from '../components/settings/EnhancedSettings';
 
 // Update components
 export { UpdateNotification } from '../components/updates/UpdateNotification';

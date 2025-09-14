@@ -1,5 +1,5 @@
-import { TerminalLogViewer } from '../components/logs/TerminalLogViewer';
-import type { LogEntry, LogFile } from '../components/logs/TerminalLogViewer';
+import { LogViewer } from '../../components/logs/LogViewer';
+import type { LogEntry, LogFile } from '../../components/logs/LogViewer';
 
 export interface LogsPageProps {
   // Data
@@ -25,7 +25,7 @@ export interface LogsPageProps {
 }
 
 /**
- * Logs page component that uses the TerminalLogViewer
+ * Logs page component that uses the LogViewer
  */
 export function LogsPage({
   logs,
@@ -43,7 +43,7 @@ export function LogsPage({
 }: LogsPageProps) {
   return (
     <div className={className}>
-      <TerminalLogViewer
+      <LogViewer
         logs={logs}
         logFiles={logFiles}
         loading={loading}

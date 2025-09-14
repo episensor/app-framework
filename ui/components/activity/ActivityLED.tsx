@@ -4,7 +4,7 @@
  */
 
 
-import { cn } from '../utils/cn';
+import { cn } from '../../utils/cn';
 
 export type LEDStatus = 'active' | 'inactive' | 'warning' | 'error' | 'success';
 

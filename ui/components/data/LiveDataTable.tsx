@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { Card } from './Card';
 import { ActivityLED, type LEDStatus } from './ActivityLED';
 import { SparklineChart } from './SparklineChart';
-import { cn } from '../utils/cn';
+import { cn } from '../../utils/cn';
 import { Clock, Activity } from 'lucide-react';
 
 export interface LiveDataColumn {
