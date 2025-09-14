@@ -65,7 +65,7 @@ const socketManager = new SocketManager();
 
 export function useSocketIO(config: SocketIOConfig = {}): [SocketIOState, SocketIOActions] {
   const {
-    url = '',
+    url = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001',
     autoConnect = true,
     reconnection = true,
     reconnectionAttempts = Infinity,
