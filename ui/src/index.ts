@@ -116,6 +116,7 @@ export { UpdateNotification } from '../components/updates/UpdateNotification';
 export { useSocketIO, socketManager } from '../hooks/useSocketIO';
 export { useDebounce } from '../hooks/useDebounce';
 export { useWebSocket, createTypedWebSocketHook } from '../hooks/useWebSocket';
+export { useConnectionStatus } from '../hooks/useConnectionStatus';
 export type { SocketIOConfig, SocketIOState, SocketIOActions } from '../hooks/useSocketIO';
 
 // Utilities
