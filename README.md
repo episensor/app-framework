@@ -118,7 +118,7 @@ await server.start();
 - **Room Management** - Built-in room join/leave handlers
 - **Client Tracking** - Track connected clients across namespaces
 - **Broadcast Options** - Selective broadcasting with compression/volatile options
-- **React Hooks** - `useWebSocket`, `useWebSocketSubscription`
+- **React Hooks** - `useSocketIO`, `useConnectionStatus`
 - **Connection Status** - Monitor connection health
 
 ### 🔒 Security & Authentication
@@ -208,7 +208,7 @@ npm install @episensor/app-framework
 import { StandardServer, createLogger } from "@episensor/app-framework";
 
 // Frontend UI components
-import { Button, Card, useWebSocket } from "@episensor/app-framework/ui";
+import { Button, Card, useSocketIO, useConnectionStatus } from "@episensor/app-framework/ui";
 ```
 
 ````
@@ -266,19 +266,19 @@ const server = new StandardServer({
 ### React WebSocket Integration
 
 ```tsx
-import { useWebSocket } from "@episensor/app-framework/ui";
+import { useSocketIO, useConnectionStatus } from "@episensor/app-framework/ui";
 
 function Dashboard() {
-  const { connected, on, off } = useWebSocket("http://localhost:8080");
+  const [state, actions] = useSocketIO();
+  const { connected } = useConnectionStatus();
   const [metrics, setMetrics] = useState([]);
 
   useEffect(() => {
-    if (connected) {
-      const handler = (data) => setMetrics(data);
-      on("metrics:update", handler);
-      return () => off("metrics:update", handler);
-    }
-  }, [connected]);
+    if (!connected) return;
+    const handler = (data) => setMetrics(data);
+    actions.on("metrics:update", handler);
+    return () => actions.off("metrics:update", handler);
+  }, [connected, actions]);
 
   return <MetricsDisplay data={metrics} />;
 }

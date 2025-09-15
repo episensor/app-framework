@@ -118,10 +118,10 @@ Returns the last N lines from today's log file.
 For specialized logging needs:
 
 ```typescript
-import { getEnhancedLogger } from '@episensor/app-framework';
+import { getLogger } from '@episensor/app-framework';
 
-const enhancedLogger = getEnhancedLogger();
-const customLogger = enhancedLogger.createLogger('CustomModule', {
+const loggerManager = getLogger();
+const customLogger = loggerManager.createLogger('CustomModule', {
   level: 'debug',
   console: true,
   file: true

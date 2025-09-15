@@ -315,7 +315,7 @@ my-app/
 import { 
   StandardServer, 
   createLogger,
-  getEnhancedLogger 
+  getLogger 
 } from '@episensor/app-framework';
 import { appSettings } from './config/settings';
 import { logConfig } from './config/logging';
@@ -324,7 +324,7 @@ const logger = createLogger('Main');
 
 async function main() {
   // Initialize enhanced logging
-  await getEnhancedLogger().initialize({
+  await getLogger().initialize({
     logLevel: 'debug',
     consoleOutput: false,
     fileOutput: true,

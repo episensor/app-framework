@@ -183,7 +183,7 @@ await server.start();
 Production-grade logging with file rotation and compression.
 
 ```typescript
-import { initializeLogger, getEnhancedLogger } from '@episensor/app-framework';
+import { getLogger } from '@episensor/app-framework';
 ```
 
 #### Initialization
@@ -202,7 +202,7 @@ initializeLogger(config?: {
 #### Creating Loggers
 
 ```typescript
-const logger = getEnhancedLogger().createLogger('MyService');
+const logger = getLogger().createLogger('MyService');
 logger.info('Service started');
 logger.error('Error occurred', { error: err });
 logger.debug('Debug info', { data });
@@ -212,16 +212,16 @@ logger.debug('Debug info', { data });
 
 ```typescript
 // Get log statistics
-const stats = getEnhancedLogger().getLogStats();
+const stats = getLogger().getLogStats();
 
 // Archive old logs
-await getEnhancedLogger().archiveLogs();
+await getLogger().archiveLogs();
 
 // Clean up archives older than 30 days
-await getEnhancedLogger().cleanupArchives(30);
+await getLogger().cleanupArchives(30);
 
 // Read log file
-const logs = await getEnhancedLogger().readLogFile('api.log', {
+const logs = await getLogger().readLogFile('api.log', {
   tail: 100,  // Last 100 lines
   date: '2024-01-15' // Specific date
 });
