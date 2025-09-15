@@ -76,14 +76,13 @@ jobs:
       run: npm rebuild
       
     - name: Run unit tests
-      run: npm run test:unit || true  # Ignore exit code due to Jest forceExit issue
+      run: npm run test:unit
       
     - name: Run integration tests
-      run: npm run test:integration || true  # Ignore exit code
+      run: npm run test:integration
       
     - name: Generate coverage report
-      run: npm run test:coverage -- --maxWorkers=1 --forceExit || true
-      continue-on-error: true
+      run: npm run test:coverage -- --maxWorkers=1 --forceExit
       
     # Coverage upload disabled until Jest issues resolved
     # - name: Upload coverage to Codecov
@@ -224,8 +223,29 @@ jobs:
     - name: Build package
       run: npm run build
       
+    - name: Build UI components
+      run: npm run build:ui
+      
+    - name: Verify UI components built
+      run: |
+        if [ ! -d "ui/dist" ]; then
+          echo "UI components not built! ui/dist directory missing"
+          exit 1
+        fi
+        if [ ! -f "ui/dist/index.js" ]; then
+          echo "UI components not properly built! index.js missing"
+          exit 1
+        fi
+        echo "✓ UI components built successfully"
+      
     - name: Package for distribution
       run: npm pack
+      
+    - name: Verify package contents
+      run: |
+        tar -tzf *.tgz | grep -q "ui/dist/index.js" || (echo "UI components not included in package!" && exit 1)
+        tar -tzf *.tgz | grep -q "dist/index.js" || (echo "Main build not included in package!" && exit 1)
+        echo "✓ Package contents verified"
       
     - name: Upload package artifact
       uses: actions/upload-artifact@v4
