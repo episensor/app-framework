@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Card, CardHeader, CardContent, CardTitle } from '../components/base/card';
+import { Card, CardHeader, CardContent, CardTitle } from '../../components/base/card';
 
 export default function HomePage() {
   return (
@@ -135,3 +135,4 @@ export default function HomePage() {
     </div>
   );
 }
+

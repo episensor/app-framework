@@ -30,19 +30,11 @@ export { LoginPage } from '../components/auth/LoginPage';
 export { ProtectedRoute } from '../components/auth/ProtectedRoute';
 
 // Page components
+// Page wrappers (kept for compatibility). Prefer components: LogViewer, SettingsFramework
 export { LogsPage } from './pages/LogsPage';
 export type { LogsPageProps } from './pages/LogsPage';
-export { EnhancedLogsPage } from './pages/EnhancedLogsPage';
-export type { EnhancedLogsPageProps, LogEntry as PageLogEntry, LogFile as PageLogFile, LogCategory as PageLogCategory } from './pages/EnhancedLogsPage';
 export { SettingsPage } from './pages/SettingsPage';
 export type { SettingsPageProps, SettingsCategory, SettingDefinition } from './pages/SettingsPage';
-export { EnhancedSettingsPage } from './pages/EnhancedSettingsPage';
-export type { 
-  EnhancedSettingsPageProps, 
-  EnhancedSettingsCategory, 
-  EnhancedSettingDefinition,
-  SettingTransform 
-} from './pages/EnhancedSettingsPage';
 
 // Status components
 export { ConnectionStatus } from '../components/connections/ConnectionStatus';
@@ -119,11 +111,11 @@ export type { ThemeToggleProps } from '../components/settings/ThemeToggle';
 export { UpdateNotification } from '../components/updates/UpdateNotification';
 
 // Hooks
-export { useSocketIO, socketManager } from '../hooks/useSocketIO';
-export { useDebounce } from '../hooks/useDebounce';
-export { useWebSocket, createTypedWebSocketHook } from '../hooks/useWebSocket';
-export { useConnectionStatus } from '../hooks/useConnectionStatus';
-export type { SocketIOConfig, SocketIOState, SocketIOActions } from '../hooks/useSocketIO';
+export { useSocketIO, socketManager } from './hooks/useSocketIO';
+export { useDebounce } from './hooks/useDebounce';
+// Deprecated: useWebSocket is no longer exported. Use useSocketIO + useConnectionStatus instead.
+export { useConnectionStatus } from './hooks/useConnectionStatus';
+export type { SocketIOConfig, SocketIOState, SocketIOActions } from './hooks/useSocketIO';
 
 // Utilities
 export { cn } from '../utils/cn';

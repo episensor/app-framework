@@ -5,11 +5,11 @@
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
-import { SettingsProvider } from './contexts/SettingsContext';
-import { LogProvider } from './contexts/LogContext';
-import HomePage from './pages/HomePage';
-import SettingsPage from './pages/SettingsPage';
-import LogsPage from './pages/LogsPage';
+import { SettingsProvider } from './src/contexts/SettingsContext';
+import { LogProvider } from './src/contexts/LogContext';
+import HomePage from './src/pages/HomePage';
+import { SettingsPage } from './src/pages/SettingsPage';
+import { LogsPage } from './src/pages/LogsPage';
 import { ThemeToggle } from './components/settings/ThemeToggle';
 import './styles/globals.css';
 

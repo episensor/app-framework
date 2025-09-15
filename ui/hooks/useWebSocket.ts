@@ -1,3 +1,8 @@
+/**
+ * DEPRECATED: This hook is superseded by useSocketIO() and useConnectionStatus().
+ * - Prefer: `const [state, actions] = useSocketIO()` and `const { connected } = useConnectionStatus()`
+ * - This file remains for compatibility in existing apps but is no longer exported by the UI bundle.
+ */
 import { useContext, useEffect, useState, useCallback } from 'react';
 import { Socket } from 'socket.io-client';
 
