@@ -41,6 +41,12 @@ export class ConfigManager<T = any> {
     this.configPath = options.configPath;
     this.defaults = options.defaults || {};
     this.config = {} as T;
+    // DEPRECATION NOTICE: Prefer core ConfigManager from './core/configManager'
+    try {
+      ensureLogger().warn(
+        "DEPRECATION: services/ConfigManager is deprecated. Use core/configManager instead.",
+      );
+    } catch {}
   }
 
   /**
