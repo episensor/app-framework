@@ -47,6 +47,7 @@ export type {
 // Status components
 export { ConnectionStatus } from '../components/connections/ConnectionStatus';
 export { ConnectionLostOverlay } from '../components/connections/ConnectionLostOverlay';
+export { ConnectionOverlay } from '../components/connections/ConnectionOverlay';
 export { ConnectionStatusBanner } from '../components/base/ConnectionStatusBanner';
 // useConnectionStatus will be exported later with other hooks
 export { RestartBanner } from '../components/base/RestartBanner';

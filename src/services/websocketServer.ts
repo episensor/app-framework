@@ -59,6 +59,13 @@ class WebSocketServer {
     logger.info("WebSocket server initialized");
   }
 
+  /**
+   * Get the underlying Socket.IO server instance
+   */
+  getIO(): Server | null {
+    return this.io;
+  }
+
   private setupEventHandlers(): void {
     if (!this.io) return;
 

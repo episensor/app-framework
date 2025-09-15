@@ -2,8 +2,8 @@
   "name": "@episensor/ui-framework",
   "version": "1.0.0",
   "description": "Opinionated UI component library for EpiSensor internal applications",
-  "main": "dist/index.js",
-  "module": "dist/index.esm.js",
+  "main": "dist/index.mjs",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist",

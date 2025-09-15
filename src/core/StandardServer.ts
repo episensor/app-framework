@@ -43,7 +43,7 @@ export interface StandardServerConfig {
   enableDesktopIntegration?: boolean; // Auto-configure for desktop apps
   desktopDataPath?: string; // Override desktop data path
   corsOrigins?: string[]; // Additional CORS origins for desktop apps
-  onInitialize?: (app: Express) => Promise<void>;
+  onInitialize?: (app: Express, io?: any) => Promise<void>;
   onStart?: () => Promise<void>;
 }
 
@@ -129,18 +129,18 @@ export class StandardServer {
       // Setup default middleware
       this.setupDefaultMiddleware();
 
-      // Call custom initialization if provided
+      // Initialize WebSocket if enabled (before onInitialize so it can be passed)
+      if (this.config.enableWebSocket) {
+        this.wsServer = createWebSocketServer(this.httpServer);
+      }
+
+      // Call custom initialization if provided, passing the WebSocket server
       if (this.config.onInitialize) {
-        await this.config.onInitialize(this.app);
+        await this.config.onInitialize(this.app, this.wsServer);
       }
 
       // Setup error handlers (should be last)
       this.setupErrorHandlers();
-
-      // Initialize WebSocket if enabled
-      if (this.config.enableWebSocket) {
-        this.wsServer = createWebSocketServer(this.httpServer);
-      }
 
       this.isInitialized = true;
     } catch (_error: any) {
