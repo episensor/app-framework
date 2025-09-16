@@ -4,16 +4,13 @@
 
 // Configuration management (unified)
 // Re-export core ConfigManager to provide a single, authoritative implementation
-export {
-  ConfigManager,
-  getConfigManager,
-} from "../core/configManager.js";
+export { ConfigManager, getConfigManager } from "../core/configManager.js";
 export type { ConfigManagerOptions as ConfigOptions } from "../core/configManager.js";
+import { ConfigManager as CoreConfigManager } from "../core/configManager.js";
+import type { ConfigManagerOptions } from "../core/configManager.js";
 // Backward-compatible factory alias
-export function createConfigManager<T = any>(
-  options: import("../core/configManager.js").ConfigManagerOptions = {},
-) {
-  return new ConfigManager(options);
+export function createConfigManager(options: ConfigManagerOptions = {}) {
+  return new CoreConfigManager(options);
 }
 
 // Other services

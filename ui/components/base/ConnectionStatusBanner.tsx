@@ -1,4 +1,3 @@
-import { AlertTriangle } from 'lucide-react';
 
 export interface ConnectionStatusBannerProps {
   connected: boolean;

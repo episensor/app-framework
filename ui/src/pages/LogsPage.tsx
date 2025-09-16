@@ -1,27 +1,16 @@
 import { LogViewer } from '../../components/logs/LogViewer';
-import type { LogEntry, LogFile } from '../../components/logs/LogViewer';
+import type { LogEntry } from '../../components/logs/LogViewer';
 
 export interface LogsPageProps {
   // Data
   logs?: LogEntry[];
-  logFiles?: LogFile[];
-  loading?: boolean;
-  
   // Actions
-  onRefresh?: () => Promise<void>;
-  onClear?: () => Promise<void>;
-  onExport?: () => Promise<void>;
-  onDownloadArchive?: (filename: string) => Promise<void>;
-  onDeleteArchive?: (filename: string) => Promise<void>;
-  onFetchArchives?: () => Promise<LogFile[]>;
-  
-  // WebSocket
-  onLogReceived?: (handler: (log: LogEntry) => void) => void;
-  offLogReceived?: (handler: (log: LogEntry) => void) => void;
-  
+  onClear?: () => void;
+  onExport?: (logs: LogEntry[]) => void;
   // Customization
   title?: string;
   className?: string;
+  apiUrl?: string; // Base logs API URL for LogViewer polling/file list
 }
 
 /**
@@ -29,33 +18,21 @@ export interface LogsPageProps {
  */
 export function LogsPage({
   logs,
-  logFiles,
-  loading,
   onClear,
   onExport,
-  onDownloadArchive,
-  onDeleteArchive,
-  onFetchArchives,
-  onLogReceived,
-  offLogReceived,
   title = 'Application Logs',
-  className
+  className,
+  apiUrl
 }: LogsPageProps) {
   return (
     <div className={className}>
       <LogViewer
         logs={logs}
-        logFiles={logFiles}
-        loading={loading}
         onClear={onClear}
         onExport={onExport}
-        onDownloadArchive={onDownloadArchive}
-        onDeleteArchive={onDeleteArchive}
-        onFetchArchives={onFetchArchives}
-        onLogReceived={onLogReceived}
-        offLogReceived={offLogReceived}
+        apiUrl={apiUrl}
         title={title}
-        autoScroll={true}
+        enableAutoScroll={true}
       />
     </div>
   );

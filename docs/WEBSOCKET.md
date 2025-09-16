@@ -2,6 +2,8 @@
 
 ## Overview
 
+Note: The legacy `useWebSocket` hook is deprecated. Use `useSocketIO()` and `useConnectionStatus()` from the UI package for React integration. See examples below.
+
 The EpiSensor App Framework provides a comprehensive WebSocket implementation built on Socket.IO for real-time bidirectional communication between server and clients. This enables live data streaming, instant updates, and responsive user interfaces.
 
 ## Table of Contents

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { RefreshCw } from 'lucide-react';
 
 interface ConnectionOverlayProps {
@@ -6,7 +6,7 @@ interface ConnectionOverlayProps {
   onRetry: () => void;
 }
 
-export function ConnectionOverlay({ isConnected, onRetry }: ConnectionOverlayProps) {
+export function ConnectionOverlay({ isConnected, onRetry }: ConnectionOverlayProps): JSX.Element | null {
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryAttempts, setRetryAttempts] = useState(0);
 
@@ -25,6 +25,7 @@ export function ConnectionOverlay({ isConnected, onRetry }: ConnectionOverlayPro
       }, 5000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isConnected, isRetrying, retryAttempts]);
 
   const handleRetry = () => {
