@@ -145,9 +145,9 @@ export function configureSession(app: Express, config: SessionConfig = {}) {
 export async function createRedisStore(redisUrl?: string) {
   try {
     // @ts-expect-error - Optional dependency
-    const RedisStore = (await import("connect-redis")).default;
+    const RedisStore = (await import(/* @vite-ignore */ "connect-redis")).default;
     // @ts-expect-error - Optional dependency
-    const { createClient } = await import("redis");
+    const { createClient } = await import(/* @vite-ignore */ "redis");
 
     const redisClient = createClient({
       url: redisUrl || process.env.REDIS_URL || "redis://localhost:6379",
