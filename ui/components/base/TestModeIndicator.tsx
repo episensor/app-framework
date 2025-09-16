@@ -3,7 +3,7 @@ import { Card } from '../../components/base/card';
 import { Badge } from '../../components/base/badge';
 import { Button } from '../../components/base/button';
 import { Switch } from '../../components/base/switch';
-// import { Slider } from '../../components/base/slider'; // TODO: Add slider component
+import { Slider } from '../../components/base/slider';
 import { Label } from '../../components/base/label';
 import { Alert, AlertDescription } from '../../components/base/alert';
 import {

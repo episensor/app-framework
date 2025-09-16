@@ -175,11 +175,7 @@ export function RealtimeDataTable<T extends Record<string, any>>({
                 
                 {/* Activity indicator */}
                 {idx === 0 && showActivity && (
-                  <ActivityLED
-                    type={activity as any}
-                    size="sm"
-                    decayTime={activityDecay}
-                  />
+                  <ActivityLED status={activity as any} size="sm" />
                 )}
                 
                 {/* Column content */}

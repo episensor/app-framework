@@ -108,7 +108,8 @@ export function useSocketIO(config: SocketIOConfig = {}): [SocketIOState, Socket
 
     // Setup event listeners
     socket.on('connect', () => {
-      const transport = socket.io?.engine?.transport?.name || null;
+      const t = socket.io?.engine?.transport?.name || null;
+      const transport = (t === 'websocket' || t === 'polling') ? t : null;
       setState({
         connected: true,
         connecting: false,
@@ -146,7 +147,8 @@ export function useSocketIO(config: SocketIOConfig = {}): [SocketIOState, Socket
     });
 
     socket.io.on('reconnect', (_attemptNumber) => {
-      const transport = socket.io?.engine?.transport?.name || null;
+      const t = socket.io?.engine?.transport?.name || null;
+      const transport = (t === 'websocket' || t === 'polling') ? t : null;
       setState(prev => ({
         ...prev,
         connected: true,

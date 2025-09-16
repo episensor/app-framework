@@ -39,7 +39,7 @@ export async function checkApiReadiness(
         clearTimeout(timeoutId);
         
         if (response.ok) {
-            const healthData = await response.json();
+            await response.json();
             // API is ready as long as it responds, regardless of health status
             return {
                 ready: true

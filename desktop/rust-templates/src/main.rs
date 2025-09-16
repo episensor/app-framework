@@ -56,10 +56,41 @@ fn main() {
             .spawn()
             .expect("Failed to start backend server");
         
-        // Give the server time to start
-        thread::sleep(std::time::Duration::from_secs(3));
-        backend_ready_clone.store(true, Ordering::Relaxed);
-        println!("Backend server started");
+        // Poll backend health endpoint instead of hardcoded sleep
+        println!("Waiting for backend to be ready...");
+        let start_time = std::time::Instant::now();
+        let timeout = std::time::Duration::from_secs(30);
+        
+        loop {
+            // Try common API ports
+            let ports = vec![8080, 7500, 5000, 3000];
+            let mut backend_found = false;
+            for port in &ports {
+                if let Ok(response) = reqwest::blocking::Client::new()
+                    .get(&format!("http://localhost:{}/api/health", port))
+                    .timeout(std::time::Duration::from_secs(1))
+                    .send() 
+                {
+                    if response.status().is_success() {
+                        backend_ready_clone.store(true, Ordering::Relaxed);
+                        println!("Backend server is ready on port {}!", port);
+                        backend_found = true;
+                        break;
+                    }
+                }
+            }
+            
+            if backend_found {
+                break;
+            }
+            
+            if start_time.elapsed() > timeout {
+                eprintln!("Backend failed to start within timeout");
+                break;
+            }
+            
+            thread::sleep(std::time::Duration::from_millis(500));
+        }
         
         let _ = child.wait();
     });
@@ -100,41 +131,39 @@ fn main() {
         .expect("error while running tauri application");
 }
 
-// Command to get logs from the backend
+// Command to get logs from the backend API
 #[tauri::command]
-fn get_logs(app: AppHandle) -> Result<Vec<String>, String> {
-    // Use Tauri's path resolver for logs directory
-    let log_path = app.path().app_log_dir()
+async fn get_logs() -> Result<serde_json::Value, String> {
+    // Call the Node.js backend API instead of direct file access
+    let client = reqwest::Client::new();
+    let response = client
+        .get("http://localhost:8080/api/logs/entries?limit=1000")
+        .send()
+        .await
         .map_err(|e| e.to_string())?;
     
-    if !log_path.exists() {
-        return Ok(vec![]);
+    if response.status().is_success() {
+        response.json::<serde_json::Value>()
+            .await
+            .map_err(|e| e.to_string())
+    } else {
+        Err(format!("Failed to fetch logs: {}", response.status()))
     }
-    
-    let mut logs = Vec::new();
-    if let Ok(entries) = std::fs::read_dir(log_path) {
-        for entry in entries.flatten() {
-            if let Ok(content) = std::fs::read_to_string(entry.path()) {
-                logs.push(content);
-            }
-        }
-    }
-    
-    Ok(logs)
 }
 
-// Command to clear logs
+// Command to clear logs via backend API
 #[tauri::command]
-fn clear_logs(app: AppHandle) -> Result<(), String> {
-    let log_path = app.path().app_log_dir()
+async fn clear_logs() -> Result<(), String> {
+    let client = reqwest::Client::new();
+    let response = client
+        .post("http://localhost:8080/api/logs/clear")
+        .send()
+        .await
         .map_err(|e| e.to_string())?;
     
-    if log_path.exists() {
-        if let Ok(entries) = std::fs::read_dir(&log_path) {
-            for entry in entries.flatten() {
-                let _ = std::fs::remove_file(entry.path());
-            }
-        }
+    if response.status().is_success() {
+        Ok(())
+    } else {
+        Err(format!("Failed to clear logs: {}", response.status()))
     }
-    Ok(())
 }

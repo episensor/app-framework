@@ -50,7 +50,7 @@ export { ConnectionIndicator } from '../components/connections/ConnectionIndicat
 export { DeviceIcon } from '../components/base/DeviceIcon';
 export { DogEarBadge } from '../components/base/DogEarBadge';
 export { EmptyState } from '../components/base/EmptyState';
-export { EmptyStates } from '../components/base/EmptyStates';
+export * from '../components/base/DomainEmptyStates';
 export { LoadingState, CardSkeleton, TableSkeleton } from '../components/base/LoadingState';
 export { HelpTooltip } from '../components/base/HelpTooltip';
 export { NetworkInterfaceSelect } from '../components/connections/NetworkInterfaceSelect';
@@ -91,6 +91,8 @@ export type { DashboardStatsProps, StatCard, CompactStatProps } from '../compone
 // export type { TerminalLogViewerProps } from '../components/logs/TerminalLogViewer';
 export { LogViewer } from '../components/logs/LogViewer';
 export type { LogViewerProps } from '../components/logs/LogViewer';
+export { LogStats } from '../components/logs/LogStats';
+export type { LogStatsProps } from '../components/logs/LogStats';
 // EnhancedLogViewer component not found
 // export { EnhancedLogViewer } from '../components/logs/EnhancedLogViewer';
 // export type { EnhancedLogViewerProps, LogEntry, LogFile, LogCategory } from '../components/logs/EnhancedLogViewer';
@@ -100,6 +102,7 @@ export type { LogViewerProps } from '../components/logs/LogViewer';
 export { SettingsFramework } from '../components/settings/SettingsFramework';
 export { ThemeToggle, CompactThemeToggle } from '../components/settings/ThemeToggle';
 export type { ThemeToggleProps } from '../components/settings/ThemeToggle';
+export { defaultSettingsCategories, createSettingsCategory } from './config/defaultSettingsCategories';
 // Settings component not found
 // export { Settings } from '../components/settings/Settings';
 // export type { SettingsProps } from '../components/settings/Settings';

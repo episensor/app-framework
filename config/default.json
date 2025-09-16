@@ -1,0 +1,19 @@
+{
+  "server": {
+    "port": 7000,
+    "host": "localhost"
+  },
+  "storage": {
+    "projectsPath": "/Users/brendan/Code/epi-app-framework/data/projects.json",
+    "logsPath": "/Users/brendan/Code/epi-app-framework/data/logs"
+  },
+  "scanner": {
+    "maxFileSize": 1048576,
+    "defaultExclusions": "node_modules,.git,dist,build,coverage,*.log,*.tmp,.DS_Store",
+    "tokenEstimateRatio": 0.25
+  },
+  "ui": {
+    "theme": "auto",
+    "maxRecentProjects": 10
+  }
+}

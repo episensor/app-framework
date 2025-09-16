@@ -87,6 +87,18 @@ if (iconSource) {
   });
 }
 
+// Read app configuration to get port
+const appConfigPath = path.join(projectPath, 'app.json');
+let devPort = 8080; // default
+if (fs.existsSync(appConfigPath)) {
+  try {
+    const appConfig = JSON.parse(fs.readFileSync(appConfigPath, 'utf8'));
+    devPort = appConfig.devServer?.webPort || appConfig.ports?.web || 8080;
+  } catch (error) {
+    console.warn('  ⚠️  Could not read app.json, using default port 8080');
+  }
+}
+
 // Generate tauri.conf.json
 console.log('⚙️  Generating Tauri configuration...');
 const tauriConfig = {
@@ -96,7 +108,7 @@ const tauriConfig = {
   "identifier": `com.episensor.${appName.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
   "build": {
     "frontendDist": "../web/dist",
-    "devUrl": "http://localhost:8080",
+    "devUrl": `http://localhost:${devPort}`,
     "beforeDevCommand": "npm run dev:web",
     "beforeBuildCommand": "cd web && npm run build"
   },
