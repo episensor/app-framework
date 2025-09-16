@@ -8,6 +8,10 @@ import path from "path";
 import { EventEmitter } from "events";
 import { ZodSchema } from "zod";
 import { createLogger } from "../core/index.js";
+import {
+  ConfigManager as CoreConfigManager,
+  type ConfigManagerOptions,
+} from "../core/configManager.js";
 
 let logger: any; // Will be initialized when needed
 
@@ -71,6 +75,10 @@ export interface SettingsOptions {
   saveDebounce?: number;
   encryptSensitive?: boolean;
   sensitiveFields?: string[];
+  // Unified config support
+  useConfigManager?: boolean; // default true
+  configManager?: CoreConfigManager;
+  configManagerOptions?: ConfigManagerOptions;
 }
 
 export class SettingsService extends EventEmitter {
@@ -81,6 +89,7 @@ export class SettingsService extends EventEmitter {
   private saveDebounce: number;
   private saveTimeout?: NodeJS.Timeout;
   private sensitiveFields: Set<string>;
+  private configManager?: CoreConfigManager;
 
   constructor(private options: SettingsOptions = {}) {
     super();
@@ -88,6 +97,20 @@ export class SettingsService extends EventEmitter {
     this.autoSave = options.autoSave ?? true;
     this.saveDebounce = options.saveDebounce ?? 1000;
     this.sensitiveFields = new Set(options.sensitiveFields || []);
+    const shouldUseCM = options.useConfigManager !== false;
+    if (options.configManager) {
+      this.configManager = options.configManager;
+    } else if (shouldUseCM) {
+      this.configManager = new CoreConfigManager(options.configManagerOptions);
+    }
+    if (this.configManager) {
+      // Bridge config events to settings events
+      this.configManager.on('configChanged', (evt: any) => {
+        this.emit('change', { key: evt.key, value: evt.newValue, previous: evt.oldValue });
+      });
+      this.configManager.on('configReset', () => this.emit('reset'));
+      this.configManager.on('configReloaded', () => this.emit('reloaded'));
+    }
   }
 
   /**
@@ -110,6 +133,17 @@ export class SettingsService extends EventEmitter {
    * Load settings from storage
    */
   async load(): Promise<void> {
+    if (this.configManager) {
+      if (!(this as any)._cmInitialized) {
+        await this.configManager.initialize();
+        (this as any)._cmInitialized = true;
+      }
+      this.settings = { ...this.configManager.get() };
+      if (this.options.encryptSensitive) {
+        this.decryptSensitiveFields();
+      }
+      return;
+    }
     if (!this.storagePath) {
       ensureLogger().info("No storage path configured, using defaults");
       return;
@@ -146,6 +180,16 @@ export class SettingsService extends EventEmitter {
    * Save settings to storage
    */
   async save(): Promise<void> {
+    if (this.configManager) {
+      const snapshot = { ...this.configManager.get() };
+      const toSave = this.options.encryptSensitive
+        ? this.encryptSensitiveFields(snapshot)
+        : snapshot;
+      await this.configManager.saveConfig(toSave);
+      ensureLogger().info("Settings saved via ConfigManager");
+      this.emit("saved", this.settings);
+      return;
+    }
     if (!this.storagePath) {
       ensureLogger().info("No storage path configured, skipping save");
       return;
@@ -184,6 +228,10 @@ export class SettingsService extends EventEmitter {
    * Get a setting value
    */
   get<T = any>(key: string, defaultValue?: T): T {
+    if (this.configManager) {
+      const value = this.configManager.get(key);
+      return value !== undefined ? (value as T) : (defaultValue as T);
+    }
     const value = this.getNestedValue(this.settings, key);
     return value !== undefined ? value : (defaultValue as T);
   }
@@ -212,6 +260,9 @@ export class SettingsService extends EventEmitter {
     }
 
     // Set the value
+    if (this.configManager) {
+      await this.configManager.set(key, value);
+    }
     this.setNestedValue(this.settings, key, value);
 
     // Emit change event
@@ -242,6 +293,9 @@ export class SettingsService extends EventEmitter {
    * Get all settings
    */
   getAll(): Record<string, any> {
+    if (this.configManager) {
+      return { ...this.configManager.get() };
+    }
     return { ...this.settings };
   }
 
@@ -331,6 +385,9 @@ export class SettingsService extends EventEmitter {
     } else {
       // Reset all settings
       this.settings = {};
+      if (this.configManager) {
+        this.configManager.reset();
+      }
       for (const category of this.categories.values()) {
         for (const field of category.fields) {
           if (field.defaultValue !== undefined) {

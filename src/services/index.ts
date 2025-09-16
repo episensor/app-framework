@@ -2,13 +2,19 @@
  * Services Module Exports
  */
 
-// Configuration management
+// Configuration management (unified)
+// Re-export core ConfigManager to provide a single, authoritative implementation
 export {
   ConfigManager,
-  createConfigManager,
-  ConfigSchemas,
-} from "./configManager.js";
-export type { ConfigOptions } from "./configManager.js";
+  getConfigManager,
+} from "../core/configManager.js";
+export type { ConfigManagerOptions as ConfigOptions } from "../core/configManager.js";
+// Backward-compatible factory alias
+export function createConfigManager<T = any>(
+  options: import("../core/configManager.js").ConfigManagerOptions = {},
+) {
+  return new ConfigManager(options);
+}
 
 // Other services
 export { getConversationStorage } from "./conversationStorage.js";
