@@ -101,7 +101,7 @@ export function SettingsFramework({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeCategory, setActiveCategory] = useState(categories[0]?.id || '');
+  const [activeCategory, setActiveCategory] = useState(categories?.[0]?.id || '');
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [restartRequired, setRestartRequired] = useState(false);
   const [isDirty, setIsDirty] = useState(false);

@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Loader2, Circle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { useSocketIO } from '../../hooks/useSocketIO';
+import { socketManager } from '../../hooks/useSocketIO';
 
 interface ConnectionLostOverlayProps {
   isConnected: boolean;
@@ -15,59 +17,107 @@ export function ConnectionLostOverlay({
   const [showOverlay, setShowOverlay] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [, socketActions] = useSocketIO();
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Show overlay when disconnected, hide when connected
     if (!isConnected) {
       // Delay showing overlay briefly to avoid flicker on quick reconnects
-      const timer = setTimeout(() => {
+      showTimeoutRef.current = setTimeout(() => {
         setShowOverlay(true);
       }, 1000);
-      return () => clearTimeout(timer);
+      return () => {
+        if (showTimeoutRef.current) {
+          clearTimeout(showTimeoutRef.current);
+        }
+      };
     } else {
       setShowOverlay(false);
       setRetryCount(0);
       setIsRetrying(false);
+      // Clear any pending retries
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+      if (showTimeoutRef.current) {
+        clearTimeout(showTimeoutRef.current);
+        showTimeoutRef.current = null;
+      }
     }
     return undefined;
   }, [isConnected]);
 
-  // Auto-retry logic
+  // Improved auto-retry logic
   useEffect(() => {
-    if (showOverlay && !isRetrying) {
-      const retryTimer = setTimeout(() => {
-        setIsRetrying(true);
-        setRetryCount(prev => {
-          const newCount = prev + 1;
-          // Attempt to reconnect by reloading after several retries
-          if (newCount > 5) {
-            window.location.reload();
-          }
-          return newCount;
-        });
-        
-        // Reset retry state after attempting
-        setTimeout(() => setIsRetrying(false), 3000);
+    if (showOverlay && !isRetrying && !isConnected) {
+      retryTimeoutRef.current = setTimeout(() => {
+        handleRetry();
       }, 5000); // Retry every 5 seconds
 
-      return () => clearTimeout(retryTimer);
+      return () => {
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current);
+          retryTimeoutRef.current = null;
+        }
+      };
     }
     return undefined;
-  }, [showOverlay, isRetrying]);
+  }, [showOverlay, isRetrying, isConnected]);
 
-  if (!showOverlay) return null;
-
-  const handleManualRetry = () => {
+  const handleRetry = () => {
     setIsRetrying(true);
     setRetryCount(prev => prev + 1);
     
+    // Try the custom retry handler first
     if (onRetry) {
       onRetry();
+      // Give it time to reconnect
+      setTimeout(() => {
+        setIsRetrying(false);
+      }, 3000);
     } else {
-      // Default behavior: force reload
-      window.location.reload();
+      // Use socket manager to reconnect
+      const socket = socketManager.getSocket();
+      if (socket) {
+        if (socket.disconnected) {
+          socket.connect();
+        }
+        // Check if we're actually reconnecting
+        setTimeout(() => {
+          if (socket.connected) {
+            setIsRetrying(false);
+          } else {
+            setIsRetrying(false);
+            // If still not connected after many retries, show a more serious error
+            if (retryCount > 10) {
+              console.error('Failed to reconnect after multiple attempts');
+            }
+          }
+        }, 3000);
+      } else {
+        // No socket available, reset retry state
+        setIsRetrying(false);
+      }
     }
   };
+
+  const handleManualRetry = () => {
+    // Clear any pending auto-retry
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
+    handleRetry();
+  };
+
+  const handleRefreshPage = () => {
+    window.location.reload();
+  };
+
+  if (!showOverlay) return null;
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
@@ -108,7 +158,10 @@ export function ConnectionLostOverlay({
                 <>
                   <AlertTriangle className="h-4 w-4 text-yellow-500" />
                   <span className="text-gray-600 dark:text-gray-400">
-                    Will retry in a few seconds (attempt #{retryCount})
+                    {retryCount === 0 
+                      ? 'Connection lost'
+                      : `Retry attempt #${retryCount} - will retry automatically`
+                    }
                   </span>
                 </>
               )}
@@ -124,17 +177,33 @@ export function ConnectionLostOverlay({
                 <RefreshCw className={`h-4 w-4 ${isRetrying ? 'animate-spin' : ''}`} />
                 Retry Now
               </button>
+              
+              {retryCount > 5 && (
+                <button
+                  onClick={handleRefreshPage}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh Page
+                </button>
+              )}
             </div>
 
             {/* Help text */}
             <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
               <p className="text-xs text-gray-500 dark:text-gray-500">
-                If this problem persists, try:
+                {retryCount > 5 
+                  ? 'Connection issues persist. The server may be down.'
+                  : 'If this problem persists, try:'
+                }
               </p>
               <ul className="mt-2 text-xs text-gray-500 dark:text-gray-500 space-y-1">
                 <li>• Checking if the backend server is running</li>
                 <li>• Restarting {appName}</li>
                 <li>• Checking the console for error messages</li>
+                {retryCount > 5 && (
+                  <li className="text-orange-500">• Consider refreshing the page if retries continue to fail</li>
+                )}
               </ul>
             </div>
           </div>

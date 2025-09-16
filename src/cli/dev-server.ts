@@ -162,7 +162,7 @@ class DevServerOrchestrator {
 
       // Check for port conflict and show enhanced error
       if (output.includes("EADDRINUSE") || output.includes("already in use")) {
-        this.showPortConflictError(this.config.backendPort);
+        this.showPortConflictError(this.config.backendPort, 'backend');
       }
 
       // Show errors
@@ -192,7 +192,7 @@ class DevServerOrchestrator {
         output.includes("EADDRINUSE") ||
         output.includes("address already in use")
       ) {
-        this.showPortConflictError(this.config.backendPort);
+        this.showPortConflictError(this.config.backendPort, 'backend');
       }
 
       // For backend stderr, just pass it through as-is to preserve formatting
@@ -379,25 +379,7 @@ class DevServerOrchestrator {
 
         // Check for port conflict error
         if (output.includes("Port") && output.includes("is in use")) {
-          console.error(
-            chalk.red(`\n⚠️  Port ${this.config.frontendPort} is already in use!`)
-          );
-          console.error(
-            chalk.yellow(`Please stop the other process using: `) +
-            chalk.cyan(`lsof -i :${this.config.frontendPort} | grep LISTEN`)
-          );
-          console.error(
-            chalk.yellow(`Then kill it with: `) +
-            chalk.cyan(`kill -9 <PID>`)
-          );
-          console.error(
-            chalk.yellow(`Or use a different port in your configuration.\n`)
-          );
-          // Store the error for display when process exits
-          this.frontendError = `Port ${this.config.frontendPort} is already in use`;
-          // Don't return here - let the error be shown
-          this.cleanup();
-          process.exit(1);
+          this.showPortConflictError(this.config.frontendPort, 'frontend');
         }
 
         // Check if Vite is outputting its ready message to stderr
@@ -593,7 +575,7 @@ class DevServerOrchestrator {
     }
   }
 
-  private async showPortConflictError(port: number) {
+  private async showPortConflictError(port: number, portType: 'backend' | 'frontend' = 'backend') {
     const processInfo = await this.getProcessUsingPort(port);
 
     console.clear();
@@ -601,7 +583,7 @@ class DevServerOrchestrator {
     // Build the error message with subtle gray styling like the startup banner
     let lines: string[] = [];
     lines.push('');
-    lines.push(`⚠️  Port ${chalk.yellow(port)} is already in use!`);
+    lines.push(`⚠️  ${chalk.yellow(portType.charAt(0).toUpperCase() + portType.slice(1))} port ${chalk.yellow(port)} is already in use!`);
     lines.push('');
 
     if (processInfo) {
@@ -644,67 +626,15 @@ class DevServerOrchestrator {
     // Check if backend port is available
     const backendAvailable = await this.checkPort(this.config.backendPort);
     if (!backendAvailable) {
-      const processInfo = await this.getProcessUsingPort(this.config.backendPort);
-
-      console.clear();
-      let errorMessage = chalk.red(`⚠️  Port ${this.config.backendPort} is already in use!\n\n`);
-
-      if (processInfo) {
-        errorMessage += chalk.white(`Process: ${chalk.yellow(processInfo.command)}\n`);
-        errorMessage += chalk.white(`PID: ${chalk.yellow(processInfo.pid)}\n\n`);
-        errorMessage += chalk.green('🔧 Quick fix - copy and run this command:\n\n');
-        errorMessage += chalk.bgGray.white(` kill -9 ${processInfo.pid} `) + '\n\n';
-      } else {
-        errorMessage += chalk.gray('Could not identify the process using this port.\n\n');
-      }
-
-      errorMessage += chalk.gray('Other options:\n');
-      errorMessage += chalk.gray(`• Check what's using it: ${chalk.cyan(`lsof -i :${this.config.backendPort}`)}\n`);
-      errorMessage += chalk.gray(`• Kill all Node processes: ${chalk.cyan('pkill -f node')}\n`);
-      errorMessage += chalk.gray(`• Use a different port in your package.json`);
-
-      console.error(boxen(errorMessage, {
-        padding: 1,
-        margin: 1,
-        borderStyle: 'round',
-        borderColor: 'red',
-        title: '❌ Port Conflict',
-        titleAlignment: 'center'
-      }));
-      process.exit(1);
+      await this.showPortConflictError(this.config.backendPort, 'backend');
+      return;
     }
 
     // Check if frontend port is available
     const frontendAvailable = await this.checkPort(this.config.frontendPort);
     if (!frontendAvailable) {
-      const processInfo = await this.getProcessUsingPort(this.config.frontendPort);
-
-      console.clear();
-      let errorMessage = chalk.red(`⚠️  Port ${this.config.frontendPort} is already in use!\n\n`);
-
-      if (processInfo) {
-        errorMessage += chalk.white(`Process: ${chalk.yellow(processInfo.command)}\n`);
-        errorMessage += chalk.white(`PID: ${chalk.yellow(processInfo.pid)}\n\n`);
-        errorMessage += chalk.green('🔧 Quick fix - copy and run this command:\n\n');
-        errorMessage += chalk.bgGray.white(` kill -9 ${processInfo.pid} `) + '\n\n';
-      } else {
-        errorMessage += chalk.gray('Could not identify the process using this port.\n\n');
-      }
-
-      errorMessage += chalk.gray('Other options:\n');
-      errorMessage += chalk.gray(`• Check what's using it: ${chalk.cyan(`lsof -i :${this.config.frontendPort}`)}\n`);
-      errorMessage += chalk.gray(`• Kill all Vite processes: ${chalk.cyan('pkill -f vite')}\n`);
-      errorMessage += chalk.gray(`• Use a different port in your package.json`);
-
-      console.error(boxen(errorMessage, {
-        padding: 1,
-        margin: 1,
-        borderStyle: 'round',
-        borderColor: 'red',
-        title: '❌ Port Conflict',
-        titleAlignment: 'center'
-      }));
-      process.exit(1);
+      await this.showPortConflictError(this.config.frontendPort, 'frontend');
+      return;
     }
 
     // Start both processes
