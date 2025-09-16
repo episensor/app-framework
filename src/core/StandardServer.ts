@@ -38,6 +38,14 @@ export interface StandardServerConfig {
   host?: string;
   environment?: string;
   enableWebSocket?: boolean;
+  // Optional logging configuration (not all fields are used yet)
+  logging?: {
+    level?: string;
+    maxSize?: string;
+    maxFiles?: string | number;
+    datePattern?: string;
+    zippedArchive?: boolean;
+  };
   // Desktop app specific
   appId?: string; // App identifier for desktop (e.g. 'com.episensor.appname')
   enableDesktopIntegration?: boolean; // Auto-configure for desktop apps
@@ -119,7 +127,8 @@ export class StandardServer {
 
         await logger.initialize({
           appName: this.config.appName,
-          logLevel: process.env.LOG_LEVEL || "info",
+          logLevel:
+            this.config.logging?.level || process.env.LOG_LEVEL || "info",
           consoleOutput: true,
           fileOutput: true,
           logsDir,
