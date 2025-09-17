@@ -71,6 +71,13 @@ afterAll(async () => {
 }, 10000);
 ```
 
+### Vitest Recommendation
+
+Vitest is the preferred test runner for new and migrated codebases. When
+bringing a project up to the latest standards, set up `vitest.config.ts`, wire
+the scripts (`test`, `test:run`, `test:coverage`), and rely on the framework's
+helpers under the `testing/` directory.
+
 ### Jest Configuration
 
 Standard Jest configuration for all apps:

@@ -6,7 +6,7 @@
  */
 
 // Framework version
-export const FRAMEWORK_VERSION = "3.1.0";
+export const FRAMEWORK_VERSION = "4.4.0";
 
 // Process Management
 export { StandardServer, createStandardServer } from "./StandardServer.js";
