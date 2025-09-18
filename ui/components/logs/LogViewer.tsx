@@ -196,6 +196,12 @@ export function LogViewer({
     setLogFiles(externalLogFiles);
   }, [externalLogFiles]);
 
+  // Update available categories when logs change
+  useEffect(() => {
+    const cats = Array.from(new Set(logs.map(l => (l.category || l.source || '')).filter(Boolean))).sort();
+    setAvailableCategories(cats);
+  }, [logs]);
+
   // Filter logs
   useEffect(() => {
     let filtered = [...logs];
@@ -229,7 +235,9 @@ export function LogViewer({
     } else if (activeCategory === 'archives' && onFetchArchives) {
       fetchArchives();
     }
-  }, [activeCategory, fetchLogs, fetchArchives, onFetchLogs, onFetchArchives]);
+  // Only depend on activeCategory and the presence of callbacks, not the functions themselves
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory]);
 
   // Subscribe to log updates
   useEffect(() => {
@@ -248,10 +256,7 @@ export function LogViewer({
           return updated;
         }
         const entry = { ...log, id: `${Date.now()}-${Math.random()}` };
-        const next = [entry, ...currentLogs];
-        const cats = Array.from(new Set(next.map(l => (l.category || l.source || '')).filter(Boolean))).sort();
-        setAvailableCategories(cats);
-        return next;
+        return [entry, ...currentLogs];
       });
     };
 
@@ -268,8 +273,7 @@ export function LogViewer({
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
       setLogs(sorted);
-      const cats = Array.from(new Set(sorted.map(l => (l.category || l.source || '')).filter(Boolean))).sort();
-      setAvailableCategories(cats);
+      // Categories will be updated by the useEffect watching logs
     } catch (error) {
       console.error('Failed to fetch logs:', error);
     } finally {
