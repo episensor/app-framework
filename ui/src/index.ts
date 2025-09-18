@@ -86,21 +86,21 @@ export { DashboardStats, CompactStat } from '../components/data/DashboardStats';
 export type { DashboardStatsProps, StatCard, CompactStatProps } from '../components/data/DashboardStats';
 
 // Log components
-// TerminalLogViewer component not found
-// export { TerminalLogViewer } from '../components/logs/TerminalLogViewer';
-// export type { TerminalLogViewerProps } from '../components/logs/TerminalLogViewer';
+// Legacy log viewer (deprecated)
+export { LogViewer as LogViewerLegacy } from '../components/logs/LogViewerLegacy';
+export type { LogViewerProps as LogViewerLegacyProps } from '../components/logs/LogViewerLegacy';
+
+// New log viewer with categories and archives
 export { LogViewer } from '../components/logs/LogViewer';
-export type { LogViewerProps } from '../components/logs/LogViewer';
-export { LogStats } from '../components/logs/LogStats';
-export type { LogStatsProps } from '../components/logs/LogStats';
-// Enhanced log viewer with categories and archives
-export { EnhancedLogViewer } from '../components/logs/EnhancedLogViewer';
 export type {
-  EnhancedLogViewerProps,
+  LogViewerProps,
   LogEntry,
   LogFile,
   LogCategory
-} from '../components/logs/EnhancedLogViewer';
+} from '../components/logs/LogViewer';
+
+export { LogStats } from '../components/logs/LogStats';
+export type { LogStatsProps } from '../components/logs/LogStats';
 
 
 // Settings components
