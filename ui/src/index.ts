@@ -93,9 +93,14 @@ export { LogViewer } from '../components/logs/LogViewer';
 export type { LogViewerProps } from '../components/logs/LogViewer';
 export { LogStats } from '../components/logs/LogStats';
 export type { LogStatsProps } from '../components/logs/LogStats';
-// EnhancedLogViewer component not found
-// export { EnhancedLogViewer } from '../components/logs/EnhancedLogViewer';
-// export type { EnhancedLogViewerProps, LogEntry, LogFile, LogCategory } from '../components/logs/EnhancedLogViewer';
+// Enhanced log viewer with categories and archives
+export { EnhancedLogViewer } from '../components/logs/EnhancedLogViewer';
+export type {
+  EnhancedLogViewerProps,
+  LogEntry,
+  LogFile,
+  LogCategory
+} from '../components/logs/EnhancedLogViewer';
 
 
 // Settings components
