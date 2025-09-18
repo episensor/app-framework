@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card } from '../base/card';
 import { Button } from '../base/button';
 import { Badge } from '../base/badge';
@@ -228,16 +228,39 @@ export function LogViewer({
     setFilteredLogs(filtered);
   }, [logs, levelFilter, categoryFilter, searchTerm]);
 
+  // Use a ref to track the previous category to prevent infinite loops
+  const prevCategoryRef = useRef<string>();
+
   // Fetch logs when category changes
   useEffect(() => {
-    if (activeCategory === 'current' && onFetchLogs) {
-      fetchLogs();
-    } else if (activeCategory === 'archives' && onFetchArchives) {
-      fetchArchives();
+    // Only fetch if the category actually changed
+    if (prevCategoryRef.current === activeCategory) {
+      return;
     }
-  // Only depend on activeCategory and the presence of callbacks, not the functions themselves
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory]);
+    prevCategoryRef.current = activeCategory;
+
+    if (activeCategory === 'current' && onFetchLogs) {
+      // Fetch logs directly without using the callback
+      setLoading(true);
+      onFetchLogs().then(fetchedLogs => {
+        const normalized = coalesceStackTraces(fetchedLogs);
+        const sorted = normalized.sort((a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+        setLogs(sorted);
+      }).catch(error => {
+        console.error('Failed to fetch logs:', error);
+      }).finally(() => {
+        setLoading(false);
+      });
+    } else if (activeCategory === 'archives' && onFetchArchives) {
+      onFetchArchives().then(archives => {
+        setLogFiles(archives);
+      }).catch(error => {
+        console.error('Failed to fetch archives:', error);
+      });
+    }
+  }, [activeCategory, onFetchLogs, onFetchArchives]);
 
   // Subscribe to log updates
   useEffect(() => {
@@ -263,33 +286,8 @@ export function LogViewer({
     return onLogReceived(handleLog);
   }, [onLogReceived]);
 
-  const fetchLogs = useCallback(async () => {
-    if (!onFetchLogs) return;
-    setLoading(true);
-    try {
-      const fetchedLogs = await onFetchLogs();
-      const normalized = coalesceStackTraces(fetchedLogs);
-      const sorted = normalized.sort((a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
-      setLogs(sorted);
-      // Categories will be updated by the useEffect watching logs
-    } catch (error) {
-      console.error('Failed to fetch logs:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [onFetchLogs]);
-
-  const fetchArchives = useCallback(async () => {
-    if (!onFetchArchives) return;
-    try {
-      const archives = await onFetchArchives();
-      setLogFiles(archives);
-    } catch (error) {
-      console.error('Failed to fetch archives:', error);
-    }
-  }, [onFetchArchives]);
+  // Remove fetchLogs and fetchArchives functions as they cause infinite loops
+  // We'll call onFetchLogs/onFetchArchives directly in the useEffect
 
   const handleClearLogs = async () => {
     if (!onClearLogs) return;
@@ -349,8 +347,12 @@ export function LogViewer({
 
   // Strip ANSI color codes from log messages
   const stripAnsiCodes = (str: string): string => {
-    // Remove ANSI escape sequences
-    return str.replace(/\x1b\[[0-9;]*m/g, '');
+    // Remove ANSI escape sequences - both with and without the escape character
+    // Matches: \x1b[...m, \033[...m, or just [...m where ... is digits and semicolons
+    return str
+      .replace(/\x1b\[[0-9;]*m/g, '')  // Standard ANSI with escape char
+      .replace(/\033\[[0-9;]*m/g, '')  // Octal escape format
+      .replace(/\[[0-9;]+m/g, '');     // Just the bracket notation without escape
   };
 
   const renderLogEntry = (log: LogEntry) => (
