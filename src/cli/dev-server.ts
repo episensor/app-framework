@@ -236,12 +236,55 @@ class DevServerOrchestrator {
     }, 5000);
   }
 
-  private startFrontend() {
+  private async startFrontend() {
     logger.info(
       chalk.gray(
         "Starting frontend on port " + this.config.frontendPort + "...",
       ),
     );
+
+    // Quick check if port is available before spawning process
+    // This helps catch port conflicts faster than waiting for Vite to report them
+    const portAvailable = await this.checkPort(this.config.frontendPort);
+    if (!portAvailable) {
+      this.frontendError = `Port ${this.config.frontendPort} is already in use`;
+      // Don't call showPortConflictError here as it exits immediately
+      // Instead, simulate a frontend exit to trigger the error banner
+      setTimeout(() => {
+        if (this.frontendProcess) {
+          this.frontendProcess.emit("exit", 1);
+        } else {
+          // If no process created yet, show error directly
+          console.clear();
+          logger.error(
+            boxen(
+              chalk.red("⚠️  Frontend Failed to Start!\n\n") +
+                chalk.white(this.frontendError + "\n\n") +
+                chalk.gray("To fix this issue:\n") +
+                chalk.gray(
+                  `1. Stop the other process using port ${this.config.frontendPort}\n`,
+                ) +
+                chalk.gray(
+                  `2. Check what's using it: ${chalk.cyan(`lsof -i :${this.config.frontendPort}`)}\n`,
+                ) +
+                chalk.gray(
+                  `3. Kill it with: ${chalk.cyan(`kill -9 <PID>`)}\n`,
+                ) +
+                chalk.gray(`4. Or use a different port in your configuration`),
+              {
+                padding: 1,
+                margin: 1,
+                borderStyle: "round",
+                borderColor: "red",
+              },
+            ),
+          );
+          this.cleanup();
+          process.exit(1);
+        }
+      }, 100);
+      return;
+    }
 
     // Handle different frontend command formats
     let cmd: string;
@@ -343,6 +386,8 @@ class DevServerOrchestrator {
       // Check for port conflict
       if (output.includes("EADDRINUSE") || output.includes("already in use") ||
           output.includes("Please stop the other process")) {
+        // Store error for the exit handler
+        this.frontendError = `Port ${this.config.frontendPort} is already in use`;
         logger.error(
           chalk.red(
             `\n⚠️  Port ${this.config.frontendPort} is already in use!`,
@@ -380,9 +425,26 @@ class DevServerOrchestrator {
           logger.info(chalk.yellow(`[Frontend stderr] ${output}`));
         }
 
-        // Check for port conflict error
-        if (output.includes("Port") && output.includes("is in use")) {
+        // Check for Vite's port conflict error message
+        // Vite outputs: "Error: Port XXXX is already in use"
+        if (output.includes("Error:") && output.includes("is already in use")) {
+          // Extract port number from error message if possible
+          const portMatch = output.match(/Port (\d+)/);
+          const port = portMatch ? parseInt(portMatch[1]) : this.config.frontendPort;
+          this.frontendError = `Port ${port} is already in use`;
+          // Don't call showPortConflictError immediately as Vite will exit
+          // The exit handler will show the proper error banner
+          return;
+        }
+
+        // Check for other port conflict formats
+        if ((output.includes("Port") && output.includes("is in use")) ||
+            output.includes("EADDRINUSE")) {
+          // Store error for the exit handler
+          this.frontendError = `Port ${this.config.frontendPort} is already in use`;
+          // Try to show the error immediately, but Vite might exit first
           this.showPortConflictError(this.config.frontendPort, 'frontend');
+          return;
         }
 
         // Check if Vite is outputting its ready message to stderr
@@ -427,7 +489,7 @@ class DevServerOrchestrator {
             `[Frontend] Resource temporarily unavailable, retrying (${this.retryCount}/3)...`,
           ),
         );
-        setTimeout(() => this.startFrontend(), 1000 * this.retryCount);
+        setTimeout(async () => await this.startFrontend(), 1000 * this.retryCount);
         return;
       }
 
@@ -644,7 +706,7 @@ class DevServerOrchestrator {
     this.startBackend();
 
     // Give backend a moment to start before frontend
-    setTimeout(() => this.startFrontend(), 1000);
+    setTimeout(async () => await this.startFrontend(), 1000);
 
     // Handle graceful shutdown
     process.on("SIGINT", () => {
