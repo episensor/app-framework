@@ -2,8 +2,6 @@
 
 ## Overview
 
-Note: The legacy `useWebSocket` hook is deprecated. Use `useSocketIO()` and `useConnectionStatus()` from the UI package for React integration. See examples below.
-
 The EpiSensor App Framework provides a comprehensive WebSocket implementation built on Socket.IO for real-time bidirectional communication between server and clients. This enables live data streaming, instant updates, and responsive user interfaces.
 
 ## Table of Contents
@@ -291,10 +289,10 @@ class SubscriptionManager {
 
 ## React Integration
 
-### useWebSocket Hook
+### useSocketIO Hook
 
 ```tsx
-import { useWebSocket } from '@episensor/app-framework/ui';
+import { useSocketIO } from '@episensor/app-framework/ui';
 
 function MyComponent() {
   const { 
@@ -305,7 +303,7 @@ function MyComponent() {
     emit,
     on,
     off 
-  } = useWebSocket('http://localhost:8080');
+  } = useSocketIO('http://localhost:8080');
   
   useEffect(() => {
     if (connected) {
@@ -331,13 +329,13 @@ function MyComponent() {
 }
 ```
 
-### useWebSocketSubscription Hook
+### useSocketIOSubscription Hook
 
 ```tsx
-import { useWebSocketSubscription } from '@episensor/app-framework/ui';
+import { useSocketIOSubscription } from '@episensor/app-framework/ui';
 
 function SimulatorDisplay({ simulatorId }) {
-  const { data, loading, error } = useWebSocketSubscription(
+  const { data, loading, error } = useSocketIOSubscription(
     'simulator',
     simulatorId,
     {
@@ -610,12 +608,12 @@ setInterval(async () => {
 ```tsx
 // Client (React)
 import React, { useState, useEffect } from 'react';
-import { useWebSocket } from '@episensor/app-framework/ui';
+import { useSocketIO } from '@episensor/app-framework/ui';
 import { LineChart, Line, XAxis, YAxis } from 'recharts';
 
 function Dashboard() {
   const [metrics, setMetrics] = useState([]);
-  const { connected, on, off } = useWebSocket('http://localhost:8080');
+  const { connected, on, off } = useSocketIO('http://localhost:8080');
   
   useEffect(() => {
     if (connected) {
@@ -718,7 +716,7 @@ app.post('/api/device/:id/data', async (req, res) => {
 function DeviceMonitor({ deviceId }) {
   const [telemetry, setTelemetry] = useState(null);
   const [history, setHistory] = useState([]);
-  const { subscribe, on } = useWebSocket();
+  const { subscribe, on } = useSocketIO();
   
   useEffect(() => {
     subscribe('device', deviceId);

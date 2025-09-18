@@ -2,16 +2,7 @@
  * Services Module Exports
  */
 
-// Configuration management (unified)
-// Re-export core ConfigManager to provide a single, authoritative implementation
-export { ConfigManager, getConfigManager } from "../core/configManager.js";
-export type { ConfigManagerOptions as ConfigOptions } from "../core/configManager.js";
-import { ConfigManager as CoreConfigManager } from "../core/configManager.js";
-import type { ConfigManagerOptions } from "../core/configManager.js";
-// Backward-compatible factory alias
-export function createConfigManager(options: ConfigManagerOptions = {}) {
-  return new CoreConfigManager(options);
-}
+// Configuration management - use SettingsService
 
 // Other services
 export { getConversationStorage } from "./conversationStorage.js";
@@ -64,7 +55,3 @@ export type {
 // Queue Service
 export { default as QueueService } from "./queueService.js";
 export type { QueueJob, QueueConfig, JobHandler } from "./queueService.js";
-
-// Browser Automation Service - commented out as file was removed
-// export { browserAutomation, BrowserAutomationService, LinkedInAutomation } from './browserAutomationService.js';
-// export type { BrowserConfig, PageAction, AutomationSession, DataExtractionSchema } from './browserAutomationService.js';

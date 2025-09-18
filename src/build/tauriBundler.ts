@@ -6,6 +6,8 @@
 import { execSync } from "child_process";
 import path from "path";
 import { ensureDir, pathExists, move } from "../utils/fs-utils.js";
+import { createLogger } from "../core/logger.js";
+const logger = createLogger('tauriBundler');
 
 export interface TauriBundleOptions {
   /** Entry point for the server (e.g., 'dist/index.js' or 'dist/server/index.js') */
@@ -62,7 +64,7 @@ export async function buildTauriSidecar(
 ): Promise<void> {
   const config = { ...DEFAULT_OPTIONS, ...options };
 
-  console.log("🚀 Building Tauri sidecar...");
+  logger.info("🚀 Building Tauri sidecar...");
 
   // Step 1: Bundle with esbuild
   await bundleWithEsbuild(config);
@@ -73,7 +75,7 @@ export async function buildTauriSidecar(
   // Step 3: Rename binaries for Tauri
   await renameBinariesForTauri(config);
 
-  console.log("✅ Tauri sidecar build complete!");
+  logger.info("✅ Tauri sidecar build complete!");
 }
 
 /**
@@ -82,7 +84,7 @@ export async function buildTauriSidecar(
 async function bundleWithEsbuild(
   config: Required<TauriBundleOptions>,
 ): Promise<void> {
-  console.log("📦 Bundling with esbuild...");
+  logger.info("📦 Bundling with esbuild...");
 
   const allExternals = [...STANDARD_EXTERNALS, ...config.externals];
   const externalFlags = allExternals
@@ -93,9 +95,9 @@ async function bundleWithEsbuild(
 
   try {
     execSync(command, { stdio: "inherit" });
-    console.log("✅ Bundle created successfully");
+    logger.info("✅ Bundle created successfully");
   } catch (_error) {
-    console.error("❌ Failed to bundle with esbuild");
+    logger.error("❌ Failed to bundle with esbuild");
     throw _error;
   }
 }
@@ -106,7 +108,7 @@ async function bundleWithEsbuild(
 async function compileWithPkg(
   config: Required<TauriBundleOptions>,
 ): Promise<void> {
-  console.log("🔨 Compiling with pkg...");
+  logger.info("🔨 Compiling with pkg...");
 
   const targets = config.platforms
     .map((platform) => {
@@ -129,9 +131,9 @@ async function compileWithPkg(
     await ensureDir(config.binaryOutput);
 
     execSync(command, { stdio: "inherit" });
-    console.log("✅ Binaries compiled successfully");
+    logger.info("✅ Binaries compiled successfully");
   } catch (_error) {
-    console.error("❌ Failed to compile with pkg");
+    logger.error("❌ Failed to compile with pkg");
     throw _error;
   }
 }
@@ -142,7 +144,7 @@ async function compileWithPkg(
 async function renameBinariesForTauri(
   config: Required<TauriBundleOptions>,
 ): Promise<void> {
-  console.log("🏷️  Renaming binaries for Tauri...");
+  logger.info("🏷️  Renaming binaries for Tauri...");
 
   for (const platform of config.platforms) {
     const pkgName = getPkgOutputName(config.bundleOutput, platform);
@@ -153,9 +155,9 @@ async function renameBinariesForTauri(
 
     if (await pathExists(sourcePath)) {
       await move(sourcePath, targetPath);
-      console.log(`  ✅ ${platform}: ${tauriName}`);
+      logger.info(`  ✅ ${platform}: ${tauriName}`);
     } else {
-      console.warn(`  ⚠️  ${platform}: Binary not found at ${sourcePath}`);
+      logger.warn(`  ⚠️  ${platform}: Binary not found at ${sourcePath}`);
     }
   }
 }

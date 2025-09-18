@@ -6,13 +6,13 @@ import { Alert, AlertDescription } from '../../components/base/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/base/select';
 import { Input } from '../../components/base/input';
 import { format } from 'date-fns';
-import { 
-  Terminal, Archive, FileText, Download, Trash2, AlertCircle, 
+import {
+  Terminal, Archive, Download, Trash2, AlertCircle,
   Search, Copy as CopyIcon, Eraser, RefreshCw
 } from 'lucide-react';
-import { cn } from '../../utils/cn';
+import { cn } from '../../src/utils/cn';
 import { useSocketIO } from '../hooks/useSocketIO';
-import { apiRequest } from '../../utils/apiRequest';
+import { apiRequest } from '../../src/utils/apiRequest';
 import { toast } from 'sonner';
 
 interface LogEntry {
@@ -152,11 +152,11 @@ export function LogsPage({
       let { timestamp, level, message, category, source, metadata } = log;
       const embedded = message.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(\w+)\s+\[([^\]]+)\]\s+(.*)$/);
       if (embedded) {
-        timestamp = embedded[1];
-        level = embedded[2].toLowerCase() as any;
-        source = embedded[3];
+        timestamp = embedded[1] || timestamp;
+        level = (embedded[2] || 'info').toLowerCase() as any;
+        source = embedded[3] || source;
         category = source;
-        message = embedded[4];
+        message = embedded[4] || message;
       }
       if (/^\s*Error[:\s]/i.test(message) || /uncaught exception/i.test(message)) {
         level = 'error';
@@ -210,11 +210,11 @@ export function LogsPage({
         let { timestamp, level, message, category, source, metadata } = log;
         const embedded = message.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(\w+)\s+\[([^\]]+)\]\s+(.*)$/);
         if (embedded) {
-          timestamp = embedded[1];
-          level = embedded[2].toLowerCase() as any;
-          source = embedded[3];
+          timestamp = embedded[1] || timestamp;
+          level = (embedded[2] || 'info').toLowerCase() as any;
+          source = embedded[3] || source;
           category = source;
-          message = embedded[4];
+          message = embedded[4] || message;
         }
         if (/^\s*Error[:\s]/i.test(message) || /uncaught exception/i.test(message)) {
           level = 'error';
@@ -226,8 +226,10 @@ export function LogsPage({
         for (const e of entries) {
           if (/^\s*at\s/.test(e.message) && out.length > 0) {
             const prev = out[out.length - 1];
-            const stack = prev.metadata?.stack ? `${prev.metadata.stack}\n${e.message}` : e.message;
-            prev.metadata = { ...(prev.metadata || {}), stack };
+            if (prev) {
+              const stack = prev.metadata?.stack ? `${prev.metadata.stack}\n${e.message}` : e.message;
+              prev.metadata = { ...(prev.metadata || {}), stack };
+            }
           } else {
             out.push(e);
           }
@@ -333,7 +335,7 @@ export function LogsPage({
   const renderLogEntry = (log: LogEntry) => (
     <div
       key={log.id}
-      className="px-3 py-2 font-mono text-xs border-b border-gray-100 dark:border-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900"
+      className="px-3 py-2 font-mono text-xs border-b border-gray-100 dark:border-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900 group"
     >
       <div className="flex items-start gap-2">
         <span className="text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -343,7 +345,20 @@ export function LogsPage({
         {(log.category || log.source) && (
           <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">[{log.category || log.source}]</span>
         )}
-        <span className="whitespace-pre-wrap break-all">{log.message}</span>
+        <span className="whitespace-pre-wrap break-all flex-1">{log.message}</span>
+        <button
+          onClick={() => {
+            const ts = formatTimestamp(log.timestamp);
+            const src = log.category || log.source ? ` [${log.category || log.source}]` : '';
+            const text = `${ts} ${log.level.toUpperCase()}${src} ${log.message}`;
+            const fullText = log.metadata?.stack ? `${text}\n${log.metadata.stack}` : text;
+            navigator.clipboard.writeText(fullText).then(() => toast.success('Copied to clipboard')).catch(() => toast.error('Copy failed'));
+          }}
+          className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+          title="Copy log entry"
+        >
+          <CopyIcon className="h-3 w-3" />
+        </button>
       </div>
       {log.metadata?.stack && (
         <pre className="ml-[180px] whitespace-pre overflow-x-auto text-[10px] leading-snug mt-1 text-gray-500 dark:text-gray-400">

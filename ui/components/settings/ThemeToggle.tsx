@@ -4,11 +4,11 @@
  */
 
 import { Moon, Sun, Monitor } from 'lucide-react';
-import { useTheme } from '../../theme/ThemeProvider';
+import { useTheme } from '../../src/theme/ThemeProvider';
 import { Button } from '../base/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../base/select';
 import { Label } from '../base/label';
-import { cn } from '../../utils/cn';
+import { cn } from '../../src/utils/cn';
 
 export interface ThemeToggleProps {
   className?: string;

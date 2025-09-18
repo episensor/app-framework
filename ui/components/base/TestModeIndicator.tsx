@@ -3,7 +3,6 @@ import { Card } from '../../components/base/card';
 import { Badge } from '../../components/base/badge';
 import { Button } from '../../components/base/button';
 import { Switch } from '../../components/base/switch';
-import { Slider } from '../../components/base/slider';
 import { Label } from '../../components/base/label';
 import { Alert, AlertDescription } from '../../components/base/alert';
 import {
@@ -20,7 +19,8 @@ import {
   Activity, X, RotateCcw 
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-// Note: Apps using this component need to provide their own config store
+// Note: Apps using this component should provide their own config store
+// Uncomment and adjust the import path as needed:
 // import { useConfigStore } from '@/lib/stores/config';
 import { toast } from 'sonner';
 
@@ -122,7 +122,7 @@ export function TestModeIndicator({ config }: TestModeIndicatorProps = {}) {
 
   const handleTestModeToggle = async (enabled: boolean) => {
     setTestModeEnabled(enabled);
-    // TODO: Implement backend API for test mode settings
+    // Note: Uncomment when config store is available
     // await config.setValue('testMode.enabled', enabled);
     
     if (enabled) {
@@ -146,7 +146,7 @@ export function TestModeIndicator({ config }: TestModeIndicatorProps = {}) {
 
 
   const saveSettings = async () => {
-    // TODO: Implement backend API for test mode settings
+    // Note: Uncomment when config store is available
     // await config.setValue('testMode.scenarios', activeScenarios);
     // await config.setValue('testMode.params', scenarioParams);
     setShowSettings(false);

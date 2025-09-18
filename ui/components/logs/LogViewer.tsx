@@ -10,7 +10,7 @@ import {
   FileText, Archive, Eye, EyeOff,
   Info, AlertTriangle, XCircle, Bug
 } from 'lucide-react';
-import { cn } from '../../utils/cn';
+import { cn } from '../../src/utils/cn';
 
 export interface LogEntry {
   timestamp: string;

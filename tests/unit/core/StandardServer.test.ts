@@ -80,15 +80,30 @@ const mockLogger = {
 };
 
 describe('StandardServer', () => {
+  let servers: StandardServer[] = [];
+
   beforeEach(() => {
     jest.clearAllMocks();
-    
+    servers = [];
+
     (express as unknown as jest.Mock).mockReturnValue(mockApp);
     (createServer as jest.Mock).mockReturnValue(mockHttpServer);
     (createWebSocketServer as jest.Mock).mockResolvedValue(mockWsServer);
     (displayStartupBanner as jest.Mock).mockReturnValue(undefined);
     (getProcessOnPort as jest.Mock).mockResolvedValue(null);
     (createLogger as jest.Mock).mockReturnValue(mockLogger);
+  });
+
+  afterEach(async () => {
+    // Clean up all servers created during tests
+    for (const server of servers) {
+      try {
+        await server.stop();
+      } catch (error) {
+        // Ignore errors during cleanup
+      }
+    }
+    servers = [];
   });
 
   describe('constructor', () => {
@@ -99,6 +114,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       
       expect(server).toBeDefined();
       expect(express).toHaveBeenCalled();
@@ -117,6 +133,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       
       expect(server).toBeDefined();
       expect(server['config'].port).toBe(3000);
@@ -136,6 +153,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       await server.initialize();
 
       expect(onInitialize).toHaveBeenCalledWith(mockApp);
@@ -151,6 +169,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       await server.initialize();
       await server.initialize(); // Second call
 
@@ -166,6 +185,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       
       await expect(server.initialize()).rejects.toThrow('Init failed');
       expect(mockLogger.error).toHaveBeenCalled();
@@ -182,6 +202,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       await server.initialize();
       await server.start();
 
@@ -202,6 +223,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       await server.initialize();
       await server.start();
 
@@ -217,6 +239,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       await server.initialize();
       await server.start();
 
@@ -237,6 +260,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       await server.initialize();
       await server.start();
 
@@ -254,6 +278,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       await server.initialize();
       await server.start();
 
@@ -273,6 +298,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       await server.initialize();
       
       await expect(server.start()).rejects.toThrow('Listen failed');
@@ -289,6 +315,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       await server.initialize();
       await server.start();
       await server.stop();
@@ -305,6 +332,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       await server.stop(); // Should not throw
 
       expect(mockHttpServer.close).toHaveBeenCalled();
@@ -321,6 +349,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       await server.initialize();
       await server.start();
       
@@ -337,6 +366,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       
       expect(server.getApp()).toBe(mockApp);
     });
@@ -348,6 +378,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       
       expect(server.getServer()).toBe(mockHttpServer);
     });
@@ -360,6 +391,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       await server.initialize();
       await server.start();
       
@@ -374,6 +406,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       
       expect(server['wsServer']).toBeUndefined();
     });
@@ -386,7 +419,8 @@ describe('StandardServer', () => {
         appVersion: '1.0.0'
       };
 
-      new StandardServer(config);
+      const server = new StandardServer(config);
+      servers.push(server);
       
       // Simulate server error
       const errorHandler = mockHttpServer.on.mock.calls.find(
@@ -414,7 +448,8 @@ describe('StandardServer', () => {
 
       const processSpy = jest.spyOn(process, 'on');
       
-      new StandardServer(config);
+      const server = new StandardServer(config);
+      servers.push(server);
       
       expect(processSpy).toHaveBeenCalledWith('SIGTERM', expect.any(Function));
       expect(processSpy).toHaveBeenCalledWith('SIGINT', expect.any(Function));
@@ -431,6 +466,7 @@ describe('StandardServer', () => {
       };
 
       const server = new StandardServer(config);
+      servers.push(server);
       await server.initialize();
       await server.start();
       

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation as useRouterLocation } from 'react-router-dom';
 import { Menu, X, LogOut } from 'lucide-react';
 import { ConnectionStatus } from '../connections/ConnectionStatus';
-import { cn } from '../../utils/cn';
+import { cn } from '../../src/utils/cn';
 
 export interface NavItem {
   name: string;

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from '../base/alert';
 import { Button } from '../base/button';
 import { Download, X, RefreshCw, ExternalLink } from 'lucide-react';
-// import { cn } from '../../utils/cn'; // Not used
+// import { cn } from '../../src/utils/cn'; // Not used
 
 interface UpdateInfo {
   currentVersion: string;

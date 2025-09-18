@@ -53,7 +53,7 @@ describe('UI Component Exports', () => {
     // Utilities
     const utilities = [
       'cn',
-      'useWebSocket',
+      'useSocketIO',
       'useConnectionStatus',
       'useDebounce',
     ];

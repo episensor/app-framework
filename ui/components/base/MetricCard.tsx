@@ -4,10 +4,10 @@
  */
 
 
-import { Card } from './Card';
+import { Card } from './card';
 import { SparklineChart } from './SparklineChart';
-import { ActivityLED, type LEDStatus } from './ActivityLED';
-import { cn } from '../../utils/cn';
+import { ActivityLED, type LEDStatus } from '../activity/ActivityLED';
+import { cn } from '../../src/utils/cn';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 export interface MetricCardProps {

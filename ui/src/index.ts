@@ -121,15 +121,15 @@ export { useConnectionStatus } from './hooks/useConnectionStatus';
 export type { SocketIOConfig, SocketIOState, SocketIOActions } from './hooks/useSocketIO';
 
 // Utilities
-export { cn } from '../utils/cn';
-export { authHandler } from '../utils/authHandler';
-export { checkApiReadiness, waitForApiReady, apiRequest, useApiReadiness } from '../utils/apiReadiness';
-export type { ApiReadinessResult, ApiReadinessOptions } from '../utils/apiReadiness';
-// export { auth } from '../utils/auth'; // Not exported from auth.ts
+export { cn } from './utils/cn';
+export { authHandler } from './utils/authHandler';
+export { checkApiReadiness, waitForApiReady, apiRequest, useApiReadiness } from './utils/apiReadiness';
+export type { ApiReadinessResult, ApiReadinessOptions } from './utils/apiReadiness';
+// export { auth } from './utils/auth'; // Not exported from auth.ts
 
 // Theme, Styles, and Icons
-export * from '../theme';
-export { ThemeProvider, useTheme } from '../theme/ThemeProvider';
-export type { ThemeMode, ThemeConfig, ThemeProviderProps } from '../theme/ThemeProvider';
-export * from '../styles';
+export * from './theme';
+export { ThemeProvider, useTheme } from './theme/ThemeProvider';
+export type { ThemeMode, ThemeConfig, ThemeProviderProps } from './theme/ThemeProvider';
+export * from './styles';
 export * from '../icons';

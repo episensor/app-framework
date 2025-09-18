@@ -4,9 +4,9 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './Card';
+import { Card, CardContent, CardHeader, CardTitle } from './card';
 import { SparklineChart } from './SparklineChart';
-import { ActivityLED } from './ActivityLED';
+import { ActivityLED } from '../activity/ActivityLED';
 
 export interface SystemHealthMonitorProps {
   apiUrl?: string;

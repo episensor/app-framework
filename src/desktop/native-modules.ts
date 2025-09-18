@@ -14,6 +14,8 @@ import {
 } from "../utils/fs-utils.js";
 import path from "path";
 import { execSync } from "child_process";
+import { createLogger } from "../core/logger.js";
+const logger = createLogger('native-modules');
 
 export interface NativeModuleConfig {
   /**
@@ -74,10 +76,10 @@ export async function copyNativeModules(
     const targetPath = path.join(targetDir, "node_modules", moduleName);
 
     if (await pathExists(sourcePath)) {
-      console.log(`📦 Copying native module: ${moduleName}`);
+      logger.info(`📦 Copying native module: ${moduleName}`);
       await copy(sourcePath, targetPath);
     } else {
-      console.warn(`⚠️  Native module not found: ${moduleName}`);
+      logger.warn(`⚠️  Native module not found: ${moduleName}`);
     }
   }
 }
@@ -89,7 +91,7 @@ export async function rebuildNativeModules(
   targetDir: string,
   electronVersion?: string,
 ): Promise<void> {
-  console.log("🔨 Rebuilding native modules...");
+  logger.info("🔨 Rebuilding native modules...");
 
   const cwd = targetDir;
 
@@ -101,7 +103,7 @@ export async function rebuildNativeModules(
         stdio: "inherit",
       });
     } catch (_error) {
-      console.error("Failed to rebuild for Electron:", _error);
+      logger.error("Failed to rebuild for Electron:", _error);
       throw _error;
     }
   } else {
@@ -109,7 +111,7 @@ export async function rebuildNativeModules(
     try {
       execSync("npm rebuild", { cwd, stdio: "inherit" });
     } catch (_error) {
-      console.error("Failed to rebuild native modules:", _error);
+      logger.error("Failed to rebuild native modules:", _error);
       throw _error;
     }
   }
@@ -260,7 +262,7 @@ export async function bundleWithNativeModules(
   if (autoDetect) {
     const detected = await detectNativeModules(projectDir);
     nativeModules = [...new Set([...nativeModules, ...detected])];
-    console.log(`🔍 Detected native modules: ${nativeModules.join(", ")}`);
+    logger.info(`🔍 Detected native modules: ${nativeModules.join(", ")}`);
   }
 
   // Copy native modules
@@ -283,5 +285,5 @@ export async function bundleWithNativeModules(
     }
   }
 
-  console.log("✅ Native modules prepared for bundling");
+  logger.info("✅ Native modules prepared for bundling");
 }

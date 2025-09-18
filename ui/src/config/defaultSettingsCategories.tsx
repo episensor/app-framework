@@ -73,7 +73,7 @@ export function createSettingsCategory(
     id,
     label,
     description,
-    icon: iconMap[iconName] ? <>{iconMap[iconName]}</> : <Settings className="h-4 w-4" />
+    icon: iconMap[iconName] || <Settings className="h-4 w-4" />
   };
 }
 

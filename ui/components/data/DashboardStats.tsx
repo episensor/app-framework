@@ -1,5 +1,5 @@
 import { Card } from '../base/card';
-import { cn } from '../../utils/cn';
+import { cn } from '../../src/utils/cn';
 import { LucideIcon } from 'lucide-react';
 
 export interface StatCard {

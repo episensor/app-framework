@@ -9,8 +9,6 @@ A comprehensive, production-ready framework for building enterprise internal too
 - **[API](./docs/API.md)** - Complete API documentation with best practices
 - **[Development](./docs/DEVELOPMENT.md)** - How to build applications with the framework
 - **[Architecture](./docs/ARCHITECTURE.md)** - System design and structure
-- **[Standards](./docs/STANDARDS.md)** - Coding standards and best practices
-- **[Structure](./docs/STRUCTURE.md)** - Application directory structure standard
 
 ### Features
 
@@ -131,12 +129,11 @@ await server.start();
 
 ### ⚙️ Configuration & Settings
 
-- **ConfigManager** Advanced configuration with Zod validation
+- **Settings Service** - Dynamic settings with UI generation
 - **Environment Merging** Automatic env variable merging
 - **File Watching** Auto-reload on config file changes
 - **Change Events** EventEmitter for config change tracking
 - **Common Schemas** Pre-built Zod schemas for common configs
-- **Settings Service** - Dynamic settings with UI generation
 
 ### 📊 Health Monitoring
 
@@ -362,39 +359,27 @@ console.log(
 );
 ```
 
-### Configuration Management
+### Settings Management
 
 ```typescript
-import { getConfigManager, CommonSchemas } from "@episensor/app-framework";
-import { z } from "zod";
+import { SettingsService, CommonSettingsCategories } from "@episensor/app-framework";
 
-// Define config schema
-const configSchema = z.object({
-  server: CommonSchemas.serverConfig,
-  logging: CommonSchemas.loggingConfig,
-  custom: z.object({
-    feature: z.boolean().default(true),
-  }),
+// Initialize settings service
+const settings = new SettingsService({
+  filePath: "./settings.json",
+  categories: CommonSettingsCategories,
+  onSettingChange: async (key, value) => {
+    console.log(`Setting ${key} changed to ${value}`);
+  },
 });
 
-// Initialize with schema validation
-const config = getConfigManager({
-  schema: configSchema,
-  watchFile: true, // Auto-reload on changes
-  mergeEnv: true, // Merge environment variables
-});
+await settings.initialize();
 
-await config.initialize();
+// Get setting value
+const port = await settings.get("server.port");
 
-// Type-safe access
-const port = config.get<number>("server.port");
-
-// Listen for changes
-config.on("configChanged", (event) => {
-  console.log(
-    `Config ${event.key} changed from ${event.oldValue} to ${event.newValue}`,
-  );
-});
+// Update setting
+await settings.set("server.port", 8080);
 ```
 
 ### WebSocket Manager

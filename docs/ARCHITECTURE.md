@@ -28,12 +28,11 @@ epi-app-framework/
 ├── src/                        # Backend Source Code
 │   ├── core/                   # Core Framework Components
 │   │   ├── StandardServer.ts   # Main server orchestration
-│   │   ├── logger.ts          # Basic logging service
-│   │   └── enhancedLogger.ts  # Advanced logging with rotation
+│   │   └── logger.ts          # Logging service with rotation
 │   │
 │   ├── services/              # Business Services
 │   │   ├── aiService.ts       # AI integration service
-│   │   ├── configManager.ts   # Configuration management
+│   │   ├── settingsService.ts # Settings management
 │   │   ├── conversationStorage.ts  # Conversation persistence
 │   │   ├── crossPlatformBuffer.ts  # Cross-platform data handling
 │   │   ├── fileHandler.ts     # File operations service
@@ -99,7 +98,7 @@ epi-app-framework/
 │   │   │   ├── useAPI.ts
 │   │   │   ├── useAuth.ts
 │   │   │   ├── useConfig.ts
-│   │   │   └── useWebSocket.ts
+│   │   │   └── useSocketIO.ts
 │   │   │
 │   │   ├── styles/         # CSS Styles
 │   │   │   ├── globals.css

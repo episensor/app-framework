@@ -3,18 +3,27 @@
  * Handles checking if the API server is ready before making requests
  */
 
-// API_URL should be provided by the consuming application
-
-interface ApiReadinessResult {
+export interface ApiReadinessResult {
     ready: boolean;
     error?: string;
     retryAfter?: number;
 }
 
+export interface ApiReadinessOptions {
+    healthEndpoint?: string;
+    timeout?: number;
+    maxAttempts?: number;
+    initialDelay?: number;
+    maxDelay?: number;
+}
+
 /**
  * Check if the API server is ready to accept requests
  */
-export async function checkApiReadiness(apiUrl = '', timeout = 5000): Promise<ApiReadinessResult> {
+export async function checkApiReadiness(
+    apiUrl: string,
+    timeout = 5000
+): Promise<ApiReadinessResult> {
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -30,7 +39,7 @@ export async function checkApiReadiness(apiUrl = '', timeout = 5000): Promise<Ap
         clearTimeout(timeoutId);
         
         if (response.ok) {
-            await response.json(); // Consume the response
+            await response.json();
             // API is ready as long as it responds, regardless of health status
             return {
                 ready: true
@@ -72,11 +81,16 @@ export async function checkApiReadiness(apiUrl = '', timeout = 5000): Promise<Ap
  * Wait for API to be ready with exponential backoff
  */
 export async function waitForApiReady(
-    apiUrl = '',
-    maxAttempts = 10,
-    initialDelay = 1000,
-    maxDelay = 10000
+    apiUrl: string,
+    options: ApiReadinessOptions = {}
 ): Promise<boolean> {
+    const {
+        maxAttempts = 10,
+        initialDelay = 1000,
+        maxDelay = 10000,
+        timeout = 5000
+    } = options;
+    
     let attempts = 0;
     let delay = initialDelay;
     
@@ -85,7 +99,7 @@ export async function waitForApiReady(
         
         console.log(`🔍 Checking API readiness (attempt ${attempts}/${maxAttempts})...`);
         
-        const result = await checkApiReadiness(apiUrl);
+        const result = await checkApiReadiness(apiUrl, timeout);
         
         if (result.ready) {
             console.log('✅ API is ready!');
@@ -134,4 +148,51 @@ export async function apiRequest<T = any>(
     }
     
     return response.json();
+}
+
+/**
+ * React Hook for API Readiness
+ */
+export function useApiReadiness(
+    apiUrl: string,
+    options: ApiReadinessOptions = {}
+): { ready: boolean; error: string | null; checking: boolean } {
+    if (typeof window === 'undefined') {
+        // Server-side rendering
+        return { ready: true, error: null, checking: false };
+    }
+    
+    const [state, setState] = (window as any).React?.useState?.({
+        ready: false,
+        error: null as string | null,
+        checking: true
+    }) || { ready: false, error: null, checking: true };
+    
+    (window as any).React?.useEffect?.(() => {
+        let mounted = true;
+        
+        async function check() {
+            if (!mounted) return;
+            
+            setState((prev: any) => ({ ...prev, checking: true }));
+            
+            const ready = await waitForApiReady(apiUrl, options);
+            
+            if (mounted) {
+                setState({
+                    ready,
+                    error: ready ? null : 'API is not available',
+                    checking: false
+                });
+            }
+        }
+        
+        check();
+        
+        return () => {
+            mounted = false;
+        };
+    }, [apiUrl]);
+    
+    return state;
 }

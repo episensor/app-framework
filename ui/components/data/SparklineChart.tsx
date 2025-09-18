@@ -4,7 +4,7 @@
  */
 
 import { useMemo } from 'react';
-import { cn } from '../../utils/cn';
+import { cn } from '../../src/utils/cn';
 
 export interface SparklineChartProps {
   data: number[];

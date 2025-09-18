@@ -211,6 +211,7 @@ if (!process.env.DATA_DIR) {
   process.env.DATA_DIR = ${format === "esm" ? "join" : "path.join"}(__dirname, 'data');
 }
 
+// Note: Using console.log in wrapper script as it runs in production without logger
 console.log('Starting ${appName} Backend...');
 console.log('Data directory:', process.env.DATA_DIR);
 

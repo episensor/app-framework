@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '../base/alert';
 import { 
   Save, RefreshCw, Check, AlertCircle, Eye, EyeOff, Info, Undo, RotateCcw, LucideIcon
 } from 'lucide-react';
-import { cn } from '../../utils/cn';
+import { cn } from '../../src/utils/cn';
 
 // Extensible type definitions
 export interface SettingDefinition {

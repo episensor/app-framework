@@ -55,11 +55,11 @@ useEffect(() => {
 }, [socket]);
 ```
 
-Or use the generic `useWebSocket` hook for custom Socket.IO contexts:
+Or use the generic `useSocketIO` hook for custom Socket.IO contexts:
 ```typescript
-import { useWebSocket } from '@episensor/app-framework/ui';
+import { useSocketIO } from '@episensor/app-framework/ui';
 
-const { socket, connected, on, off, emit } = useWebSocket(SocketContext);
+const { socket, connected, on, off, emit } = useSocketIO(SocketContext);
 
 // Simplified event handling
 useEffect(() => {
@@ -1091,7 +1091,7 @@ const SearchComponent = () => {
 };
 ```
 
-#### useWebSocket
+#### useSocketIO
 
 ```typescript
 const {
@@ -1102,16 +1102,16 @@ const {
   emit,
   on,
   off
-} = useWebSocket('http://localhost:8080', {
+} = useSocketIO('http://localhost:8080', {
   reconnection: true,
   reconnectionDelay: 1000
 });
 ```
 
-#### useWebSocketSubscription
+#### useSocketIOSubscription
 
 ```typescript
-const { data, loading, error } = useWebSocketSubscription(
+const { data, loading, error } = useSocketIOSubscription(
   'entity-type',
   'entity-id',
   {

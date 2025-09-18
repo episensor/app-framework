@@ -4,7 +4,7 @@ import { Badge } from '../base/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../base/table';
 import { ActivityLED } from '../activity/ActivityLED';
 import { Sparkline } from './Sparkline';
-import { cn } from '../../utils/cn';
+import { cn } from '../../src/utils/cn';
 
 export interface DataColumn<T> {
   key: string;

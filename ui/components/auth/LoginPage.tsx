@@ -90,7 +90,7 @@ export function LoginPage({
     } catch (error) {
       const errorMsg = 'Login failed. Please try again.';
       setError(errorMsg);
-      console.error('Login error:', error);
+      // Error is already captured in state and shown to user
       if (onLoginError) {
         onLoginError(errorMsg);
       }
@@ -160,7 +160,9 @@ export function LoginPage({
                 <button
                   type="button"
                   className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
-                  onClick={() => console.log('Language selector clicked')}
+                  onClick={() => {
+                    // Language selector functionality to be implemented
+                  }}
                 >
                   <Globe className="h-4 w-4" />
                   <span>English</span>

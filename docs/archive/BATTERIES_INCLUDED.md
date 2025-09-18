@@ -323,7 +323,7 @@ import { logConfig } from './config/logging';
 const logger = createLogger('Main');
 
 async function main() {
-  // Initialize enhanced logging
+  // Initialize logging
   await getLogger().initialize({
     logLevel: 'debug',
     consoleOutput: false,

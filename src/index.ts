@@ -97,14 +97,7 @@ export {
 
 // WebSocket Manager exports
 
-// Configuration management exports
-export {
-  ConfigManager,
-  getConfigManager,
-  CommonSchemas,
-  type ConfigManagerOptions,
-  type ConfigChangeEvent,
-} from "./core/configManager.js";
+// Configuration management - use SettingsService instead
 
 // Tauri build utilities
 export {

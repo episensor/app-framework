@@ -52,6 +52,7 @@
     "build:watch": "tsc --watch",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
+    "postbuild": "node ./scripts/postbuild-ensure-cli-executables.cjs",
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "jest tests/unit/ --forceExit",
     "test:integration": "jest tests/integration/ --passWithNoTests",

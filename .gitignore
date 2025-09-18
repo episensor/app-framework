@@ -54,3 +54,12 @@ tmp/
 temp/
 cicd_logs_*
 .claude/
+uploads/
+*.tgz
+fix_*.sh
+lint_output.txt
+data/logs/
+
+# Backup files
+content.backup.*
+*.backup.*

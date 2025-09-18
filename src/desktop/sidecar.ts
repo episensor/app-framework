@@ -9,6 +9,8 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { ensureDir, readJson, writeFile } from "../utils/fs-utils.js";
 import path from "path";
+import { createLogger } from "../core/logger.js";
+const logger = createLogger('sidecar');
 
 const execAsync = promisify(exec);
 
@@ -107,13 +109,13 @@ export async function buildSidecar(
     const outputName = BINARY_NAME_MAP[targetKey];
 
     if (!pkgTarget || !outputName) {
-      console.warn(`Unsupported target: ${targetKey}`);
+      logger.warn(`Unsupported target: ${targetKey}`);
       continue;
     }
 
     const outputPath = path.join(outputDir, outputName);
 
-    console.log(`Building sidecar for ${targetKey}...`);
+    logger.info(`Building sidecar for ${targetKey}...`);
 
     const pkgCommand = [
       "npx pkg",
@@ -129,17 +131,17 @@ export async function buildSidecar(
 
     try {
       const { stdout, stderr } = await execAsync(pkgCommand);
-      if (stdout) console.log(stdout);
-      if (stderr) console.warn(stderr);
+      if (stdout) logger.info(stdout);
+      if (stderr) logger.warn(stderr);
 
       // Make the binary executable on Unix systems
       if (target.platform !== "windows") {
         await import("fs").then((fs) => fs.promises.chmod(outputPath, 0o755));
       }
 
-      console.log(`✅ Built ${outputName} (${targetKey})`);
+      logger.info(`✅ Built ${outputName} (${targetKey})`);
     } catch (_error: any) {
-      console.error(`❌ Failed to build ${targetKey}: ${_error.message}`);
+      logger.error(`❌ Failed to build ${targetKey}: ${_error.message}`);
     }
   }
 }
@@ -282,11 +284,13 @@ async function main() {
   try {
     await import('./${path.basename(inputFile)}');
   } catch (_error) {
+    // Note: Using console.error in generated wrapper script as it runs independently
     console.error('Server failed to start:', _error);
     process.exit(1);
   }
 }
 
+// Note: Using console.error in generated wrapper script as it runs independently
 main().catch(console.error);
 `;
 
@@ -338,8 +342,8 @@ export async function buildSidecarCLI(args: string[]): Promise<void> {
     }
   }
 
-  console.log("Building Tauri sidecar with configuration:");
-  console.log(JSON.stringify(config, null, 2));
+  logger.info("Building Tauri sidecar with configuration:");
+  logger.info(JSON.stringify(config, null, 2));
 
   await buildSidecar(config);
 }

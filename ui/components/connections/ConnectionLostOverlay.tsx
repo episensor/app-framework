@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Loader2, Circle, AlertTriangle, RefreshCw } from 'lucide-react';
-import { useSocketIO } from '../../hooks/useSocketIO';
-import { socketManager } from '../../hooks/useSocketIO';
+import { useSocketIO } from '../../src/hooks/useSocketIO';
+import { socketManager } from '../../src/hooks/useSocketIO';
 
 interface ConnectionLostOverlayProps {
   isConnected: boolean;
@@ -17,7 +17,7 @@ export function ConnectionLostOverlay({
   const [showOverlay, setShowOverlay] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isRetrying, setIsRetrying] = useState(false);
-  const [, socketActions] = useSocketIO();
+  useSocketIO();
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -80,7 +80,7 @@ export function ConnectionLostOverlay({
       }, 3000);
     } else {
       // Use socket manager to reconnect
-      const socket = socketManager.getSocket();
+      const socket = socketManager.getSocket('/');
       if (socket) {
         if (socket.disconnected) {
           socket.connect();

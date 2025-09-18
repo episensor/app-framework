@@ -12,6 +12,8 @@ import net from "net";
 import chalk from "chalk";
 import boxen from "boxen";
 import { displayStartupBanner } from "../utils/startupBanner.js";
+import { createLogger } from "../core/logger.js";
+const logger = createLogger('dev-server');
 
 interface DevServerConfig {
   appName: string;
@@ -84,6 +86,7 @@ class DevServerOrchestrator {
     if (!this.isBackendReady || !this.isFrontendReady || this.hasShownBanner)
       return;
 
+    logger.info("Clearing console for startup banner");
     console.clear();
 
     // Use the standardized banner from utils
@@ -103,8 +106,8 @@ class DevServerOrchestrator {
 
     // Show any buffered important messages
     if (this.outputBuffer.length > 0) {
-      console.log("\n" + chalk.gray("Recent activity:"));
-      this.outputBuffer.forEach((msg) => console.log(msg));
+      logger.info("\n" + chalk.gray("Recent activity:"));
+      this.outputBuffer.forEach((msg) => logger.info(msg));
       this.outputBuffer = [];
     }
   }
@@ -118,7 +121,7 @@ class DevServerOrchestrator {
   }
 
   private startBackend() {
-    console.log(
+    logger.info(
       chalk.gray("Starting backend on port " + this.config.backendPort + "..."),
     );
 
@@ -175,7 +178,7 @@ class DevServerOrchestrator {
           if (line.trim()) {
             const msg = chalk.red(`[Backend] ${line.trim()}`);
             if (this.hasShownBanner) {
-              console.log(msg);
+              logger.error(msg);
             } else {
               this.outputBuffer.push(msg);
             }
@@ -203,26 +206,26 @@ class DevServerOrchestrator {
     });
 
     this.backendProcess.on("error", (error) => {
-      console.error(chalk.red(`[Backend] Failed to start: ${error.message}`));
+      logger.error(chalk.red(`[Backend] Failed to start: ${error.message}`));
     });
 
     this.backendProcess.on("exit", (code) => {
       if (code !== 0 && code !== null) {
-        console.error(chalk.red(`[Backend] Exited with code ${code}`));
+        logger.error(chalk.red(`[Backend] Exited with code ${code}`));
       }
     });
 
     // Fallback: Mark as ready after timeout if we haven't detected it
     setTimeout(() => {
       if (!this.hasDetectedBackendReady && this.isBackendReady !== false) {
-        console.log(
+        logger.warn(
           chalk.yellow("Backend ready detection timeout - assuming ready"),
         );
         this.hasDetectedBackendReady = true;
         this.isBackendReady = true;
         this.showStartupBanner();
       } else if (this.isBackendReady === false) {
-        console.error(
+        logger.error(
           chalk.red(
             "\nBackend failed to start. Check the error messages above.",
           ),
@@ -234,7 +237,7 @@ class DevServerOrchestrator {
   }
 
   private startFrontend() {
-    console.log(
+    logger.info(
       chalk.gray(
         "Starting frontend on port " + this.config.frontendPort + "...",
       ),
@@ -270,7 +273,7 @@ class DevServerOrchestrator {
         // Fallback to sh -c for complex commands
         cmd = "sh";
         args = ["-c", this.config.frontendCommand!];
-        console.log(chalk.gray(`Frontend command: ${cmd} ${args.join(" ")}`));
+        logger.info(chalk.gray(`Frontend command: ${cmd} ${args.join(" ")}`));
         this.frontendProcess = spawn(cmd, args, {
           stdio: ["inherit", "pipe", "pipe"],
           shell: true,
@@ -314,7 +317,7 @@ class DevServerOrchestrator {
 
       // Debug: Log all frontend output
       if (process.env.DEBUG_DEV_SERVER) {
-        console.log(chalk.blue(`[Frontend stdout] ${output.trim()}`));
+        logger.info(chalk.blue(`[Frontend stdout] ${output.trim()}`));
       }
 
       // Detect when frontend is ready
@@ -340,12 +343,12 @@ class DevServerOrchestrator {
       // Check for port conflict
       if (output.includes("EADDRINUSE") || output.includes("already in use") ||
           output.includes("Please stop the other process")) {
-        console.error(
+        logger.error(
           chalk.red(
             `\n⚠️  Port ${this.config.frontendPort} is already in use!`,
           ),
         );
-        console.error(chalk.yellow("Please stop the other process or use a different port.\n"));
+        logger.error(chalk.yellow("Please stop the other process or use a different port.\n"));
         this.cleanup();
         process.exit(1);
       }
@@ -360,7 +363,7 @@ class DevServerOrchestrator {
             const cleanLine = line.replace(/\x1b\[[0-9;]*m/g, "").trim();
             const msg = chalk.red(`[Frontend] ${cleanLine}`);
             if (this.hasShownBanner) {
-              console.log(msg);
+              logger.error(msg);
             } else {
               this.outputBuffer.push(msg);
             }
@@ -374,7 +377,7 @@ class DevServerOrchestrator {
       if (output) {
         // Debug: Log all frontend stderr
         if (process.env.DEBUG_DEV_SERVER) {
-          console.log(chalk.yellow(`[Frontend stderr] ${output}`));
+          logger.info(chalk.yellow(`[Frontend stderr] ${output}`));
         }
 
         // Check for port conflict error
@@ -404,7 +407,7 @@ class DevServerOrchestrator {
 
         // For important errors, show them immediately
         if (output.toLowerCase().includes("error") && !output.includes("ExperimentalWarning")) {
-          console.error(chalk.red(`[Frontend] ${output}`));
+          logger.error(chalk.red(`[Frontend] ${output}`));
         } else if (!this.hasShownBanner) {
           // Buffer other output until banner is shown
           this.outputBuffer.push(output);
@@ -419,7 +422,7 @@ class DevServerOrchestrator {
       // EAGAIN errors are temporary resource issues, retry
       if (error.code === "EAGAIN" && this.retryCount < 3) {
         this.retryCount++;
-        console.log(
+        logger.warn(
           chalk.yellow(
             `[Frontend] Resource temporarily unavailable, retrying (${this.retryCount}/3)...`,
           ),
@@ -429,12 +432,12 @@ class DevServerOrchestrator {
       }
 
       // For other errors, show in yellow (warning) not red (error) since it might still work
-      console.log(
+      logger.warn(
         chalk.yellow(`[Frontend] Process spawn warning: ${error.message}`),
       );
       if (process.env.DEBUG_DEV_SERVER) {
-        console.log(chalk.gray(`[Frontend] Command: ${cmd} ${args.join(" ")}`));
-        console.log(chalk.gray(`[Frontend] Directory: ${process.cwd()}`));
+        logger.info(chalk.gray(`[Frontend] Command: ${cmd} ${args.join(" ")}`));
+        logger.info(chalk.gray(`[Frontend] Directory: ${process.cwd()}`));
       }
     });
 
@@ -443,7 +446,7 @@ class DevServerOrchestrator {
         // Show specific error if we captured one
         if (this.frontendError) {
           console.clear();
-          console.error(
+          logger.error(
             boxen(
               chalk.red("⚠️  Frontend Failed to Start!\n\n") +
                 chalk.white(this.frontendError + "\n\n") +
@@ -467,9 +470,9 @@ class DevServerOrchestrator {
             ),
           );
         } else {
-          console.error(chalk.red(`[Frontend] Exited with code ${code}`));
+          logger.error(chalk.red(`[Frontend] Exited with code ${code}`));
           if (!this.hasDetectedFrontendReady) {
-            console.error(
+            logger.error(
               chalk.red(
                 `[Frontend] Failed to start properly. Check that the frontend command works manually.`,
               ),
@@ -487,7 +490,7 @@ class DevServerOrchestrator {
     // Fallback: Mark as ready after timeout if we haven't detected it
     setTimeout(() => {
       if (!this.hasDetectedFrontendReady) {
-        console.log(
+        logger.warn(
           chalk.yellow("Frontend ready detection timeout - assuming ready"),
         );
         this.hasDetectedFrontendReady = true;
@@ -606,7 +609,7 @@ class DevServerOrchestrator {
     lines.push('');
 
     // Use subtle gray box like the startup banner
-    console.error(boxen(lines.join('\n'), {
+    logger.error(boxen(lines.join('\n'), {
       padding: 1,
       margin: 1,
       borderStyle: 'round',
@@ -619,7 +622,7 @@ class DevServerOrchestrator {
   }
 
   async start() {
-    console.log(
+    logger.info(
       chalk.cyan(`\nStarting ${this.config.appName} development server...\n`),
     );
 
@@ -645,7 +648,7 @@ class DevServerOrchestrator {
 
     // Handle graceful shutdown
     process.on("SIGINT", () => {
-      console.log(chalk.yellow("\n\nShutting down..."));
+      logger.info(chalk.yellow("\n\nShutting down..."));
       this.cleanup();
       // Force exit after a delay if processes don't terminate
       setTimeout(() => process.exit(0), 1000);
