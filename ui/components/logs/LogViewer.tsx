@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card } from '../base/card';
 import { Button } from '../base/button';
 import { Badge } from '../base/badge';
@@ -229,7 +229,7 @@ export function LogViewer({
     } else if (activeCategory === 'archives' && onFetchArchives) {
       fetchArchives();
     }
-  }, [activeCategory]);
+  }, [activeCategory, fetchLogs, fetchArchives, onFetchLogs, onFetchArchives]);
 
   // Subscribe to log updates
   useEffect(() => {
@@ -258,7 +258,7 @@ export function LogViewer({
     return onLogReceived(handleLog);
   }, [onLogReceived]);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     if (!onFetchLogs) return;
     setLoading(true);
     try {
@@ -275,9 +275,9 @@ export function LogViewer({
     } finally {
       setLoading(false);
     }
-  };
+  }, [onFetchLogs]);
 
-  const fetchArchives = async () => {
+  const fetchArchives = useCallback(async () => {
     if (!onFetchArchives) return;
     try {
       const archives = await onFetchArchives();
@@ -285,7 +285,7 @@ export function LogViewer({
     } catch (error) {
       console.error('Failed to fetch archives:', error);
     }
-  };
+  }, [onFetchArchives]);
 
   const handleClearLogs = async () => {
     if (!onClearLogs) return;
@@ -343,6 +343,12 @@ export function LogViewer({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  // Strip ANSI color codes from log messages
+  const stripAnsiCodes = (str: string): string => {
+    // Remove ANSI escape sequences
+    return str.replace(/\x1b\[[0-9;]*m/g, '');
+  };
+
   const renderLogEntry = (log: LogEntry) => (
     <div
       key={log.id}
@@ -358,11 +364,11 @@ export function LogViewer({
             [{log.category || log.source}]
           </span>
         )}
-        <span className="whitespace-pre-wrap break-all">{log.message}</span>
+        <span className="whitespace-pre-wrap break-all">{stripAnsiCodes(log.message)}</span>
       </div>
       {log.metadata?.stack && (
         <pre className="ml-[180px] whitespace-pre overflow-x-auto text-[10px] leading-snug mt-1 text-gray-500 dark:text-gray-400">
-          {log.metadata.stack}
+          {stripAnsiCodes(log.metadata.stack)}
         </pre>
       )}
       {log.metadata && !log.metadata.stack && Object.keys(log.metadata).length > 0 && (
