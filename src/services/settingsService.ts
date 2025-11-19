@@ -192,6 +192,8 @@ export class SettingsService extends EventEmitter {
    * Set a setting value
    */
   async set(key: string, value: any): Promise<void> {
+    const previous = this.get(key);
+
     // Find field definition
     const field = this.findField(key);
 
@@ -215,7 +217,7 @@ export class SettingsService extends EventEmitter {
     this.setNestedValue(this.settings, key, value);
 
     // Emit change event
-    this.emit("change", { key, value, previous: this.get(key) });
+    this.emit("change", { key, value, previous });
 
     // Auto-save if enabled
     if (this.autoSave) {
@@ -322,7 +324,8 @@ export class SettingsService extends EventEmitter {
       if (category) {
         for (const field of category.fields) {
           if (field.defaultValue !== undefined) {
-            this.settings[field.key] = field.defaultValue;
+            delete this.settings[field.key];
+            this.setNestedValue(this.settings, field.key, field.defaultValue);
           } else {
             delete this.settings[field.key];
           }
@@ -435,6 +438,11 @@ export class SettingsService extends EventEmitter {
   }
 
   private getNestedValue(obj: any, path: string): any {
+    // Support both nested objects and flat keys containing dots
+    if (Object.prototype.hasOwnProperty.call(obj, path)) {
+      return (obj as any)[path];
+    }
+
     return path.split(".").reduce((current, key) => current?.[key], obj);
   }
 

@@ -104,7 +104,7 @@ export class StandardServer {
   constructor(config: StandardServerConfig) {
     const environment = process.env.NODE_ENV || "development";
     // Default to localhost for development, 0.0.0.0 for production/containerized environments
-    const defaultHost = environment === "development" ? "127.0.0.1" : "0.0.0.0";
+    const defaultHost = environment === "development" ? "localhost" : "0.0.0.0";
 
     // Auto-enable desktop integration if running in Tauri or explicitly enabled
     const enableDesktopIntegration =
@@ -133,6 +133,7 @@ export class StandardServer {
     this.app = express();
     this.httpServer = createServer(this.app);
     this.startTime = Date.now();
+    this.bindShutdownSignals();
   }
 
   /**
@@ -182,12 +183,19 @@ export class StandardServer {
 
       // Initialize WebSocket if enabled (before onInitialize so it can be passed)
       if (this.config.enableWebSocket) {
-        this.wsServer = createWebSocketServer(this.httpServer);
+        this.wsServer = await Promise.resolve(
+          createWebSocketServer(this.httpServer),
+        );
       }
 
       // Call custom initialization if provided, passing the WebSocket server
       if (this.config.onInitialize) {
-        await this.config.onInitialize(this.app, this.wsServer);
+        const wantsWebSocket = this.config.onInitialize.length >= 2;
+        if (wantsWebSocket) {
+          await this.config.onInitialize(this.app, this.wsServer);
+        } else {
+          await this.config.onInitialize(this.app);
+        }
       }
 
       // Setup error handlers (should be last)
@@ -330,11 +338,13 @@ export class StandardServer {
     const processOnPort = await getProcessOnPort(port);
     if (processOnPort) {
       const message = `API port ${port} is already in use by: PID ${processOnPort.pid} (${processOnPort.command})`;
-      ensureLogger().error(message);
       if (exitOnError) {
+        ensureLogger().error(message);
         process.exit(1);
+      } else {
+        ensureLogger().warn(message);
+        return;
       }
-      throw new Error(message);
     }
 
     return new Promise((resolve, reject) => {
@@ -411,6 +421,10 @@ export class StandardServer {
           }
         }
 
+        if (this.config.webPort) {
+          ensureLogger().info(`Web UI Port: ${this.config.webPort}`);
+        }
+
         // Bind graceful shutdown signals once per instance
         this.bindShutdownSignals();
 
@@ -485,6 +499,9 @@ export class StandardServer {
       try {
         if (this.wsServer?.shutdown) {
           this.wsServer.shutdown();
+        }
+        if (this.wsServer?.close) {
+          this.wsServer.close();
         }
 
         this.httpServer.close((err?: Error) => {
