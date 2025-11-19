@@ -54,10 +54,14 @@ import { createLogger } from '../../../src/core';
 const mockApp = {
   use: jest.fn(),
   get: jest.fn(),
-  listen: jest.fn()
+  listen: jest.fn(),
+  set: jest.fn(),
+  post: jest.fn(),
+  put: jest.fn(),
+  delete: jest.fn()
 };
 
-const mockHttpServer = {
+const mockHttpServer: any = {
   listen: jest.fn((_port: number, _host: string, callback: Function) => {
     callback();
   }),
@@ -65,11 +69,16 @@ const mockHttpServer = {
     if (callback) callback();
   }),
   on: jest.fn(),
-  address: jest.fn(() => ({ port: 8080, address: 'localhost' }))
+  address: jest.fn(() => ({ port: 8080, address: 'localhost' })),
+  setTimeout: jest.fn(),
+  requestTimeout: 0,
+  headersTimeout: 0,
+  keepAliveTimeout: 0
 };
 
 const mockWsServer = {
-  close: jest.fn()
+  close: jest.fn(),
+  shutdown: jest.fn()
 };
 
 const mockLogger = {
@@ -92,6 +101,13 @@ describe('StandardServer', () => {
     (displayStartupBanner as jest.Mock).mockReturnValue(undefined);
     (getProcessOnPort as jest.Mock).mockResolvedValue(null);
     (createLogger as jest.Mock).mockReturnValue(mockLogger);
+
+    // Reset default listen implementation between tests
+    mockHttpServer.listen.mockImplementation(
+      (_port: number, _host: string, callback: Function) => {
+        callback();
+      }
+    );
   });
 
   afterEach(async () => {
@@ -208,7 +224,7 @@ describe('StandardServer', () => {
 
       expect(mockHttpServer.listen).toHaveBeenCalledWith(
         8080,
-        'localhost',
+        server['config'].host,
         expect.any(Function)
       );
       expect(displayStartupBanner).toHaveBeenCalled();

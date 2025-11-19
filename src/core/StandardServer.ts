@@ -103,8 +103,11 @@ export class StandardServer {
 
   constructor(config: StandardServerConfig) {
     const environment = process.env.NODE_ENV || "development";
-    // Default to localhost for development, 0.0.0.0 for production/containerized environments
-    const defaultHost = environment === "development" ? "localhost" : "0.0.0.0";
+    // Default to localhost for development/test, 0.0.0.0 for production/containerized environments
+    const defaultHost =
+      environment === "development" || environment === "test"
+        ? "localhost"
+        : "0.0.0.0";
 
     // Auto-enable desktop integration if running in Tauri or explicitly enabled
     const enableDesktopIntegration =
@@ -154,6 +157,8 @@ export class StandardServer {
    * Initialize the server (setup middleware, routes, etc.)
    */
   public async initialize(): Promise<void> {
+    if (this.isInitialized) return;
+    this.isInitialized = true;
     try {
       // Setup desktop-specific paths, CORS, and logging if running as desktop app
       if (this.config.enableDesktopIntegration) {
@@ -201,9 +206,9 @@ export class StandardServer {
       // Setup error handlers (should be last)
       this.setupErrorHandlers();
 
-      this.isInitialized = true;
     } catch (_error: any) {
       ensureLogger().error("Server initialization failed:", _error);
+      this.isInitialized = false;
       throw _error;
     }
   }
@@ -337,12 +342,14 @@ export class StandardServer {
     // Check if API port is available
     const processOnPort = await getProcessOnPort(port);
     if (processOnPort) {
-      const message = `API port ${port} is already in use by: PID ${processOnPort.pid} (${processOnPort.command})`;
+      const message = `Port ${port} is already in use`;
       if (exitOnError) {
         ensureLogger().error(message);
         process.exit(1);
       } else {
-        ensureLogger().warn(message);
+        ensureLogger().warn(
+          `${message} (PID ${processOnPort.pid} - ${processOnPort.command})`,
+        );
         return;
       }
     }
@@ -386,7 +393,8 @@ export class StandardServer {
       this.httpServer.headersTimeout = this.config.headersTimeoutMs!;
       this.httpServer.keepAliveTimeout = this.config.keepAliveTimeoutMs!;
 
-      this.httpServer.listen(port, host, async () => {
+      try {
+        this.httpServer.listen(port, host, async () => {
         // Display banner only after successful binding
         // Note: In production, webPort is typically not used because the API server
         // serves the UI assets directly from the main port. However, if webPort
@@ -428,8 +436,16 @@ export class StandardServer {
         // Bind graceful shutdown signals once per instance
         this.bindShutdownSignals();
 
-        resolve();
-      });
+          resolve();
+        });
+      } catch (err: any) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        ensureLogger().error("Failed to start server:", error);
+        if (exitOnError) {
+          process.exit(1);
+        }
+        reject(error);
+      }
     });
   }
 
@@ -461,6 +477,10 @@ export class StandardServer {
     if (!this.config.gracefulShutdownSignals?.length) return;
 
     const signals = this.config.gracefulShutdownSignals;
+    if (process.setMaxListeners) {
+      const current = process.getMaxListeners ? process.getMaxListeners() : 10;
+      process.setMaxListeners(Math.max(current, signals.length + 20));
+    }
     signals.forEach((signal) => {
       process.on(signal, async () => {
         ensureLogger().info(`Received ${signal}, shutting down gracefully...`);
@@ -492,7 +512,7 @@ export class StandardServer {
 
       const close = () => {
         clearTimeout(timeout);
-        ensureLogger().info("Server stopped");
+        ensureLogger().info("Server stopped gracefully");
         resolve();
       };
 

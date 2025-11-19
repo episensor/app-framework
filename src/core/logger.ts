@@ -571,8 +571,8 @@ class Logger {
       );
     }
 
-    // File transports - flat structure in data/logs
-    if (options.file !== false) {
+    // File transports - flat structure in data/logs (skip in tests)
+    if (options.file !== false && process.env.NODE_ENV !== "test") {
       // Daily rotating file transport for all logs
       logTransports.push(
         new DailyRotateFile({
