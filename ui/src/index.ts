@@ -90,13 +90,12 @@ export type { DashboardStatsProps, StatCard, CompactStatProps } from '../compone
 export { LogViewer as LogViewerLegacy } from '../components/logs/LogViewerLegacy';
 export type { LogViewerProps as LogViewerLegacyProps } from '../components/logs/LogViewerLegacy';
 
-// New log viewer with categories and archives
+// New log viewer with categories/archives + ANSI handling
 export { LogViewer } from '../components/logs/LogViewer';
 export type {
   LogViewerProps,
   LogEntry,
-  LogFile,
-  LogCategory
+  LogFile
 } from '../components/logs/LogViewer';
 
 export { LogStats } from '../components/logs/LogStats';

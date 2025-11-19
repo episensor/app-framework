@@ -15,21 +15,30 @@ import { cn } from '../../src/utils/cn';
 export interface SettingDefinition {
   key: string;
   label: string;
-  type: 'string' | 'number' | 'boolean' | 'select' | 'password' | 'custom';
+  type: 'string' | 'text' | 'number' | 'boolean' | 'select' | 'password' | 'custom';
   defaultValue?: any;
   description?: string;
   help?: string;
+  hint?: string;
+  placeholder?: string;
   options?: Array<{ label: string; value: string | number }>;
-  validation?: (value: any) => true | string;
+  validation?: (value: any) => string | null;
   requiresRestart?: boolean;
   hidden?: boolean;
   customComponent?: React.ComponentType<CustomFieldProps>;
+  // Additional UI properties
+  inputWidth?: 'small' | 'medium' | 'large';
+  suffix?: string;
+  step?: number;
+  min?: number;
+  max?: number;
+  showIf?: (values: any) => boolean;
 }
 
 export interface SettingsCategory {
   id: string;
   label: string;
-  icon?: LucideIcon | string;
+  icon?: LucideIcon | string | React.ReactNode;
   description?: string;
   settings: SettingDefinition[];
 }
@@ -171,8 +180,7 @@ export function SettingsFramework({
 
   const validateField = (setting: SettingDefinition, value: any): string | null => {
     if (setting.validation) {
-      const result = setting.validation(value);
-      return result === true ? null : result;
+      return setting.validation(value);
     }
     return null;
   };
@@ -271,6 +279,15 @@ export function SettingsFramework({
     const value = values[setting.key] ?? setting.defaultValue;
     const error = errors[setting.key];
     const showPassword = showPasswords[setting.key];
+    if (setting.showIf && !setting.showIf(values)) return null;
+
+    const widthClass = setting.inputWidth === 'small'
+      ? 'max-w-[180px]'
+      : setting.inputWidth === 'medium'
+        ? 'max-w-sm'
+        : setting.inputWidth === 'large'
+          ? 'w-full'
+          : undefined;
     
     // Custom field component
     if (setting.type === 'custom' || setting.customComponent) {
@@ -305,29 +322,44 @@ export function SettingsFramework({
     // Default field types
     switch (setting.type) {
       case 'string':
+      case 'text':
       case 'password':
         return (
-          <Input
-            id={setting.key}
-            type={setting.type === 'password' && !showPassword ? 'password' : 'text'}
-            value={value || ''}
-            onChange={(e) => setValue(setting.key, e.target.value)}
-            className={cn(error && "border-red-500")}
-            placeholder={setting.type === 'password' ? '••••••••' : undefined}
-            disabled={saving}
-          />
+          <div className={cn("flex items-center gap-2", widthClass)}>
+            <Input
+              id={setting.key}
+              type={setting.type === 'password' && !showPassword ? 'password' : 'text'}
+              value={value || ''}
+              onChange={(e) => setValue(setting.key, e.target.value)}
+              className={cn(error && "border-red-500", widthClass)}
+              placeholder={setting.placeholder || (setting.type === 'password' ? '••••••••' : undefined)}
+              disabled={saving}
+            />
+            {setting.suffix && (
+              <span className="text-xs text-muted-foreground">{setting.suffix}</span>
+            )}
+          </div>
         );
       
       case 'number':
         return (
-          <Input
-            id={setting.key}
-            type="number"
-            value={value || 0}
-            onChange={(e) => setValue(setting.key, parseInt(e.target.value) || 0)}
-            className={cn(error && "border-red-500")}
-            disabled={saving}
-          />
+          <div className={cn("flex items-center gap-2", widthClass)}>
+            <Input
+              id={setting.key}
+              type="number"
+              value={value ?? ''}
+              onChange={(e) => setValue(setting.key, parseFloat(e.target.value) || 0)}
+              className={cn(error && "border-red-500", widthClass)}
+              placeholder={setting.placeholder}
+              disabled={saving}
+              step={setting.step}
+              min={setting.min}
+              max={setting.max}
+            />
+            {setting.suffix && (
+              <span className="text-xs text-muted-foreground">{setting.suffix}</span>
+            )}
+          </div>
         );
       
       case 'boolean':
@@ -441,7 +473,16 @@ export function SettingsFramework({
             <h3 className="font-semibold mb-4">Categories</h3>
             <div className="space-y-1">
               {categories.map((category) => {
-                const Icon = typeof category.icon === 'string' ? null : category.icon;
+                const renderIcon = () => {
+                  if (!category.icon) return null;
+                  if (typeof category.icon === 'string') return null;
+                  if (typeof category.icon === 'function') {
+                    const IconComponent = category.icon as LucideIcon;
+                    return <IconComponent className="h-4 w-4" />;
+                  }
+                  return category.icon as ReactNode;
+                };
+
                 return (
                   <button
                     key={category.id}
@@ -454,7 +495,7 @@ export function SettingsFramework({
                       categoryClassName
                     )}
                   >
-                    {Icon && <Icon className="h-4 w-4" />}
+                    {renderIcon()}
                     <span className="text-left">{category.label}</span>
                   </button>
                 );
@@ -524,6 +565,9 @@ export function SettingsFramework({
                           
                           {setting.description && (
                             <p className="text-xs text-muted-foreground">{setting.description}</p>
+                          )}
+                          {setting.hint && (
+                            <p className="text-[11px] text-muted-foreground">{setting.hint}</p>
                           )}
                           
                           {field}

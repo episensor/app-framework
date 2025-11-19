@@ -73,11 +73,12 @@ export function NetworkInterfaceSelect({
       }
       
       const data = await response.json();
-      setInterfaces(data.interfaces || []);
+      const interfacesList = data.interfaces || [];
+      setInterfaces(interfacesList);
       setNetworkInfo(data.networkInfo || null);
-      
+
       // If current value is not in the list, add it as custom
-      if (value && !data.interfaces.some((i: NetworkInterface) => i.value === value)) {
+      if (value && interfacesList.length > 0 && !interfacesList.some((i: NetworkInterface) => i.value === value)) {
         setInterfaces(prev => [...prev, {
           label: `Custom (${value})`,
           value,

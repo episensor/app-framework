@@ -228,38 +228,52 @@ export function LogViewer({
     setFilteredLogs(filtered);
   }, [logs, levelFilter, categoryFilter, searchTerm]);
 
-  // Use a ref to track the previous category to prevent infinite loops
-  const prevCategoryRef = useRef<string>();
+  const archivesFetchedRef = useRef(false);
 
-  // Fetch logs when category changes
+  // Fetch data on category changes; guard against infinite loops
   useEffect(() => {
-    // Only fetch if the category actually changed
-    if (prevCategoryRef.current === activeCategory) {
-      return;
-    }
-    prevCategoryRef.current = activeCategory;
+    let cancelled = false;
 
-    if (activeCategory === 'current' && onFetchLogs) {
-      // Fetch logs directly without using the callback
-      setLoading(true);
-      onFetchLogs().then(fetchedLogs => {
-        const normalized = coalesceStackTraces(fetchedLogs);
-        const sorted = normalized.sort((a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        );
-        setLogs(sorted);
-      }).catch(error => {
-        console.error('Failed to fetch logs:', error);
-      }).finally(() => {
-        setLoading(false);
-      });
-    } else if (activeCategory === 'archives' && onFetchArchives) {
-      onFetchArchives().then(archives => {
-        setLogFiles(archives);
-      }).catch(error => {
-        console.error('Failed to fetch archives:', error);
-      });
-    }
+    const run = async () => {
+      if (activeCategory === 'current' && onFetchLogs) {
+        setLoading(true);
+        try {
+          const fetchedLogs = await onFetchLogs();
+          if (cancelled || !fetchedLogs) return;
+          const normalized = coalesceStackTraces(fetchedLogs);
+          const sorted = normalized.sort(
+            (a, b) =>
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          );
+          setLogs(sorted);
+        } catch (error) {
+          console.error('Failed to fetch logs:', error);
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      } else if (
+        activeCategory === 'archives' &&
+        onFetchArchives &&
+        !archivesFetchedRef.current
+      ) {
+        setLoading(true);
+        try {
+          const archives = await onFetchArchives();
+          if (cancelled || !archives) return;
+          setLogFiles(archives);
+          archivesFetchedRef.current = true;
+        } catch (error) {
+          console.error('Failed to fetch archives:', error);
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
   }, [activeCategory, onFetchLogs, onFetchArchives]);
 
   // Subscribe to log updates
@@ -347,12 +361,14 @@ export function LogViewer({
 
   // Strip ANSI color codes from log messages
   const stripAnsiCodes = (str: string): string => {
-    // Remove ANSI escape sequences - both with and without the escape character
-    // Matches: \x1b[...m, \033[...m, or just [...m where ... is digits and semicolons
+    if (!str) return '';
+    // Remove all ANSI escape sequences
     return str
-      .replace(/\x1b\[[0-9;]*m/g, '')  // Standard ANSI with escape char
-      .replace(/\033\[[0-9;]*m/g, '')  // Octal escape format
-      .replace(/\[[0-9;]+m/g, '');     // Just the bracket notation without escape
+      .replace(/\x1b\[[0-9;]*m/g, '')     // Standard ANSI escape sequences
+      .replace(/\u001b\[[0-9;]*m/g, '')   // Unicode escape sequences
+      .replace(/\033\[[0-9;]*m/g, '')     // Octal escape sequences
+      .replace(/\[[0-9;]+m/g, '')         // Bracket notation without escape
+      .replace(/\[[\d;]*m/g, '');         // Any remaining bracket patterns
   };
 
   const renderLogEntry = (log: LogEntry) => (
@@ -477,7 +493,10 @@ export function LogViewer({
                   return (
                     <button
                       key={category.id}
-                      onClick={() => setActiveCategory(category.id)}
+                      onClick={() => {
+                        setActiveCategory(category.id);
+                        // Archive fetching removed - causing infinite loops
+                      }}
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
                         activeCategory === category.id
