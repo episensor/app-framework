@@ -3,7 +3,8 @@
  * Provides cross-platform compatibility without ESM issues
  */
 
-import { promises as fs } from "fs";
+import fs from "fs/promises";
+import { createReadStream, createWriteStream } from "fs";
 import path from "path";
 
 /**
@@ -120,9 +121,10 @@ export async function emptyDir(dir: string): Promise<void> {
 }
 
 // Re-export native fs methods that don't need replacement
-export { promises as fs, createReadStream, createWriteStream } from "fs";
-export const readFile = fs.readFile;
-export const writeFile = fs.writeFile;
-export const readdir = fs.readdir;
-export const stat = fs.stat;
+export { fs };
+export { createReadStream, createWriteStream };
+export const readFile = fs.readFile.bind(fs);
+export const writeFile = fs.writeFile.bind(fs);
+export const readdir = fs.readdir.bind(fs);
+export const stat = fs.stat.bind(fs);
 export const unlink = fs.unlink;

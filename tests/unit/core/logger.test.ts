@@ -10,6 +10,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import os from 'os';
+import { Readable } from 'stream';
 
 // Mock fs modules
 jest.mock('fs/promises');
