@@ -62,6 +62,12 @@ export interface LogViewerProps {
   // WebSocket handlers
   onLogReceived?: (handler: (log: LogEntry) => void) => () => void;
 
+  // Behavior
+  autoRefreshMs?: number;
+  maxEntries?: number;
+  defaultCategory?: 'current' | 'archives' | string;
+  enableLiveUpdates?: boolean;
+
   // Configuration
   categories?: LogCategory[];
   levelBadgeColors?: Record<string, string>;
@@ -109,6 +115,10 @@ export function LogViewer({
   onDownloadArchive,
   onDeleteArchive,
   onLogReceived,
+  autoRefreshMs = 0,
+  maxEntries = 1000,
+  defaultCategory = 'current',
+  enableLiveUpdates = true,
   categories = defaultCategories,
   levelBadgeColors = defaultLevelBadgeColors,
   currentLogLevel = 'info',
@@ -121,12 +131,14 @@ export function LogViewer({
   const [filteredLogs, setFilteredLogs] = useState<LogEntry[]>([]);
   const [logFiles, setLogFiles] = useState<LogFile[]>(externalLogFiles);
   const [loading, setLoading] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('current');
+  const [activeCategory, setActiveCategory] = useState(defaultCategory);
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const logContainerRef = useRef<HTMLDivElement>(null);
+  const autoRefreshRef = useRef<NodeJS.Timeout | null>(null);
+  const [autoRefreshOn, setAutoRefreshOn] = useState(autoRefreshMs > 0);
 
   const LevelChip = ({ level }: { level: string }) => {
     return (
@@ -166,6 +178,11 @@ export function LogViewer({
     };
   };
 
+  const enforceMax = (entries: LogEntry[]) => {
+    if (!maxEntries || entries.length <= maxEntries) return entries;
+    return entries.slice(0, maxEntries);
+  };
+
   // Coalesce stack traces
   const coalesceStackTraces = (entries: Array<PartialLogEntry | LogEntry>): LogEntry[] => {
     const out: LogEntry[] = [];
@@ -186,7 +203,7 @@ export function LogViewer({
   useEffect(() => {
     if (externalLogs.length > 0) {
       const normalized = coalesceStackTraces(externalLogs);
-      setLogs(normalized);
+      setLogs(enforceMax(normalized));
       const cats = Array.from(new Set(normalized.map(l => l.category || l.source || '').filter(Boolean))).sort();
       setAvailableCategories(cats);
     }
@@ -228,6 +245,35 @@ export function LogViewer({
     setFilteredLogs(filtered);
   }, [logs, levelFilter, categoryFilter, searchTerm]);
 
+  // Auto-refresh polling
+  useEffect(() => {
+    if (!autoRefreshOn || autoRefreshMs <= 0 || !onFetchLogs) return;
+    if (autoRefreshRef.current) clearInterval(autoRefreshRef.current);
+
+    autoRefreshRef.current = setInterval(() => {
+      onFetchLogs()
+        .then((fetched) => {
+          if (!fetched) return;
+          const normalized = coalesceStackTraces(fetched);
+          const sorted = normalized.sort(
+            (a, b) =>
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          );
+          setLogs(enforceMax(sorted));
+        })
+        .catch((err) => {
+          console.error('Auto-refresh failed:', err);
+        });
+    }, autoRefreshMs);
+
+    return () => {
+      if (autoRefreshRef.current) {
+        clearInterval(autoRefreshRef.current);
+        autoRefreshRef.current = null;
+      }
+    };
+  }, [autoRefreshOn, autoRefreshMs, onFetchLogs, maxEntries]);
+
   const archivesFetchedRef = useRef(false);
 
   // Fetch data on category changes; guard against infinite loops
@@ -245,7 +291,7 @@ export function LogViewer({
             (a, b) =>
               new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
           );
-          setLogs(sorted);
+          setLogs(enforceMax(sorted));
         } catch (error) {
           console.error('Failed to fetch logs:', error);
         } finally {
@@ -274,11 +320,11 @@ export function LogViewer({
     return () => {
       cancelled = true;
     };
-  }, [activeCategory, onFetchLogs, onFetchArchives]);
+  }, [activeCategory, onFetchLogs, onFetchArchives, maxEntries]);
 
   // Subscribe to log updates
   useEffect(() => {
-    if (!onLogReceived) return;
+    if (!onLogReceived || !enableLiveUpdates) return;
 
     const handleLog = (raw: PartialLogEntry | LogEntry) => {
       const log = normalizeLog(raw);
@@ -293,12 +339,13 @@ export function LogViewer({
           return updated;
         }
         const entry = { ...log, id: `${Date.now()}-${Math.random()}` };
-        return [entry, ...currentLogs];
+        const next = [entry, ...currentLogs];
+        return enforceMax(next);
       });
     };
 
     return onLogReceived(handleLog);
-  }, [onLogReceived]);
+  }, [onLogReceived, enableLiveUpdates, maxEntries]);
 
   // Remove fetchLogs and fetchArchives functions as they cause infinite loops
   // We'll call onFetchLogs/onFetchArchives directly in the useEffect
@@ -461,6 +508,23 @@ export function LogViewer({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {onFetchLogs && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => onFetchLogs().then((l) => l && setLogs(enforceMax(coalesceStackTraces(l))))}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              {autoRefreshMs > 0 && (
+                <Button
+                  variant={autoRefreshOn ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setAutoRefreshOn((v) => !v)}
+                >
+                  {autoRefreshOn ? 'Auto-Refresh On' : 'Auto-Refresh Off'}
+                </Button>
+              )}
+            </>
+          )}
           {activeCategory === 'current' && (
             <>
               <Button variant="outline" size="sm" onClick={handleCopyLogs}>
@@ -493,10 +557,7 @@ export function LogViewer({
                   return (
                     <button
                       key={category.id}
-                      onClick={() => {
-                        setActiveCategory(category.id);
-                        // Archive fetching removed - causing infinite loops
-                      }}
+                      onClick={() => setActiveCategory(category.id)}
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
                         activeCategory === category.id
