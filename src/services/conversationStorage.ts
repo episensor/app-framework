@@ -6,7 +6,7 @@
 import { Low } from "lowdb";
 import { JSONFile } from "lowdb/node";
 import path from "path";
-import { ensureDir } from "../utils/fs-utils.js";
+import { ensureDir } from "fs-extra";
 import { createLogger } from "../core/index.js";
 let logger: any; // Will be initialized when needed
 
@@ -95,11 +95,13 @@ class ConversationStorage {
     await this.initialize();
 
     const now = new Date().toISOString();
+    const existing = this.db!.data!.conversations[conversationId];
     const fullConversation: Conversation = {
       id: conversationId,
-      messages: [],
+      messages: conversation.messages || existing?.messages || [],
+      ...existing,
       ...conversation,
-      createdAt: conversation.createdAt || now,
+      createdAt: existing?.createdAt || conversation.createdAt || now,
       updatedAt: now,
     };
 
