@@ -15,7 +15,7 @@ import {
 } from "fs";
 import { createGzip } from "zlib";
 import { pipeline } from "stream/promises";
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 
 // Use process.cwd() based paths for better compatibility
 const getLogsDir = () => path.join(process.cwd(), "data", "logs");
@@ -66,10 +66,13 @@ interface LogFileInfo {
   compressed: boolean;
 }
 
-interface ExtendedWinstonLogger extends WinstonLogger {
+export interface ExtendedWinstonLogger extends WinstonLogger {
   logRequest?: (req: Request, res: Response, duration: number) => void;
   logSimulator?: (simulatorId: string, action: string, data?: any) => void;
   logError?: (error: Error, context?: any) => void;
+  // Management helpers (proxied to manager-level functions)
+  compactLogs?: (daysToKeep?: number) => Promise<LogStats>;
+  getLogStats?: () => Promise<LogStats>;
 }
 
 // Log levels with colors
@@ -370,6 +373,26 @@ class Logger {
       verbose: logMethod("verbose"),
       http: logMethod("http"),
       silly: logMethod("silly"),
+      logRequest: (req: Request, res: Response, duration: number) => {
+        if (self.initialized) {
+          const real = self.createLogger(name);
+          real?.logRequest?.(req, res, duration);
+          return;
+        }
+        logMethod("info")(
+          `Request ${req.method} ${req.url} completed in ${duration}ms`,
+        );
+      },
+      logError: (error: Error, context: any = {}) => {
+        if (self.initialized) {
+          const real = self.createLogger(name);
+          real?.logError?.(error, context);
+          return;
+        }
+        logMethod("error")(error, context);
+      },
+      compactLogs: (daysToKeep?: number) => self.compactLogs(daysToKeep),
+      getLogStats: () => self.getLogStats(),
     };
   }
 
@@ -513,7 +536,19 @@ class Logger {
     );
 
     // File format (structured JSON for machine parsing)
+    // Strip ANSI codes from messages before writing to file
+    const stripAnsi = format((info) => {
+      if (info.message && typeof info.message === 'string') {
+        info.message = info.message.replace(/\x1b\[[0-9;]*m/g, '');
+      }
+      if (info.source && typeof info.source === 'string') {
+        info.source = info.source.replace(/\x1b\[[0-9;]*m/g, '');
+      }
+      return info;
+    });
+
     const fileFormat = format.combine(
+      stripAnsi(),
       format.timestamp({ format: "YYYY-MM-DD HH:mm:ss.SSS" }),
       format.errors({ stack: true }),
       format.json(),
@@ -570,7 +605,7 @@ class Logger {
     // Create the logger
     const logger = winston.createLogger({
       levels: logLevels.levels,
-      transports: logTransports,
+      transports: logTransports.filter(Boolean),
       exitOnError: false,
       defaultMeta: { source: category },
     }) as ExtendedWinstonLogger;

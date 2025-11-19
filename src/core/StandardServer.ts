@@ -14,6 +14,7 @@ import { getProcessOnPort } from "./portUtils.js";
 import { createLogger, getLogger } from "./index.js";
 import { aiErrorHandler } from "../middleware/aiErrorHandler.js";
 import { apiErrorHandler } from "./apiResponse.js";
+import { createRequestLoggingMiddleware } from "../middleware/requestLogging.js";
 import {
   getAppDataPath,
   getLogsPath,
@@ -38,6 +39,11 @@ export interface StandardServerConfig {
   host?: string;
   environment?: string;
   enableWebSocket?: boolean;
+  /**
+   * When true (default), startup failures will terminate the Node process.
+   * Disable in test environments to surface errors as rejections instead.
+   */
+  exitOnStartupError?: boolean;
   // Optional logging configuration (not all fields are used yet)
   logging?: {
     level?: string;
@@ -53,6 +59,32 @@ export interface StandardServerConfig {
   corsOrigins?: string[]; // Additional CORS origins for desktop apps
   onInitialize?: (app: Express, io?: any) => Promise<void>;
   onStart?: () => Promise<void>;
+  /**
+   * Request payload size limit passed to express.json/urlencoded
+   */
+  bodyLimit?: string | number;
+  /**
+   * Whether to log requests using the framework logger (defaults to true)
+   */
+  enableRequestLogging?: boolean;
+  /**
+   * Options forwarded to the request logging middleware
+   */
+  requestLogging?: Parameters<typeof createRequestLoggingMiddleware>[0];
+  /**
+   * Configure trust proxy setting for Express (defaults to true for prod)
+   */
+  trustProxy?: boolean | string;
+  /**
+   * Custom timeouts for the underlying HTTP server
+   */
+  requestTimeoutMs?: number;
+  headersTimeoutMs?: number;
+  keepAliveTimeoutMs?: number;
+  /**
+   * Signals that should trigger a graceful shutdown. Set to [] to disable.
+   */
+  gracefulShutdownSignals?: NodeJS.Signals[];
 }
 
 /**
@@ -66,6 +98,8 @@ export class StandardServer {
   private wsServer: any;
   private startTime: number;
   private isInitialized: boolean = false;
+  private shuttingDown = false;
+  private signalsBound = false;
 
   constructor(config: StandardServerConfig) {
     const environment = process.env.NODE_ENV || "development";
@@ -81,10 +115,18 @@ export class StandardServer {
       host: process.env.HOST || config.host || defaultHost,
       environment,
       enableWebSocket: true,
+      bodyLimit: "10mb",
+      requestTimeoutMs: 120_000,
+      headersTimeoutMs: 65_000,
+      keepAliveTimeoutMs: 60_000,
+      gracefulShutdownSignals: ["SIGTERM", "SIGINT"],
+      enableRequestLogging: true,
       enableDesktopIntegration,
       appId:
         config.appId ||
         `com.company.${config.appName.toLowerCase().replace(/[^a-z0-9]/g, "-")}`,
+      exitOnStartupError:
+        config.exitOnStartupError ?? process.env.NODE_ENV !== "test",
       ...config,
     };
 
@@ -119,7 +161,7 @@ export class StandardServer {
 
       // Initialize the logger first to ensure file output works
       const logger = getLogger;
-      if (!logger.isInitialized()) {
+      if (logger && typeof logger.isInitialized === "function" && !logger.isInitialized()) {
         // Use proper logs directory for desktop apps
         const logsDir = this.config.enableDesktopIntegration
           ? getLogsPath(this.config.appId!, this.config.appName)
@@ -213,8 +255,10 @@ export class StandardServer {
    */
   private setupDefaultMiddleware(): void {
     // Basic middleware that should be present in all apps
-    this.app.use(express.json());
-    this.app.use(express.urlencoded({ extended: true }));
+    this.app.use(express.json({ limit: this.config.bodyLimit }));
+    this.app.use(
+      express.urlencoded({ extended: true, limit: this.config.bodyLimit }),
+    );
 
     // CORS setup for non-desktop apps (desktop setup happens in setupDesktopIntegration)
     if (!this.config.enableDesktopIntegration) {
@@ -239,6 +283,24 @@ export class StandardServer {
         this.app.use(cors());
       }
     }
+
+    // Request logging (can be disabled)
+    if (this.config.enableRequestLogging) {
+      this.app.use(
+        createRequestLoggingMiddleware({
+          logger: ensureLogger(),
+          ...this.config.requestLogging,
+        }),
+      );
+    }
+
+    // Trust proxy to respect X-Forwarded-* headers in containerized/proxy envs
+    const trustProxy =
+      this.config.trustProxy ??
+      (this.config.environment !== "development" ? true : false);
+    if (typeof this.app.set === "function") {
+      this.app.set("trust proxy", trustProxy);
+    }
   }
 
   /**
@@ -262,32 +324,58 @@ export class StandardServer {
 
     const port = this.config.port!;
     const host = this.config.host!;
+    const exitOnError = this.config.exitOnStartupError !== false;
 
     // Check if API port is available
     const processOnPort = await getProcessOnPort(port);
     if (processOnPort) {
-      ensureLogger().error(
-        `API port ${port} is already in use by: PID ${processOnPort.pid} (${processOnPort.command})`,
-      );
-      process.exit(1);
+      const message = `API port ${port} is already in use by: PID ${processOnPort.pid} (${processOnPort.command})`;
+      ensureLogger().error(message);
+      if (exitOnError) {
+        process.exit(1);
+      }
+      throw new Error(message);
     }
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      const fail = (error: Error) => {
+        ensureLogger().error("Server error:", error);
+        if (exitOnError) {
+          process.exit(1);
+        }
+        reject(error);
+      };
+
       // Handle server errors
       this.httpServer.on("error", (error: any) => {
         if (error.code === "EADDRINUSE") {
-          ensureLogger().error(`Port ${port} is already in use`);
-          process.exit(1);
+          const message = `Port ${port} is already in use`;
+          ensureLogger().error(message);
+          if (exitOnError) {
+            process.exit(1);
+          }
+          reject(new Error(message));
+          return;
         } else if (error.code === "EACCES") {
-          ensureLogger().error(`Port ${port} requires elevated privileges`);
-          process.exit(1);
+          const message = `Port ${port} requires elevated privileges`;
+          ensureLogger().error(message);
+          if (exitOnError) {
+            process.exit(1);
+          }
+          reject(new Error(message));
+          return;
         } else {
-          ensureLogger().error("Server error:", error);
-          process.exit(1);
+          fail(error instanceof Error ? error : new Error(String(error)));
+          return;
         }
       });
 
       // Start listening
+      // Apply safer timeouts for production workloads
+      this.httpServer.requestTimeout = this.config.requestTimeoutMs!;
+      this.httpServer.headersTimeout = this.config.headersTimeoutMs!;
+      this.httpServer.keepAliveTimeout = this.config.keepAliveTimeoutMs!;
+
       this.httpServer.listen(port, host, async () => {
         // Display banner only after successful binding
         // Note: In production, webPort is typically not used because the API server
@@ -312,10 +400,19 @@ export class StandardServer {
           try {
             await this.config.onStart();
           } catch (_error) {
-            ensureLogger().error("Custom start handler failed:", _error);
-            process.exit(1);
+            const error =
+              _error instanceof Error ? _error : new Error(String(_error));
+            ensureLogger().error("Custom start handler failed:", error);
+            if (exitOnError) {
+              process.exit(1);
+            }
+            reject(error);
+            return;
           }
         }
+
+        // Bind graceful shutdown signals once per instance
+        this.bindShutdownSignals();
 
         resolve();
       });
@@ -343,18 +440,65 @@ export class StandardServer {
   }
 
   /**
+   * Attach signal listeners for graceful shutdown
+   */
+  private bindShutdownSignals(): void {
+    if (this.signalsBound) return;
+    if (!this.config.gracefulShutdownSignals?.length) return;
+
+    const signals = this.config.gracefulShutdownSignals;
+    signals.forEach((signal) => {
+      process.on(signal, async () => {
+        ensureLogger().info(`Received ${signal}, shutting down gracefully...`);
+        try {
+          await this.stop();
+          process.exit(0);
+        } catch (error) {
+          ensureLogger().error("Graceful shutdown failed", error);
+          process.exit(1);
+        }
+      });
+    });
+
+    this.signalsBound = true;
+  }
+
+  /**
    * Stop the server gracefully
    */
   public async stop(): Promise<void> {
-    return new Promise((resolve) => {
-      if (this.wsServer) {
-        this.wsServer.shutdown();
-      }
+    if (this.shuttingDown) return Promise.resolve();
+    this.shuttingDown = true;
 
-      this.httpServer.close(() => {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        ensureLogger().warn("Force closing server after timeout");
+        resolve();
+      }, 10_000);
+
+      const close = () => {
+        clearTimeout(timeout);
         ensureLogger().info("Server stopped");
         resolve();
-      });
+      };
+
+      try {
+        if (this.wsServer?.shutdown) {
+          this.wsServer.shutdown();
+        }
+
+        this.httpServer.close((err?: Error) => {
+          if (err) {
+            ensureLogger().error("Error while stopping server", err);
+            reject(err);
+            return;
+          }
+          close();
+        });
+      } catch (error) {
+        clearTimeout(timeout);
+        reject(error);
+      }
     });
   }
 }

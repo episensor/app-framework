@@ -63,3 +63,9 @@ export {
   createDevCors,
 } from "./cors.js";
 export type { DynamicCorsOptions } from "./cors.js";
+
+// Request logging / context
+export {
+  createRequestLoggingMiddleware,
+  type RequestLoggingOptions,
+} from "./requestLogging.js";

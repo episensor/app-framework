@@ -96,6 +96,8 @@ await server.start();
 ### 🖥️ Server Management
 
 - **StandardServer** - Simplified server setup with Express
+- **Request Correlation** - Automatic request IDs with structured request logging
+- **Safer Defaults** - Request body limits, trust proxy, and sane HTTP timeouts
 - **Port Management** - Automatic port conflict resolution
 - **Graceful Shutdown** - Clean resource cleanup
 - **Health Checks** - Real system metrics (CPU, memory, disk) - informational only

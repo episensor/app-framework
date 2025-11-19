@@ -4,6 +4,7 @@
  */
 
 import { Response } from "express";
+import { ZodError } from "zod";
 import { createLogger } from "../core/logger.js";
 
 const logger = createLogger("api-error");
@@ -39,11 +40,13 @@ export function sendSuccess<T = any>(
   message?: string,
   statusCode = 200,
 ): Response<ApiSuccessResponse<T>> {
+  const requestId = res.locals?.requestId;
   return res.status(statusCode).json({
     success: true,
     data,
     message,
     timestamp: new Date().toISOString(),
+    metadata: requestId ? { requestId } : undefined,
   });
 }
 
@@ -56,11 +59,13 @@ export function sendError(
   statusCode = 500,
   details?: any,
 ): Response<ApiErrorResponse> {
+  const requestId = res.locals?.requestId;
   const errorMessage = typeof error === "string" ? error : error.message;
   const response: ApiErrorResponse = {
     success: false,
     error: errorMessage,
     timestamp: new Date().toISOString(),
+    metadata: requestId ? { requestId } : undefined,
   };
 
   if (details) {
@@ -171,6 +176,11 @@ export function apiErrorHandler(err: any, _req: any, res: any, next: any) {
   });
 
   // Handle different error types
+  if (err instanceof ZodError || err?.name === "ZodError") {
+    const issues = err instanceof ZodError ? err.issues : err?.issues;
+    return sendValidationError(res, issues || err.message);
+  }
+
   if (err.name === "ValidationError") {
     return sendValidationError(res, err.errors || err.message);
   }
