@@ -348,15 +348,21 @@ let wsServer: WebSocketServer | null = null;
 /**
  * Create WebSocket server instance
  */
-export function createWebSocketServer(httpServer: HTTPServer): WebSocketServer {
+export function createWebSocketServer(
+  httpServer: HTTPServer,
+  opts?: { reset?: boolean; broadcastHook?: (event: string, data: any) => void },
+): WebSocketServer {
   // Initialize logger if not already done
   if (!logger) {
     logger = createLogger("WebSocket");
   }
 
-  if (!wsServer) {
+  if (!wsServer || opts?.reset) {
     wsServer = new WebSocketServer(httpServer);
-    wsServer.initialize();
+    wsServer.initialize({ broadcastHook: opts?.broadcastHook });
+  } else if (opts?.broadcastHook) {
+    // Reconfigure hook without rebuilding the IO server
+    wsServer.initialize({ broadcastHook: opts.broadcastHook });
   }
   return wsServer;
 }

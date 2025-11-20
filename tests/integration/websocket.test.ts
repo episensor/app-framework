@@ -9,13 +9,15 @@ describe('WebSocket Integration', () => {
   let wsServer: WebSocketServer;
   let client: ClientSocket;
   let port: number;
+  const broadcastLog: Array<{ event: string; data: any }> = [];
 
   beforeEach(async () => {
     httpServer = createServer();
-    const broadcastEvents: Array<{ event: string; data: any }> = [];
-    wsServer = createWebSocketServer(httpServer);
-    // Reinitialize with a broadcast hook for observability in tests
-    wsServer.initialize({ broadcastHook: (event, data) => broadcastEvents.push({ event, data }) });
+    broadcastLog.length = 0;
+    wsServer = createWebSocketServer(httpServer, {
+      reset: true,
+      broadcastHook: (event, data) => broadcastLog.push({ event, data }),
+    });
 
     await new Promise<void>((resolve) => {
       httpServer.listen(0, () => resolve());
@@ -58,20 +60,10 @@ describe('WebSocket Integration', () => {
     expect(payload.timestamp).toBeDefined();
   });
 
-  it.skip('broadcasts events without throwing and tracks clients', async () => {
-    await connectClient();
-    const stats = wsServer.getStats();
-    expect(stats.totalClients).toBeGreaterThanOrEqual(1);
-
-    // Invoke broadcast and ensure clients count remains stable
-    expect(() =>
-      wsServer.broadcast('simulator:started', { simulatorId: 'sim-123', status: 'started' })
-    ).not.toThrow();
-
-    // Give the async emission a beat and verify the hook captured it
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    const hookSeen = (wsServer as any).broadcastHook ? true : true; // hook stored internally
-    expect(hookSeen).toBe(true);
+  it('broadcasts events without throwing and records via hook', async () => {
+    wsServer.broadcast('simulator:started', { simulatorId: 'sim-123', status: 'started' });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(broadcastLog.find((entry) => entry.event === 'simulator:started')).toBeDefined();
   });
 
   it('tracks the singleton instance', () => {
