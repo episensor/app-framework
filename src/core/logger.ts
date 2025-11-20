@@ -537,12 +537,13 @@ class Logger {
 
     // File format (structured JSON for machine parsing)
     // Strip ANSI codes from messages before writing to file
+    const ansiPattern = new RegExp("\\x1b\\[[0-9;]*m", "g"); // eslint-disable-line no-control-regex
     const stripAnsi = format((info) => {
       if (info.message && typeof info.message === 'string') {
-        info.message = info.message.replace(/\x1b\[[0-9;]*m/g, '');
+        info.message = info.message.replace(ansiPattern, '');
       }
       if (info.source && typeof info.source === 'string') {
-        info.source = info.source.replace(/\x1b\[[0-9;]*m/g, '');
+        info.source = info.source.replace(ansiPattern, '');
       }
       return info;
     });
