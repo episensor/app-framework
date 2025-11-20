@@ -9,7 +9,12 @@ describe('StandardServer Integration', () => {
 
   afterEach(async () => {
     if (server) {
-      await server.stop();
+      try {
+        await server.stop();
+      } catch (_err) {
+        // ignore teardown errors in negative-path tests
+      }
+      server = undefined as any;
     }
   });
 
@@ -50,7 +55,7 @@ describe('StandardServer Integration', () => {
     await server.start();
   });
 
-  test.skip('handles initialization errors gracefully', async () => {
+  test('handles initialization errors gracefully', async () => {
     server = new StandardServer({
       appName: 'Test App',
       appVersion: '1.0.0',
@@ -61,6 +66,7 @@ describe('StandardServer Integration', () => {
     });
 
     await expect(server.initialize()).rejects.toThrow('Initialization failed');
+    server = undefined as any;
   });
 
   test.skip('handles port conflicts', async () => {
@@ -84,13 +90,20 @@ describe('StandardServer Integration', () => {
     await server.initialize();
     
     // Mock process.exit to prevent test from exiting
-    const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
-      throw new Error('Process exit called');
-    });
+    const mockExit = jest.spyOn(process, 'exit').mockImplementation(((code?: number | undefined) => {
+      throw new Error(`Process exit called with code ${code}`);
+    }) as any);
     
-    await expect(server.start()).rejects.toThrow();
+    let startError: any;
+    try {
+      await server.start();
+    } catch (err) {
+      startError = err;
+    }
+    expect(startError).toBeDefined();
     
     mockExit.mockRestore();
+    server = undefined as any;
     await server1.stop();
   });
 
