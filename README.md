@@ -170,12 +170,14 @@ await server.start();
 #### Advanced Components
 
 - **SettingsFramework** - Complete settings UI with validation
-- **LogViewer** - Real-time log display with filtering
+- **LogViewer** - Real-time log display with filtering, stack coalescing, ANSI stripping, auto-refresh, archives, and per-level badges
 - **ConnectionStatus** - WebSocket connection monitoring
 - **AppLayout** - Standard application layout with navigation
 - **RealtimeDataTable** - Live updating data tables
 - **DashboardStats** - Metric display cards
 - **UpdateNotification** - Application update notifications
+
+> UI bundle note: the UI package now bundles ESM-heavy dependencies (`react-markdown`, `remark-gfm`, `react-syntax-highlighter`) for better Jest/Node compatibility, and exports the new log viewer alongside the legacy variant. Use `LogViewer` for the advanced experience; `LogViewerLegacy` remains for backwards compatibility.
 
 ### 🧪 Testing Utilities
 

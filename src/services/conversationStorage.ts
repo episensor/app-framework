@@ -97,11 +97,11 @@ class ConversationStorage {
     const now = new Date().toISOString();
     const existing = this.db!.data!.conversations[conversationId];
     const fullConversation: Conversation = {
-      id: conversationId,
-      messages: conversation.messages || existing?.messages || [],
       ...existing,
       ...conversation,
-      createdAt: existing?.createdAt || conversation.createdAt || now,
+      id: conversationId,
+      messages: conversation.messages ?? existing?.messages ?? [],
+      createdAt: existing?.createdAt ?? conversation.createdAt ?? now,
       updatedAt: now,
     };
 
