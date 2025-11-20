@@ -7,6 +7,11 @@ export default defineConfig({
   splitting: false,
   sourcemap: true,
   clean: true,
+  noExternal: [
+    'react-markdown',
+    'remark-gfm',
+    'react-syntax-highlighter'
+  ],
   external: ['react', 'react-dom', 'react-router-dom'],
   treeshake: true,
   minify: true,

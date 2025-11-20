@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from '../base/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../base/select';
 import {
   Terminal, Archive, Download, Trash2, Search, Copy as CopyIcon,
-  AlertCircle
+  AlertCircle, RefreshCw
 } from 'lucide-react';
 import { cn } from '../../src/utils/cn';
 import { format } from 'date-fns';
@@ -156,11 +156,12 @@ export function LogViewer({
     let { timestamp, level, message, category, source, metadata } = log;
     const embedded = message ? message.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(\w+)\s+\[([^\]]+)\]\s+(.*)$/) : null;
     if (embedded) {
-      timestamp = embedded[1];
-      level = embedded[2].toLowerCase();
-      source = embedded[3];
-      category = source;
-      message = embedded[4];
+      const [, tsMatch, levelMatch, sourceMatch, msgMatch] = embedded;
+      timestamp = tsMatch || timestamp;
+      level = (levelMatch || level || 'info').toLowerCase();
+      source = sourceMatch || source;
+      category = category || source;
+      message = msgMatch || message;
     }
     if (message && (/^\s*Error[:\s]/i.test(message) || /uncaught exception/i.test(message))) {
       level = 'error';
@@ -190,8 +191,12 @@ export function LogViewer({
       const normalized = normalizeLog(e);
       if (/^\s*at\s/.test(normalized.message) && out.length > 0) {
         const prev = out[out.length - 1];
-        const stack = prev.metadata?.stack ? `${prev.metadata.stack}\n${normalized.message}` : normalized.message;
-        prev.metadata = { ...(prev.metadata || {}), stack };
+        if (prev) {
+          const stack = prev.metadata?.stack ? `${prev.metadata.stack}\n${normalized.message}` : normalized.message;
+          prev.metadata = { ...(prev.metadata || {}), stack };
+        } else {
+          out.push(normalized);
+        }
       } else {
         out.push(normalized);
       }
@@ -331,12 +336,13 @@ export function LogViewer({
       setLogs(prev => {
         const currentLogs = prev || [];
         if (/^\s*at\s/.test(log.message) && currentLogs.length > 0) {
-          const updated = [...currentLogs];
-          const top = { ...updated[0] };
-          const stack = top.metadata?.stack ? `${top.metadata.stack}\n${log.message}` : log.message;
-          top.metadata = { ...(top.metadata || {}), stack };
-          updated[0] = top;
-          return updated;
+          const [first, ...rest] = currentLogs as [LogEntry, ...LogEntry[]];
+          const stack = first.metadata?.stack ? `${first.metadata.stack}\n${log.message}` : log.message;
+          const merged: LogEntry = {
+            ...first,
+            metadata: { ...(first.metadata || {}), stack }
+          };
+          return enforceMax([merged, ...rest]);
         }
         const entry = { ...log, id: `${Date.now()}-${Math.random()}` };
         const next = [entry, ...currentLogs];
@@ -413,7 +419,7 @@ export function LogViewer({
     return str
       .replace(/\x1b\[[0-9;]*m/g, '')     // Standard ANSI escape sequences
       .replace(/\u001b\[[0-9;]*m/g, '')   // Unicode escape sequences
-      .replace(/\033\[[0-9;]*m/g, '')     // Octal escape sequences
+      .replace(/\x1b\[[0-9;]*m/g, '')     // Octal escape sequences expressed in hex
       .replace(/\[[0-9;]+m/g, '')         // Bracket notation without escape
       .replace(/\[[\d;]*m/g, '');         // Any remaining bracket patterns
   };

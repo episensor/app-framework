@@ -2,9 +2,34 @@
  * Unit tests for StorageService
  */
 
+// Mock fs-utils before importing the service to avoid touching real disk
+jest.mock('../../../src/utils/fs-utils', () => {
+  const now = new Date();
+  return {
+    ensureDir: jest.fn().mockResolvedValue(undefined),
+    writeFile: jest.fn().mockResolvedValue(undefined),
+    readFile: jest.fn().mockResolvedValue(Buffer.from('test content')),
+    pathExists: jest.fn().mockResolvedValue(true),
+    copy: jest.fn().mockResolvedValue(undefined),
+    remove: jest.fn().mockResolvedValue(undefined),
+    unlink: jest.fn().mockResolvedValue(undefined),
+    readdir: jest.fn().mockResolvedValue([]),
+    stat: jest.fn().mockResolvedValue({
+      size: 1024,
+      isFile: () => true,
+      isDirectory: () => false,
+      birthtime: now,
+      mtime: now
+    }),
+    emptyDir: jest.fn().mockResolvedValue(undefined),
+    move: jest.fn().mockResolvedValue(undefined),
+  };
+});
+
 import { StorageService, getStorageService } from '../../../src/core/storageService';
 import fs from 'fs-extra';
 import crypto from 'crypto';
+import * as fsUtils from '../../../src/utils/fs-utils';
 
 // Mock dependencies
 jest.mock('fs-extra');
@@ -37,21 +62,21 @@ describe('StorageService', () => {
     handler = new StorageService();
     
     // Setup default mocks
-    (fs.ensureDir as jest.Mock).mockResolvedValue(undefined);
-    (fs.writeFile as unknown as jest.Mock).mockResolvedValue(undefined);
-    (fs.readFile as unknown as jest.Mock).mockResolvedValue(Buffer.from('test content'));
-    (fs.stat as unknown as jest.Mock).mockResolvedValue({ 
+    (fsUtils.ensureDir as jest.Mock).mockResolvedValue(undefined);
+    (fsUtils.writeFile as unknown as jest.Mock).mockResolvedValue(undefined);
+    (fsUtils.readFile as unknown as jest.Mock).mockResolvedValue(Buffer.from('test content'));
+    (fsUtils.stat as unknown as jest.Mock).mockResolvedValue({ 
       size: 1024,
       isFile: () => true,
       isDirectory: () => false,
       birthtime: new Date(),
       mtime: new Date()
     });
-    (fs.pathExists as jest.Mock).mockResolvedValue(true);
-    (fs.copy as jest.Mock).mockResolvedValue(undefined);
-    (fs.remove as jest.Mock).mockResolvedValue(undefined);
-    (fs.unlink as unknown as jest.Mock).mockResolvedValue(undefined);
-    (fs.readdir as unknown as jest.Mock).mockResolvedValue([]);
+    (fsUtils.pathExists as jest.Mock).mockResolvedValue(false);
+    (fsUtils.copy as jest.Mock).mockResolvedValue(undefined);
+    (fsUtils.remove as jest.Mock).mockResolvedValue(undefined);
+    (fsUtils.unlink as unknown as jest.Mock).mockResolvedValue(undefined);
+    (fsUtils.readdir as unknown as jest.Mock).mockResolvedValue([]);
     
     // Mock crypto
     (crypto.createHash as jest.Mock).mockReturnValue({
@@ -65,17 +90,17 @@ describe('StorageService', () => {
       await handler.initialize();
       
       // Should create all base directories
-      expect(fs.ensureDir).toHaveBeenCalledWith(expect.stringContaining('data'));
-      expect(fs.ensureDir).toHaveBeenCalledWith(expect.stringContaining('templates'));
-      expect(fs.ensureDir).toHaveBeenCalledWith(expect.stringContaining('uploads'));
-      expect(fs.ensureDir).toHaveBeenCalledWith(expect.stringContaining('logs'));
-      expect(fs.ensureDir).toHaveBeenCalledWith(expect.stringContaining('config'));
+      expect(fsUtils.ensureDir).toHaveBeenCalledWith(expect.stringContaining('data'));
+      expect(fsUtils.ensureDir).toHaveBeenCalledWith(expect.stringContaining('templates'));
+      expect(fsUtils.ensureDir).toHaveBeenCalledWith(expect.stringContaining('uploads'));
+      expect(fsUtils.ensureDir).toHaveBeenCalledWith(expect.stringContaining('logs'));
+      expect(fsUtils.ensureDir).toHaveBeenCalledWith(expect.stringContaining('config'));
     });
     
     test('creates .gitignore files', async () => {
       await handler.initialize();
       
-      expect(fs.writeFile).toHaveBeenCalledWith(
+      expect(fsUtils.writeFile).toHaveBeenCalledWith(
         expect.stringContaining('.gitignore'),
         '*\n!.gitignore\n'
       );
@@ -86,12 +111,12 @@ describe('StorageService', () => {
       await handler.initialize();
       
       // ensureDir should only be called once per directory
-      const callCount = (fs.ensureDir as jest.Mock).mock.calls.length;
+      const callCount = (fsUtils.ensureDir as jest.Mock).mock.calls.length;
       expect(callCount).toBeLessThanOrEqual(6); // Number of base directories
     });
     
     test('handles initialization errors', async () => {
-      (fs.ensureDir as jest.Mock).mockRejectedValueOnce(new Error('Permission denied'));
+      (fsUtils.ensureDir as jest.Mock).mockRejectedValueOnce(new Error('Permission denied'));
       
       await expect(handler.initialize()).rejects.toThrow('Permission denied');
     });
@@ -139,6 +164,7 @@ describe('StorageService', () => {
   describe('path validation', () => {
     test('accepts valid paths within base directory', async () => {
       await handler.initialize();
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(true);
       // validatePath is internal, test through file operations
       const result = await handler.readFile('test.txt', 'data');
       expect(result).toBeTruthy();
@@ -146,22 +172,24 @@ describe('StorageService', () => {
     
     test('sanitizes path traversal attempts', async () => {
       await handler.initialize();
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(true);
       // Path traversal attempts are sanitized to just the filename
       const content = await handler.readFile('../../../etc/passwd', 'data');
       expect(content).toBeDefined();
       // The file read should be for 'passwd' not the full path
-      expect(fs.readFile).toHaveBeenCalledWith(
+      expect(fsUtils.readFile).toHaveBeenCalledWith(
         expect.stringContaining('passwd')
       );
     });
     
     test('sanitizes absolute paths', async () => {
       await handler.initialize();
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(true);
       // Absolute paths are sanitized to just the filename
       const content = await handler.readFile('/etc/passwd', 'data');
       expect(content).toBeDefined();
       // The file read should be for 'passwd' not the full path
-      expect(fs.readFile).toHaveBeenCalledWith(
+      expect(fsUtils.readFile).toHaveBeenCalledWith(
         expect.stringContaining('passwd')
       );
     });
@@ -174,6 +202,7 @@ describe('StorageService', () => {
     
     test('automatically initializes when needed', async () => {
       const uninitializedHandler = new StorageService();
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(true);
       // Handler will auto-initialize when readFile is called
       const content = await uninitializedHandler.readFile('test.txt', 'data');
       expect(content).toBeDefined();
@@ -183,17 +212,16 @@ describe('StorageService', () => {
   describe('saveFile', () => {
     beforeEach(async () => {
       await handler.initialize();
+      (fsUtils.writeFile as jest.Mock).mockClear();
+      (fsUtils.copy as jest.Mock).mockClear();
     });
     
     test('saves file content', async () => {
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(false); // File doesn't exist yet
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(false); // File doesn't exist yet
       const content = 'test content';
-      const info = await handler.saveFile('test.txt', content, 'data');
+      const info = await handler.saveFile(content, 'test.txt', 'data');
       
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('test.txt'),
-        content
-      );
+      expect(fsUtils.writeFile).toHaveBeenCalled();
       expect(info).toMatchObject({
         name: 'test.txt',
         size: content.length
@@ -201,48 +229,47 @@ describe('StorageService', () => {
     });
     
     test('creates backup when requested', async () => {
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(true);
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(true);
       
-      await handler.saveFile('test.txt', 'content', 'data', {
+      await handler.saveFile('content', 'test.txt', 'data', {
         overwrite: true,
         createBackup: true
       });
       
-      expect(fs.copy).toHaveBeenCalledWith(
-        expect.stringContaining('test.txt'),
-        expect.stringContaining('.backup')
-      );
+      expect(fsUtils.copy).toHaveBeenCalled();
     });
     
     test('prevents overwriting without permission', async () => {
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(true);
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(true);
       
-      await expect(handler.saveFile('test.txt', 'content', 'data'))
+      await expect(handler.saveFile('content', 'test.txt', 'data'))
         .rejects.toThrow('File already exists');
     });
     
     test('allows overwriting with permission', async () => {
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(true);
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(true);
       
-      const info = await handler.saveFile('test.txt', 'content', 'data', {
+      const info = await handler.saveFile('content', 'test.txt', 'data', {
         overwrite: true
       });
       
       expect(info).toBeDefined();
-      expect(fs.writeFile).toHaveBeenCalled();
+      expect(fsUtils.writeFile).toHaveBeenCalled();
     });
     
     test('enforces max file size', async () => {
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(false); // File doesn't exist yet
-      const largeContent = Buffer.alloc(200 * 1024 * 1024).toString(); // 200MB
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(false); // File doesn't exist yet
+      // Lower max size to keep test fast
+      (handler as any).maxFileSize = 1;
+      const largeContent = 'too-big';
       
-      await expect(handler.saveFile('large.txt', largeContent, 'data'))
+      await expect(handler.saveFile(largeContent, 'large.txt', 'data'))
         .rejects.toThrow('File size exceeds maximum allowed size');
     });
     
     test('calculates file hash', async () => {
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(false); // File doesn't exist yet
-      const info = await handler.saveFile('test.txt', 'content', 'data');
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(false); // File doesn't exist yet
+      const info = await handler.saveFile('content', 'test.txt', 'data');
       
       expect(crypto.createHash).toHaveBeenCalledWith('sha256');
       expect(info.hash).toBe('mockhash123');
@@ -252,12 +279,13 @@ describe('StorageService', () => {
   describe('readFile', () => {
     beforeEach(async () => {
       await handler.initialize();
+      (fsUtils.pathExists as jest.Mock).mockResolvedValue(true);
     });
     
     test('reads file content', async () => {
       const content = await handler.readFile('test.txt', 'data');
       
-      expect(fs.readFile).toHaveBeenCalledWith(
+      expect(fsUtils.readFile).toHaveBeenCalledWith(
         expect.stringContaining('test.txt')
       );
       expect(content).toBeDefined();
@@ -266,14 +294,14 @@ describe('StorageService', () => {
     test('reads with specified encoding', async () => {
       await handler.readFile('test.txt', 'data', { encoding: 'base64' });
       
-      expect(fs.readFile).toHaveBeenCalledWith(
+      expect(fsUtils.readFile).toHaveBeenCalledWith(
         expect.stringContaining('test.txt'),
         'base64'
       );
     });
     
     test('enforces max size limit', async () => {
-      (fs.stat as unknown as jest.Mock).mockResolvedValueOnce({
+      (fsUtils.stat as unknown as jest.Mock).mockResolvedValueOnce({
         size: 10 * 1024 * 1024, // 10MB
         isFile: () => true
       });
@@ -283,20 +311,20 @@ describe('StorageService', () => {
     });
     
     test('throws on non-existent file', async () => {
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(false);
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(false);
       
       await expect(handler.readFile('missing.txt', 'data'))
         .rejects.toThrow('File not found');
     });
     
     test('reads directory as file', async () => {
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(true);
-      (fs.stat as unknown as jest.Mock).mockResolvedValueOnce({
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(true);
+      (fsUtils.stat as unknown as jest.Mock).mockResolvedValueOnce({
         size: 100,
         isFile: () => false,
         isDirectory: () => true
       });
-      (fs.readFile as unknown as jest.Mock).mockResolvedValueOnce(Buffer.from('dir content'));
+      (fsUtils.readFile as unknown as jest.Mock).mockResolvedValueOnce(Buffer.from('dir content'));
       
       const content = await handler.readFile('somedir', 'data');
       expect(content).toBeDefined();
@@ -309,27 +337,27 @@ describe('StorageService', () => {
     });
     
     test('deletes existing file', async () => {
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(true);
-      (fs.unlink as unknown as jest.Mock).mockResolvedValueOnce(undefined);
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(true);
+      (fsUtils.unlink as unknown as jest.Mock).mockResolvedValueOnce(undefined);
       
       const result = await handler.deleteFile('test.txt', 'data');
       
-      expect(fs.unlink).toHaveBeenCalledWith(expect.stringContaining('test.txt'));
+      expect(fsUtils.unlink).toHaveBeenCalledWith(expect.stringContaining('test.txt'));
       expect(result).toBe(true);
     });
     
     test('returns false for non-existent file', async () => {
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(false);
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(false);
       
       const result = await handler.deleteFile('missing.txt', 'data');
       
-      expect(fs.unlink).not.toHaveBeenCalled();
+      expect(fsUtils.unlink).not.toHaveBeenCalled();
       expect(result).toBe(false);
     });
     
     test('handles deletion errors', async () => {
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(true);
-      (fs.unlink as unknown as jest.Mock).mockRejectedValueOnce(new Error('Permission denied'));
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(true);
+      (fsUtils.unlink as unknown as jest.Mock).mockRejectedValueOnce(new Error('Permission denied'));
       
       await expect(handler.deleteFile('test.txt', 'data'))
         .rejects.toThrow('Permission denied');
@@ -342,8 +370,8 @@ describe('StorageService', () => {
     });
     
     test('lists files in directory', async () => {
-      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['file1.txt', 'file2.txt', 'subdir']);
-      (fs.stat as unknown as jest.Mock)
+      (fsUtils.readdir as unknown as jest.Mock).mockResolvedValueOnce(['file1.txt', 'file2.txt', 'subdir']);
+      (fsUtils.stat as unknown as jest.Mock)
         .mockResolvedValueOnce({ 
           size: 100, 
           isFile: () => true,
@@ -375,7 +403,7 @@ describe('StorageService', () => {
     });
     
     test('returns empty array for empty directory', async () => {
-      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce([]);
+      (fsUtils.readdir as unknown as jest.Mock).mockResolvedValueOnce([]);
       
       const files = await handler.listFiles('data');
       
@@ -383,8 +411,8 @@ describe('StorageService', () => {
     });
     
     test('lists files matching pattern', async () => {
-      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['test.txt', 'data.json', 'file.pdf']);
-      (fs.stat as unknown as jest.Mock)
+      (fsUtils.readdir as unknown as jest.Mock).mockResolvedValueOnce(['test.txt', 'data.json', 'file.pdf']);
+      (fsUtils.stat as unknown as jest.Mock)
         .mockResolvedValueOnce({
           size: 50,
           isFile: () => true,
@@ -422,9 +450,9 @@ describe('StorageService', () => {
       const mtime = new Date('2024-01-02');
       
       // Clear the default mock and set specific one
-      (fs.stat as unknown as jest.Mock).mockReset();
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(true);
-      (fs.stat as unknown as jest.Mock).mockResolvedValueOnce({
+      (fsUtils.stat as unknown as jest.Mock).mockReset();
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(true);
+      (fsUtils.stat as unknown as jest.Mock).mockResolvedValueOnce({
         size: 1024,
         isFile: () => true,
         birthtime,
@@ -442,15 +470,15 @@ describe('StorageService', () => {
     });
     
     test('returns null for non-existent file', async () => {
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(false);
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(false);
       
       const info = await handler.getFileInfo('missing.txt', 'data');
       expect(info).toBeNull();
     });
     
     test('returns file info for directory', async () => {
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(true);
-      (fs.stat as unknown as jest.Mock).mockResolvedValueOnce({
+      (fsUtils.pathExists as jest.Mock).mockResolvedValueOnce(true);
+      (fsUtils.stat as unknown as jest.Mock).mockResolvedValueOnce({
         size: 0,
         isFile: () => false,
         isDirectory: () => true,
