@@ -6,10 +6,10 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "app-framework": "./dist/cli/index.js",
-    "framework": "./dist/cli/index.js",
-    "build-sidecar": "./dist/cli/build-sidecar.js",
-    "dev-server": "./dist/cli/dev-server.js"
+    "app-framework": "dist/cli/index.js",
+    "framework": "dist/cli/index.js",
+    "build-sidecar": "dist/cli/build-sidecar.js",
+    "dev-server": "dist/cli/dev-server.js"
   },
   "exports": {
     ".": {
@@ -87,7 +87,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/brendan-carroll/epi-app-framework.git"
+    "url": "git+https://github.com/brendan-carroll/epi-app-framework.git"
   },
   "dependencies": {
     "@types/express-session": "^1.18.2",
