@@ -34,6 +34,7 @@ class WebSocketServer {
   private httpServer: HTTPServer;
   private clients: Map<string, ClientInfo>;
   private simulatorSubscriptions: Map<string, Set<string>>; // simulatorId -> Set of socket IDs
+  private broadcastHook?: (event: string, data: any) => void;
 
   constructor(httpServer: HTTPServer) {
     // Initialize logger if not already done
@@ -46,7 +47,7 @@ class WebSocketServer {
     this.simulatorSubscriptions = new Map();
   }
 
-  initialize(): void {
+  initialize(opts?: { broadcastHook?: (event: string, data: any) => void }): void {
     this.io = new Server(this.httpServer, {
       cors: {
         origin: "*", // Allow all origins for local development
@@ -54,6 +55,10 @@ class WebSocketServer {
       },
       transports: ["websocket", "polling"],
     });
+
+    if (opts?.broadcastHook) {
+      this.broadcastHook = opts.broadcastHook;
+    }
 
     this.setupEventHandlers();
     logger.info("WebSocket server initialized");
@@ -181,6 +186,15 @@ class WebSocketServer {
    */
   broadcast(event: string, data: BroadcastData): void {
     if (!this.io) return;
+
+    // Allow tests/consumers to observe outbound broadcasts
+    if (this.broadcastHook) {
+      try {
+        this.broadcastHook(event, data);
+      } catch (_err) {
+        // ignore hook errors
+      }
+    }
 
     // Create typed message based on event
     let message: WebSocketMessage;
