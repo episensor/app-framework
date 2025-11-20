@@ -205,7 +205,7 @@ export function LogsPage({
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const response = await apiRequest(`${apiUrl}/entries`);
+      const response = await apiRequest<any>(`${apiUrl}/entries`);
       const normalize = (log: LogEntry): LogEntry => {
         let { timestamp, level, message, category, source, metadata } = log;
         const embedded = message.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(\w+)\s+\[([^\]]+)\]\s+(.*)$/);
@@ -236,17 +236,17 @@ export function LogsPage({
         }
         return out;
       };
-      const normalized = (response.logs || []).map(normalize);
+      const entries = Array.isArray(response)
+        ? response
+        : response?.logs || response?.entries || response?.data?.logs || [];
+      const normalized = (entries || []).map(normalize);
       const grouped = coalesce(normalized);
       const sorted = grouped.sort((a: LogEntry, b: LogEntry) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       setLogs(sorted);
       const cats = Array.from(new Set(sorted.map(l => (l.category || l.source || '')).filter(Boolean))).sort();
       setAvailableCategories(cats);
     } catch (error) {
-      console.error('Failed to fetch logs:', error);
-      if (error instanceof Error && !error.message.includes('404')) {
-        toast.error('Failed to load logs');
-      }
+      console.warn('Failed to fetch logs:', error);
     } finally {
       setLoading(false);
     }
@@ -254,25 +254,17 @@ export function LogsPage({
 
   const fetchArchives = async () => {
     try {
-      let response = await apiRequest(`${apiUrl}/archives`);
-      let archives = (response.archives || []).map((a: any) => ({
+      const response = await apiRequest<any>(`${apiUrl}/files`);
+      const archives = (response?.files || response?.archives || response?.data?.files || []).map((a: any) => ({
         filename: a.filename || a.name,
         name: a.name,
         size: a.size,
         modified: a.modified,
       }));
-      if (!archives.length) {
-        response = await apiRequest(`${apiUrl}/all-files`);
-        archives = (response.archives || []).map((a: any) => ({
-          filename: a.filename || a.name,
-          name: a.name,
-          size: a.size,
-          modified: a.modified,
-        }));
-      }
-      setLogFiles(archives);
+      setLogFiles(archives || []);
     } catch (error) {
-      console.error('Failed to fetch archives:', error);
+      console.warn('Failed to fetch archives:', error);
+      setLogFiles([]);
     }
   };
 
@@ -290,7 +282,17 @@ export function LogsPage({
 
   const handleExportLogs = async () => {
     try {
-      const text = await apiRequest(`${apiUrl}/export?level=all`);
+      const response = await apiRequest<any>(`${apiUrl}/entries?limit=500`);
+      const entries = Array.isArray(response)
+        ? response
+        : response?.logs || response?.entries || response?.data?.logs || [];
+      const text = (entries || []).map((l: LogEntry) => {
+        const ts = formatTimestamp(l.timestamp);
+        const src = l.category || l.source ? ` [${l.category || l.source}]` : '';
+        const head = `${ts} ${l.level.toUpperCase()}${src} ${l.message}`;
+        const stack = l.metadata?.stack ? `\n${l.metadata.stack}` : '';
+        return head + stack;
+      }).join('\n');
       
       const blob = new Blob([text], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
@@ -306,19 +308,13 @@ export function LogsPage({
   };
 
   const handleDownloadArchive = (filename: string) => {
-    window.open(`${apiUrl}/download-any/${filename}`, '_blank');
+    window.open(`${apiUrl}/download/${filename}`, '_blank');
   };
 
   const handleDeleteArchive = async (filename: string) => {
-    if (!confirm(`Delete archive ${filename}?`)) return;
-    
-    try {
-      await apiRequest(`${apiUrl}/archive/${filename}`, { method: 'DELETE' });
-      await fetchArchives();
-      toast.success('Archive deleted');
-    } catch (error) {
-      toast.error('Failed to delete archive');
-    }
+    // Archive deletion isn't supported by the default logs API
+    console.warn('Archive deletion is not supported by the default logs API', filename);
+    toast.error('Archive deletion is not available');
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -464,9 +460,7 @@ export function LogsPage({
                 size="sm"
                 onClick={async () => { 
                   if (!confirm('Purge all archived logs? This action cannot be undone.')) return;
-                  await apiRequest(`${apiUrl}/purge-all`, { method: 'POST' }); 
-                  toast.success('All logs purged'); 
-                  await fetchArchives(); 
+                  toast.error('Archive purge is not available with the default logs API'); 
                 }}
               >
                 <Eraser className="h-4 w-4 mr-2" />

@@ -99,7 +99,7 @@ export async function apiRequest<T = any>(
       
       // Check for API response format
       if (typeof data === 'object' && 'success' in data) {
-        const apiResponse = data as ApiResponse<T>;
+        const apiResponse = data as ApiResponse<T> & Record<string, any>;
         
         if (!apiResponse.success) {
           throw new ApiError(
@@ -108,8 +108,16 @@ export async function apiRequest<T = any>(
             apiResponse.details
           );
         }
+
+        const inferred =
+          apiResponse.data ??
+          apiResponse.logs ??
+          apiResponse.files ??
+          apiResponse.entries ??
+          apiResponse.items ??
+          apiResponse;
         
-        return apiResponse.data as T;
+        return inferred as T;
       }
       
       // Handle non-standard responses
