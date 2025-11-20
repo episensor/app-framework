@@ -3,6 +3,7 @@
  */
 
 import { StandardServer } from '../../src/core/StandardServer.js';
+import net from 'net';
 
 describe('StandardServer Integration', () => {
   let server: StandardServer;
@@ -69,44 +70,6 @@ describe('StandardServer Integration', () => {
     server = undefined as any;
   });
 
-  test.skip('handles port conflicts', async () => {
-    // Start first server
-    const server1 = new StandardServer({
-      appName: 'Server 1',
-      appVersion: '1.0.0',
-      port: 19999,
-    });
-    
-    await server1.initialize();
-    await server1.start();
-
-    // Second server on same port should fail
-    server = new StandardServer({
-      appName: 'Server 2',
-      appVersion: '1.0.0',
-      port: 19999,
-    });
-    
-    await server.initialize();
-    
-    // Mock process.exit to prevent test from exiting
-    const mockExit = jest.spyOn(process, 'exit').mockImplementation(((code?: number | undefined) => {
-      throw new Error(`Process exit called with code ${code}`);
-    }) as any);
-    
-    let startError: any;
-    try {
-      await server.start();
-    } catch (err) {
-      startError = err;
-    }
-    expect(startError).toBeDefined();
-    
-    mockExit.mockRestore();
-    server = undefined as any;
-    await server1.stop();
-  });
-
   test('enables WebSocket when configured', async () => {
     server = new StandardServer({
       appName: 'WebSocket Test',
@@ -123,7 +86,7 @@ describe('StandardServer Integration', () => {
     expect(server.getServer()).toBeDefined();
   });
 
-  test.skip('respects environment configuration', async () => {
+  test('respects environment configuration defaults', async () => {
     const originalEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
 
@@ -134,10 +97,40 @@ describe('StandardServer Integration', () => {
     });
 
     await server.initialize();
-    
-    // In production, webPort should default to main port
-    // This would be visible in the startup banner
-    
+    await server.start();
+
+    // In production the default host should be 0.0.0.0
+    expect((server as any).config.host).toBe("0.0.0.0");
+
+    await server.stop();
+    server = undefined as any;
     process.env.NODE_ENV = originalEnv;
+  });
+
+  test('handles port conflicts', async () => {
+    // Occupy a known port with a simple TCP server
+    const occupiedPort = 19999;
+    const blocker = net.createServer().listen(occupiedPort);
+    await new Promise(resolve => blocker.once('listening', resolve));
+
+    server = new StandardServer({
+      appName: 'Server 2',
+      appVersion: '1.0.0',
+      port: occupiedPort,
+      exitOnStartupError: true,
+    });
+    
+    await server.initialize();
+    
+    // Mock process.exit to prevent test from exiting
+    const mockExit = jest.spyOn(process, 'exit').mockImplementation(((code?: number | undefined) => {
+      throw new Error(`Process exit called with code ${code}`);
+    }) as any);
+    
+    await expect(server.start()).rejects.toThrow();
+    
+    mockExit.mockRestore();
+    server = undefined as any;
+    await new Promise(resolve => blocker.close(resolve));
   });
 });
