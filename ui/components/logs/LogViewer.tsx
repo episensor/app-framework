@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from '../base/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../base/select';
 import {
   Terminal, Archive, Download, Trash2, Search, Copy as CopyIcon,
-  AlertCircle, RefreshCw
+  AlertCircle, RefreshCw, PauseCircle, PlayCircle, ArrowDownCircle
 } from 'lucide-react';
 import { cn } from '../../src/utils/cn';
 import { format } from 'date-fns';
@@ -67,6 +67,10 @@ export interface LogViewerProps {
   maxEntries?: number;
   defaultCategory?: 'current' | 'archives' | string;
   enableLiveUpdates?: boolean;
+  enablePause?: boolean;
+  enableAutoScroll?: boolean;
+  autoScrollDefault?: boolean;
+  pausedDefault?: boolean;
 
   // Configuration
   categories?: LogCategory[];
@@ -139,6 +143,8 @@ export function LogViewer({
   const logContainerRef = useRef<HTMLDivElement>(null);
   const autoRefreshRef = useRef<NodeJS.Timeout | null>(null);
   const [autoRefreshOn, setAutoRefreshOn] = useState(autoRefreshMs > 0);
+  const [autoScroll, setAutoScroll] = useState(autoScrollDefault ?? true);
+  const [isPaused, setIsPaused] = useState(pausedDefault ?? false);
 
   const LevelChip = ({ level }: { level: string }) => {
     return (
@@ -250,9 +256,23 @@ export function LogViewer({
     setFilteredLogs(filtered);
   }, [logs, levelFilter, categoryFilter, searchTerm]);
 
+  // Auto-scroll when enabled
+  useEffect(() => {
+    if (!autoScroll || !logContainerRef.current) return;
+    queueMicrotask(() => {
+      if (logContainerRef.current) {
+        logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+      }
+    });
+  }, [filteredLogs, autoScroll]);
+
   // Auto-refresh polling
   useEffect(() => {
-    if (!autoRefreshOn || autoRefreshMs <= 0 || !onFetchLogs) return;
+    if (autoRefreshRef.current && (!autoRefreshOn || autoRefreshMs <= 0 || !onFetchLogs || isPaused)) {
+      clearInterval(autoRefreshRef.current);
+      autoRefreshRef.current = null;
+    }
+    if (!autoRefreshOn || autoRefreshMs <= 0 || !onFetchLogs || isPaused) return;
     if (autoRefreshRef.current) clearInterval(autoRefreshRef.current);
 
     autoRefreshRef.current = setInterval(() => {
@@ -277,7 +297,7 @@ export function LogViewer({
         autoRefreshRef.current = null;
       }
     };
-  }, [autoRefreshOn, autoRefreshMs, onFetchLogs, maxEntries]);
+  }, [autoRefreshOn, autoRefreshMs, onFetchLogs, maxEntries, isPaused]);
 
   const archivesFetchedRef = useRef(false);
 
@@ -286,6 +306,8 @@ export function LogViewer({
     let cancelled = false;
 
     const run = async () => {
+      if (isPaused) return;
+
       if (activeCategory === 'current' && onFetchLogs) {
         setLoading(true);
         try {
@@ -329,9 +351,10 @@ export function LogViewer({
 
   // Subscribe to log updates
   useEffect(() => {
-    if (!onLogReceived || !enableLiveUpdates) return;
+    if (!onLogReceived || !enableLiveUpdates || isPaused) return;
 
     const handleLog = (raw: PartialLogEntry | LogEntry) => {
+      if (isPaused) return;
       const log = normalizeLog(raw);
       setLogs(prev => {
         const currentLogs = prev || [];
@@ -351,7 +374,7 @@ export function LogViewer({
     };
 
     return onLogReceived(handleLog);
-  }, [onLogReceived, enableLiveUpdates, maxEntries]);
+  }, [onLogReceived, enableLiveUpdates, maxEntries, isPaused]);
 
   // Remove fetchLogs and fetchArchives functions as they cause infinite loops
   // We'll call onFetchLogs/onFetchArchives directly in the useEffect
@@ -533,6 +556,35 @@ export function LogViewer({
           )}
           {activeCategory === 'current' && (
             <>
+              {enablePause && (
+                <Button
+                  variant={isPaused ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setIsPaused((v) => !v)}
+                >
+                  {isPaused ? (
+                    <>
+                      <PlayCircle className="h-4 w-4 mr-2" />
+                      Resume
+                    </>
+                  ) : (
+                    <>
+                      <PauseCircle className="h-4 w-4 mr-2" />
+                      Pause
+                    </>
+                  )}
+                </Button>
+              )}
+              {enableAutoScroll && (
+                <Button
+                  variant={autoScroll ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setAutoScroll((v) => !v)}
+                >
+                  <ArrowDownCircle className="h-4 w-4 mr-2" />
+                  {autoScroll ? 'Auto-scroll On' : 'Auto-scroll Off'}
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={handleCopyLogs}>
                 <CopyIcon className="h-4 w-4 mr-2" />
                 Copy
