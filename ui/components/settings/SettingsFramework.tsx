@@ -473,16 +473,6 @@ export function SettingsFramework({
             <h3 className="font-semibold mb-4">Categories</h3>
             <div className="space-y-1">
               {categories.map((category) => {
-                const renderIcon = () => {
-                  if (!category.icon) return null;
-                  if (typeof category.icon === 'string') return null;
-                  if (typeof category.icon === 'function') {
-                    const IconComponent = category.icon as LucideIcon;
-                    return <IconComponent className="h-4 w-4" />;
-                  }
-                  return category.icon as ReactNode;
-                };
-
                 return (
                   <button
                     key={category.id}
@@ -495,7 +485,13 @@ export function SettingsFramework({
                       categoryClassName
                     )}
                   >
-                    {renderIcon()}
+                    {typeof category.icon === 'function' && (
+                      // Only render Lucide-like icons; skip arbitrary React nodes to avoid invalid children
+                      (() => {
+                        const IconComponent = category.icon as LucideIcon;
+                        return <IconComponent className="h-4 w-4" />;
+                      })()
+                    )}
                     <span className="text-left">{category.label}</span>
                   </button>
                 );
