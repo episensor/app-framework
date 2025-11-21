@@ -81,6 +81,11 @@ export interface LogViewerProps {
   showCategories?: boolean;
   showArchives?: boolean;
   height?: string;
+  enableSearch?: boolean;
+  enableFilter?: boolean;
+  enableExport?: boolean;
+  enableClear?: boolean;
+  enableCopy?: boolean;
 
   // Styling
   className?: string;
@@ -123,6 +128,15 @@ export function LogViewer({
   maxEntries = 1000,
   defaultCategory = 'current',
   enableLiveUpdates = true,
+  enablePause = false,
+  enableAutoScroll = false,
+  autoScrollDefault = true,
+  pausedDefault = false,
+  enableSearch = true,
+  enableFilter = true,
+  enableExport = true,
+  enableClear = true,
+  enableCopy = true,
   categories = defaultCategories,
   levelBadgeColors = defaultLevelBadgeColors,
   currentLogLevel = 'info',
@@ -143,8 +157,8 @@ export function LogViewer({
   const logContainerRef = useRef<HTMLDivElement>(null);
   const autoRefreshRef = useRef<NodeJS.Timeout | null>(null);
   const [autoRefreshOn, setAutoRefreshOn] = useState(autoRefreshMs > 0);
-  const [autoScroll, setAutoScroll] = useState(autoScrollDefault ?? true);
-  const [isPaused, setIsPaused] = useState(pausedDefault ?? false);
+  const [autoScroll, setAutoScroll] = useState<boolean>(autoScrollDefault ?? true);
+  const [isPaused, setIsPaused] = useState<boolean>(pausedDefault ?? false);
 
   const LevelChip = ({ level }: { level: string }) => {
     return (
@@ -585,15 +599,19 @@ export function LogViewer({
                   {autoScroll ? 'Auto-scroll On' : 'Auto-scroll Off'}
                 </Button>
               )}
-              <Button variant="outline" size="sm" onClick={handleCopyLogs}>
-                <CopyIcon className="h-4 w-4 mr-2" />
-                Copy
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleExportLogs}>
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-              {onClearLogs && (
+              {enableCopy && (
+                <Button variant="outline" size="sm" onClick={handleCopyLogs}>
+                  <CopyIcon className="h-4 w-4 mr-2" />
+                  Copy
+                </Button>
+              )}
+              {enableExport && (
+                <Button variant="outline" size="sm" onClick={handleExportLogs}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              )}
+              {onClearLogs && enableClear && (
                 <Button variant="outline" size="sm" onClick={handleClearLogs}>
                   <Trash2 className="h-4 w-4 mr-2" />
                   Clear
@@ -659,24 +677,26 @@ export function LogViewer({
             <Card className="p-0 overflow-hidden">
               <div className="px-4 py-3 border-b bg-gray-50 dark:bg-gray-900 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Filter:</span>
-                    <Select value={levelFilter} onValueChange={setLevelFilter}>
-                      <SelectTrigger className="w-32 h-8">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Levels</SelectItem>
-                        <SelectItem value="error">Error</SelectItem>
-                        <SelectItem value="warn">Warning</SelectItem>
-                        <SelectItem value="info">Info</SelectItem>
-                        <SelectItem value="debug">Debug</SelectItem>
-                        <SelectItem value="verbose">Verbose</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {enableFilter && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Filter:</span>
+                      <Select value={levelFilter} onValueChange={setLevelFilter}>
+                        <SelectTrigger className="w-32 h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Levels</SelectItem>
+                          <SelectItem value="error">Error</SelectItem>
+                          <SelectItem value="warn">Warning</SelectItem>
+                          <SelectItem value="info">Info</SelectItem>
+                          <SelectItem value="debug">Debug</SelectItem>
+                          <SelectItem value="verbose">Verbose</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
-                  {availableCategories.length > 0 && (
+                  {enableFilter && availableCategories.length > 0 && (
                     <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                       <SelectTrigger className="w-44 h-8">
                         <SelectValue />
@@ -690,16 +710,18 @@ export function LogViewer({
                     </Select>
                   )}
 
-                  <div className="relative">
-                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search logs..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-8 pr-3 py-1.5 text-sm border rounded-md w-64 focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
+                  {enableSearch && (
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search logs..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-8 pr-3 py-1.5 text-sm border rounded-md w-64 focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
