@@ -32,7 +32,7 @@ class DevServerOrchestrator {
   private backendProcess: ChildProcess | null = null;
   private frontendProcess: ChildProcess | null = null;
   private startTime: number;
-  private isBackendReady = false;
+  private isBackendReady: boolean | null = null;
   private isFrontendReady = false;
   private hasDetectedBackendReady = false;
   private hasDetectedFrontendReady = false;
@@ -205,33 +205,45 @@ class DevServerOrchestrator {
       }
     });
 
+    // Secondary readiness check: wait for port to open in case stdout is quiet
+    this.waitForPort(this.config.backendPort, 8000).then((reachable) => {
+      if (!this.hasDetectedBackendReady && reachable) {
+        this.hasDetectedBackendReady = true;
+        this.isBackendReady = true;
+        this.showStartupBanner();
+      }
+    });
+
     this.backendProcess.on("error", (error) => {
       logger.error(chalk.red(`[Backend] Failed to start: ${error.message}`));
     });
 
     this.backendProcess.on("exit", (code) => {
       if (code !== 0 && code !== null) {
+        this.isBackendReady = false;
         logger.error(chalk.red(`[Backend] Exited with code ${code}`));
       }
     });
 
     // Fallback: Mark as ready after timeout if we haven't detected it
     setTimeout(() => {
-      if (!this.hasDetectedBackendReady && this.isBackendReady !== false) {
-        logger.warn(
-          chalk.yellow("Backend ready detection timeout - assuming ready"),
-        );
-        this.hasDetectedBackendReady = true;
-        this.isBackendReady = true;
-        this.showStartupBanner();
-      } else if (this.isBackendReady === false) {
-        logger.error(
-          chalk.red(
-            "\nBackend failed to start. Check the error messages above.",
-          ),
-        );
-        this.cleanup();
-        process.exit(1);
+      if (!this.hasDetectedBackendReady) {
+        if (this.isBackendReady !== false) {
+          logger.warn(
+            chalk.yellow("Backend ready detection timeout - assuming ready"),
+          );
+          this.hasDetectedBackendReady = true;
+          this.isBackendReady = true;
+          this.showStartupBanner();
+        } else {
+          logger.error(
+            chalk.red(
+              "\nBackend failed to start. Check the error messages above.",
+            ),
+          );
+          this.cleanup();
+          process.exit(1);
+        }
       }
     }, 5000);
   }
@@ -610,6 +622,27 @@ class DevServerOrchestrator {
         resolve(true);
       });
       server.listen(port);
+    });
+  }
+
+  private async waitForPort(port: number, timeoutMs = 8000, host = "127.0.0.1"): Promise<boolean> {
+    const start = Date.now();
+    return new Promise((resolve) => {
+      const tryConnect = () => {
+        const socket = net.connect({ port, host }, () => {
+          socket.end();
+          resolve(true);
+        });
+        socket.on("error", () => {
+          socket.destroy();
+          if (Date.now() - start >= timeoutMs) {
+            resolve(false);
+          } else {
+            setTimeout(tryConnect, 200);
+          }
+        });
+      };
+      tryConnect();
     });
   }
 
