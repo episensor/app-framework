@@ -7,6 +7,7 @@
 import express, { Express } from "express";
 import { createServer, Server as HttpServer } from "http";
 import { Server as HttpsServer } from "https";
+import type { Socket as NetSocket } from "net";
 import cors from "cors";
 import { createWebSocketServer } from "../services/websocketServer.js";
 import { displayStartupBanner } from "../utils/startupBanner.js";
@@ -100,6 +101,7 @@ export class StandardServer {
   private isInitialized: boolean = false;
   private shuttingDown = false;
   private signalsBound = false;
+  private connections: Set<NetSocket> = new Set();
 
   constructor(config: StandardServerConfig) {
     const environment = process.env.NODE_ENV || "development";
@@ -135,6 +137,10 @@ export class StandardServer {
 
     this.app = express();
     this.httpServer = createServer(this.app);
+    this.httpServer.on("connection", (socket: NetSocket) => {
+      this.connections.add(socket);
+      socket.on("close", () => this.connections.delete(socket));
+    });
     this.startTime = Date.now();
     this.bindShutdownSignals();
   }
@@ -507,6 +513,7 @@ export class StandardServer {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         ensureLogger().warn("Force closing server after timeout");
+        this.forceCloseConnections();
         resolve();
       }, 10_000);
 
@@ -530,6 +537,7 @@ export class StandardServer {
             reject(err);
             return;
           }
+          this.forceCloseConnections();
           close();
         });
       } catch (error) {
@@ -537,6 +545,26 @@ export class StandardServer {
         reject(error);
       }
     });
+  }
+
+  private forceCloseConnections(): void {
+    // Prefer native closeAllConnections if available
+    if (typeof (this.httpServer as any).closeAllConnections === "function") {
+      try {
+        (this.httpServer as any).closeAllConnections();
+      } catch (err) {
+        ensureLogger().warn("closeAllConnections failed", err);
+      }
+    }
+
+    this.connections.forEach((socket) => {
+      try {
+        socket.destroy();
+      } catch {
+        // ignore
+      }
+    });
+    this.connections.clear();
   }
 }
 

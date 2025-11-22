@@ -6,7 +6,7 @@
 import { Request, Response, NextFunction } from "express";
 import multer from "multer";
 import path from "path";
-import { FileHandler } from "../services/fileHandler.js";
+import { getStorageService } from "../core/storageService.js";
 import { createLogger } from "../core/index.js";
 
 let logger: any; // Will be initialized when needed
@@ -32,7 +32,7 @@ export interface FileUploadConfig {
  */
 export function createFileUpload(config: FileUploadConfig = {}) {
   const {
-    destination = "./uploads",
+    destination = "uploads",
     maxSize = 10 * 1024 * 1024, // 10MB default
     allowedTypes = [],
     fieldName = "file",
@@ -103,19 +103,23 @@ export function createFileUpload(config: FileUploadConfig = {}) {
         return;
       }
 
-      // Process uploaded files
+      // Process uploaded files via StorageService to keep a single path for uploads
       try {
-        const fileHandler = new FileHandler(destination);
+        const storage = getStorageService();
 
         if (multiple && req.files && Array.isArray(req.files)) {
           // Multiple files
           const uploadedFiles = [];
 
           for (const file of req.files) {
-            const uploaded = await fileHandler.saveUpload(
+            const uploaded = await storage.saveUserUpload(
               file.buffer,
               file.originalname,
-              { allowedTypes, maxSize },
+              {
+                allowedTypes,
+                maxSize,
+                destination,
+              },
             );
             uploadedFiles.push({
               ...uploaded,
@@ -127,10 +131,14 @@ export function createFileUpload(config: FileUploadConfig = {}) {
           ensureLogger().info(`Uploaded ${uploadedFiles.length} files`);
         } else if (req.file) {
           // Single file
-          const uploaded = await fileHandler.saveUpload(
+          const uploaded = await storage.saveUserUpload(
             req.file.buffer,
             req.file.originalname,
-            { allowedTypes, maxSize },
+            {
+              allowedTypes,
+              maxSize,
+              destination,
+            },
           );
 
           req.uploadedFile = {
@@ -191,12 +199,12 @@ export function createTempCleaner(
   maxAge: number = 24 * 60 * 60 * 1000, // 24 hours
   interval: number = 60 * 60 * 1000, // 1 hour
 ) {
-  const fileHandler = new FileHandler("./uploads", tempDir);
+  const storage = getStorageService();
 
   // Start periodic cleaning
   setInterval(async () => {
     try {
-      const deleted = await fileHandler.cleanTempFiles(maxAge);
+      const deleted = await storage.cleanTempFiles(maxAge, tempDir);
       if (deleted > 0) {
         ensureLogger().info(`Cleaned ${deleted} old temporary files`);
       }

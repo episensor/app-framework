@@ -44,8 +44,8 @@ describe('WebSocket Server', () => {
     // Setup Server mock to return our mock IO
     (SocketIOServer as unknown as jest.Mock).mockImplementation(() => mockIO);
     
-    // Create WebSocket server
-    wsServer = createWebSocketServer(mockHttpServer);
+    // Create WebSocket server (resetting singleton between tests)
+    wsServer = createWebSocketServer(mockHttpServer, { reset: true });
   });
 
   describe('initialization', () => {

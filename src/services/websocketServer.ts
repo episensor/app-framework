@@ -48,6 +48,14 @@ class WebSocketServer {
   }
 
   initialize(opts?: { broadcastHook?: (event: string, data: any) => void }): void {
+    if (this.io) {
+      if (opts?.broadcastHook) {
+        this.broadcastHook = opts.broadcastHook;
+        logger.debug("WebSocket broadcast hook updated");
+      }
+      return;
+    }
+
     this.io = new Server(this.httpServer, {
       cors: {
         origin: "*", // Allow all origins for local development

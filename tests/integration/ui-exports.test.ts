@@ -1,7 +1,20 @@
 /**
+ * @jest-environment jsdom
+ */
+/**
  * Integration test to verify UI components are properly exported
  * This test ensures that all UI components can be imported and are available
  */
+
+import { TextDecoder, TextEncoder } from 'util';
+
+// Provide global TextEncoder/TextDecoder for React Router in the UI bundle
+if (!(global as any).TextEncoder) {
+  (global as any).TextEncoder = TextEncoder;
+}
+if (!(global as any).TextDecoder) {
+  (global as any).TextDecoder = TextDecoder as any;
+}
 
 describe('UI Component Exports', () => {
   it('should export all UI components from @episensor/app-framework/ui', async () => {

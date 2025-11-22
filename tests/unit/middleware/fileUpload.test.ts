@@ -11,11 +11,23 @@ import {
   createTempCleaner,
   FileUploadConfig
 } from '../../../src/middleware/fileUpload';
-import { FileHandler } from '../../../src/services/fileHandler';
+import { getStorageService } from '../../../src/core/storageService';
+import type { StorageService } from '../../../src/core/storageService';
+
+const storageMock: jest.Mocked<StorageService> = {
+  saveUserUpload: jest.fn(),
+  cleanTempFiles: jest.fn()
+} as any;
 
 // Mock dependencies
 jest.mock('multer');
-jest.mock('../../../src/services/fileHandler');
+jest.mock('../../../src/core/storageService', () => {
+  const actual = jest.requireActual('../../../src/core/storageService');
+  return {
+    ...actual,
+    getStorageService: jest.fn(() => storageMock)
+  };
+});
 jest.mock('../../../src/core', () => ({
   ...jest.requireActual('../../../src/core'),
   createLogger: jest.fn(() => ({
@@ -36,7 +48,7 @@ describe('File Upload Middleware', () => {
   let mockRes: Partial<Response>;
   let mockNext: NextFunction;
   let mockMulterMiddleware: jest.Mock;
-  let mockFileHandler: jest.Mocked<FileHandler>;
+  let mockStorage: jest.Mocked<StorageService>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -79,20 +91,19 @@ describe('File Upload Middleware', () => {
       }
     };
 
-    // Setup FileHandler mock
-    mockFileHandler = {
-      saveUpload: jest.fn().mockResolvedValue({
-        originalName: 'test.jpg',
-        filename: 'uploaded-test.jpg',
-        path: '/uploads/uploaded-test.jpg',
-        size: 1024,
-        extension: '.jpg',
-        hash: 'abc123'
-      }),
-      cleanTempFiles: jest.fn().mockResolvedValue(5)
-    } as any;
-
-    (FileHandler as jest.MockedClass<typeof FileHandler>).mockImplementation(() => mockFileHandler);
+    // Setup StorageService mock
+    mockStorage = storageMock;
+    mockStorage.saveUserUpload.mockReset();
+    mockStorage.cleanTempFiles.mockReset();
+    mockStorage.saveUserUpload.mockResolvedValue({
+      originalName: 'test.jpg',
+      filename: 'uploaded-test.jpg',
+      path: '/uploads/uploaded-test.jpg',
+      size: 1024,
+      extension: '.jpg',
+      hash: 'abc123'
+    });
+    mockStorage.cleanTempFiles.mockResolvedValue(5);
   });
 
   afterEach(() => {
@@ -149,10 +160,10 @@ describe('File Upload Middleware', () => {
       const middleware = createFileUpload();
       await middleware(mockReq as Request, mockRes as Response, mockNext);
 
-      expect(mockFileHandler.saveUpload).toHaveBeenCalledWith(
+      expect(mockStorage.saveUserUpload).toHaveBeenCalledWith(
         mockReq.file.buffer,
         'test.jpg',
-        expect.any(Object)
+        expect.objectContaining({ destination: 'uploads' })
       );
       expect(mockReq.uploadedFile).toBeDefined();
       expect(mockReq.uploadedFile?.mimetype).toBe('image/jpeg');
@@ -226,7 +237,7 @@ describe('File Upload Middleware', () => {
         stream: {} as any
       };
 
-      mockFileHandler.saveUpload.mockRejectedValue(new Error('Processing failed'));
+      mockStorage.saveUserUpload.mockRejectedValue(new Error('Processing failed'));
 
       const middleware = createFileUpload();
       await middleware(mockReq as Request, mockRes as Response, mockNext);
@@ -278,7 +289,7 @@ describe('File Upload Middleware', () => {
       const middleware = createFileUpload();
       await middleware(mockReq as Request, mockRes as Response, mockNext);
 
-      expect(mockFileHandler.saveUpload).not.toHaveBeenCalled();
+      expect(mockStorage.saveUserUpload).not.toHaveBeenCalled();
       expect(mockNext).toHaveBeenCalled();
     });
   });
@@ -363,25 +374,21 @@ describe('File Upload Middleware', () => {
     });
 
     test('creates temp cleaner with default settings', () => {
-      const middleware = createTempCleaner();
+      createTempCleaner();
       
       expect(mockSetInterval).toHaveBeenCalledWith(
         expect.any(Function),
         60 * 60 * 1000 // 1 hour
       );
-      
-      expect(FileHandler).toHaveBeenCalledWith('./uploads', './temp');
     });
 
     test('creates temp cleaner with custom settings', () => {
-      const middleware = createTempCleaner('./custom-temp', 12 * 60 * 60 * 1000, 30 * 60 * 1000);
+      createTempCleaner('./custom-temp', 12 * 60 * 60 * 1000, 30 * 60 * 1000);
       
       expect(mockSetInterval).toHaveBeenCalledWith(
         expect.any(Function),
         30 * 60 * 1000 // 30 minutes
       );
-      
-      expect(FileHandler).toHaveBeenCalledWith('./uploads', './custom-temp');
     });
 
     test('executes cleanup periodically', async () => {
@@ -390,11 +397,11 @@ describe('File Upload Middleware', () => {
       const cleanupFunction = mockSetInterval.mock.calls[0][0];
       await cleanupFunction();
       
-      expect(mockFileHandler.cleanTempFiles).toHaveBeenCalledWith(24 * 60 * 60 * 1000);
+      expect(mockStorage.cleanTempFiles).toHaveBeenCalledWith(24 * 60 * 60 * 1000, './temp');
     });
 
     test('handles cleanup errors', async () => {
-      mockFileHandler.cleanTempFiles.mockRejectedValue(new Error('Cleanup failed'));
+      mockStorage.cleanTempFiles.mockRejectedValue(new Error('Cleanup failed'));
       
       createTempCleaner();
       
@@ -402,7 +409,7 @@ describe('File Upload Middleware', () => {
       await cleanupFunction();
       
       // Should not throw, just log error
-      expect(mockFileHandler.cleanTempFiles).toHaveBeenCalled();
+      expect(mockStorage.cleanTempFiles).toHaveBeenCalled();
     });
 
     test('middleware passes through requests', () => {
@@ -413,7 +420,7 @@ describe('File Upload Middleware', () => {
     });
 
     test('logs when files are cleaned', async () => {
-      mockFileHandler.cleanTempFiles.mockResolvedValue(3);
+      mockStorage.cleanTempFiles.mockResolvedValue(3);
       
       createTempCleaner();
       
@@ -421,18 +428,18 @@ describe('File Upload Middleware', () => {
       await cleanupFunction();
       
       // Logger would be called with info about 3 files cleaned
-      expect(mockFileHandler.cleanTempFiles).toHaveBeenCalled();
+      expect(mockStorage.cleanTempFiles).toHaveBeenCalled();
     });
 
     test('does not log when no files cleaned', async () => {
-      mockFileHandler.cleanTempFiles.mockResolvedValue(0);
+      mockStorage.cleanTempFiles.mockResolvedValue(0);
       
       createTempCleaner();
       
       const cleanupFunction = mockSetInterval.mock.calls[0][0];
       await cleanupFunction();
       
-      expect(mockFileHandler.cleanTempFiles).toHaveBeenCalled();
+      expect(mockStorage.cleanTempFiles).toHaveBeenCalled();
     });
   });
 

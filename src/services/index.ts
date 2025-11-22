@@ -23,16 +23,6 @@ export type {
   SettingsOptions,
 } from "./settingsService.js";
 
-// File handling
-export {
-  FileHandler,
-  CSVHandler,
-  JSONHandler,
-  TemplateProcessor,
-  fileHandler,
-} from "./fileHandler.js";
-export type { FileUploadOptions, UploadedFile } from "./fileHandler.js";
-
 // WebSocket events
 export {
   WebSocketEventManager,

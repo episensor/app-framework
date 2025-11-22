@@ -427,8 +427,18 @@ export class StorageService {
       filename = sanitizedName;
     }
 
-    // Determine the upload path
-    const uploadPath = this.getSafePath(filename, destination as BaseDirectory);
+    // Determine the upload path. Prefer known base directories, but allow custom
+    // destinations for backward compatibility with the old FileHandler API.
+    let uploadPath: string;
+    if ((BASE_DIRS as Record<string, string>)[destination]) {
+      uploadPath = this.getSafePath(filename, destination as BaseDirectory);
+    } else {
+      const resolvedDest = path.isAbsolute(destination)
+        ? destination
+        : path.join(process.cwd(), destination);
+      await fsUtils.ensureDir(resolvedDest);
+      uploadPath = path.join(resolvedDest, this.sanitizeFilename(filename));
+    }
 
     // Save the file
     if (Buffer.isBuffer(file)) {
@@ -490,6 +500,46 @@ export class StorageService {
     });
 
     return uploadedFile;
+  }
+
+  /**
+   * Clean temporary files older than a given age. Falls back to ./temp to
+   * preserve the previous middleware behaviour.
+   */
+  async cleanTempFiles(
+    maxAgeMs: number = 24 * 60 * 60 * 1000,
+    tempDir: string = path.join(process.cwd(), "temp"),
+  ): Promise<number> {
+    await fsUtils.ensureDir(tempDir);
+
+    const now = Date.now();
+    let deletedCount = 0;
+
+    try {
+      const files = await fsUtils.readdir(tempDir);
+
+      for (const file of files) {
+        const filePath = path.join(tempDir, file);
+        const stats = await fsUtils.stat(filePath);
+
+        if (!stats.isFile()) continue;
+
+        if (now - stats.mtimeMs > maxAgeMs) {
+          await fsUtils.unlink(filePath);
+          deletedCount++;
+        }
+      }
+
+      if (deletedCount > 0) {
+        ensureLogger().info(
+          `Cleaned ${deletedCount} temporary file(s) older than ${Math.round(maxAgeMs / (1000 * 60 * 60))}h`,
+        );
+      }
+    } catch (_error: any) {
+      ensureLogger().error("Error cleaning temp files:", _error);
+    }
+
+    return deletedCount;
   }
 
   /**
