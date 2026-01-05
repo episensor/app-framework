@@ -1,24 +1,38 @@
-import React from 'react';
-import { render, fireEvent, waitFor, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { LogViewer, LogEntry } from '../components/logs/LogViewer';
+/**
+ * LogViewer Component Tests
+ * Tests for the log viewer UI component
+ */
 
-// Mock fetch
-global.fetch = jest.fn();
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { LogViewer, LogEntry, LogFile } from '../components/logs/LogViewer';
+
+// Mock react-virtuoso
+vi.mock('react-virtuoso', () => ({
+  Virtuoso: ({ data, itemContent }: { data: LogEntry[]; itemContent: (index: number, item: LogEntry) => React.ReactNode }) => (
+    <div data-testid="virtuoso-container">
+      {data.map((item: LogEntry, index: number) => (
+        <div key={item.id || index}>{itemContent(index, item)}</div>
+      ))}
+    </div>
+  ),
+}));
 
 describe('LogViewer', () => {
   const mockLogs: LogEntry[] = [
     {
       id: '1',
       timestamp: '2024-01-13T10:00:00Z',
-      level: 'INFO',
+      level: 'info',
       message: 'Application started',
       source: 'app'
     },
     {
       id: '2',
       timestamp: '2024-01-13T10:00:01Z',
-      level: 'ERROR',
+      level: 'error',
       message: 'Database connection failed',
       source: 'db',
       metadata: { error: 'Connection timeout', retries: 3 }
@@ -26,411 +40,464 @@ describe('LogViewer', () => {
     {
       id: '3',
       timestamp: '2024-01-13T10:00:02Z',
-      level: 'WARN',
+      level: 'warn',
       message: 'High memory usage detected',
       source: 'monitor'
     },
     {
       id: '4',
       timestamp: '2024-01-13T10:00:03Z',
-      level: 'DEBUG',
+      level: 'debug',
       message: 'Processing request',
       source: 'api'
     }
   ];
 
+  const mockArchives: LogFile[] = [
+    {
+      name: 'app-2024-01-01.log',
+      size: 1024,
+      modified: '2024-01-01T00:00:00Z'
+    },
+    {
+      name: 'app-2024-01-02.log.gz',
+      size: 512,
+      modified: '2024-01-02T00:00:00Z'
+    }
+  ];
+
   beforeEach(() => {
-    jest.clearAllMocks();
-    (global.fetch as jest.Mock).mockClear();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
-  it('should render logs when provided directly', () => {
-    const { getByText } = render(
-      <LogViewer logs={mockLogs} />
-    );
+  describe('Basic Rendering', () => {
+    it('renders logs when provided directly', () => {
+      render(<LogViewer logs={mockLogs} />);
 
-    expect(getByText('Application started')).toBeInTheDocument();
-    expect(getByText('Database connection failed')).toBeInTheDocument();
-    expect(getByText('High memory usage detected')).toBeInTheDocument();
-    expect(getByText('Processing request')).toBeInTheDocument();
-  });
+      expect(screen.getByText('Application started')).toBeInTheDocument();
+      expect(screen.getByText('Database connection failed')).toBeInTheDocument();
+      expect(screen.getByText('High memory usage detected')).toBeInTheDocument();
+      expect(screen.getByText('Processing request')).toBeInTheDocument();
+    });
 
-  it('should display log counts', () => {
-    const { getByText } = render(
-      <LogViewer logs={mockLogs} />
-    );
+    it('displays log count', () => {
+      render(<LogViewer logs={mockLogs} />);
 
-    expect(getByText('4 / 4')).toBeInTheDocument();
-  });
+      expect(screen.getByText(/4 lines/)).toBeInTheDocument();
+    });
 
-  it('should filter logs by search term', async () => {
-    const { getByPlaceholderText, queryByText } = render(
-      <LogViewer logs={mockLogs} enableSearch={true} />
-    );
+    it('renders empty state when no logs', () => {
+      render(<LogViewer logs={[]} />);
 
-    const searchInput = getByPlaceholderText('Search logs...');
-    
-    await userEvent.type(searchInput, 'database');
+      expect(screen.getByText('No logs to display')).toBeInTheDocument();
+    });
 
-    await waitFor(() => {
-      expect(queryByText('Database connection failed')).toBeInTheDocument();
-      expect(queryByText('Application started')).not.toBeInTheDocument();
-      expect(queryByText('High memory usage detected')).not.toBeInTheDocument();
+    it('renders level badges with correct colors', () => {
+      render(<LogViewer logs={mockLogs} />);
+
+      expect(screen.getByText('ERROR')).toBeInTheDocument();
+      expect(screen.getByText('WARN')).toBeInTheDocument();
+      expect(screen.getByText('INFO')).toBeInTheDocument();
+      expect(screen.getByText('DEBUG')).toBeInTheDocument();
     });
   });
 
-  it('should filter logs by level', async () => {
-    const { getByRole, getByText, queryByText } = render(
-      <LogViewer logs={mockLogs} enableFilter={true} />
-    );
+  describe('Filtering', () => {
+    it('filters logs by search term when enabled', async () => {
+      render(<LogViewer logs={mockLogs} enableSearch={true} />);
 
-    const levelSelect = getByRole('combobox');
-    fireEvent.click(levelSelect);
-    
-    await waitFor(() => {
-      fireEvent.click(getByText('ERROR'));
-    });
+      const searchInput = screen.getByPlaceholderText('Search logs...');
+      await userEvent.type(searchInput, 'database');
 
-    expect(queryByText('Database connection failed')).toBeInTheDocument();
-    expect(queryByText('Application started')).not.toBeInTheDocument();
-    expect(queryByText('High memory usage detected')).not.toBeInTheDocument();
-    expect(queryByText('Processing request')).not.toBeInTheDocument();
-  });
-
-  it('should toggle auto-scroll', async () => {
-    const { getByText } = render(
-      <LogViewer logs={mockLogs} enableAutoScroll={true} />
-    );
-
-    const autoScrollButton = getByText('Auto-scroll');
-    
-    // Should be enabled by default
-    expect(autoScrollButton.parentElement).toHaveClass('variant', 'default');
-    
-    // Toggle off
-    fireEvent.click(autoScrollButton);
-    
-    await waitFor(() => {
-      expect(autoScrollButton.parentElement).toHaveClass('variant', 'outline');
-    });
-  });
-
-  it('should pause and resume log fetching', async () => {
-    const mockFetch = jest.fn().mockResolvedValue(mockLogs);
-    
-    const { getByText } = render(
-      <LogViewer onFetchLogs={mockFetch} enablePause={true} />
-    );
-
-    // Should fetch initially
-    await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledTimes(1);
-    });
-
-    const pauseButton = getByText('Pause');
-    fireEvent.click(pauseButton);
-
-    // Should show Resume
-    expect(getByText('Resume')).toBeInTheDocument();
-    
-    // Clear previous calls
-    mockFetch.mockClear();
-    
-    // Should not fetch while paused
-    await waitFor(() => {
-      expect(mockFetch).not.toHaveBeenCalled();
-    }, { timeout: 3000 });
-  });
-
-  it('should clear logs', async () => {
-    const onClear = jest.fn();
-    
-    const { getByText, queryByText } = render(
-      <LogViewer logs={mockLogs} enableClear={true} onClear={onClear} />
-    );
-
-    const clearButton = getByText('Clear');
-    fireEvent.click(clearButton);
-
-    expect(onClear).toHaveBeenCalled();
-  });
-
-  it('should export logs', async () => {
-    const createElementSpy = jest.spyOn(document, 'createElement');
-    const createObjectURLSpy = jest.spyOn(URL, 'createObjectURL').mockReturnValue('blob:url');
-    const revokeObjectURLSpy = jest.spyOn(URL, 'revokeObjectURL');
-    
-    const { getByText } = render(
-      <LogViewer logs={mockLogs} enableExport={true} />
-    );
-
-    const exportButton = getByText('Export');
-    fireEvent.click(exportButton);
-
-    expect(createElementSpy).toHaveBeenCalledWith('a');
-    expect(createObjectURLSpy).toHaveBeenCalled();
-    expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:url');
-  });
-
-  it('should call custom export handler', () => {
-    const onExport = jest.fn();
-    
-    const { getByText } = render(
-      <LogViewer logs={mockLogs} enableExport={true} onExport={onExport} />
-    );
-
-    const exportButton = getByText('Export');
-    fireEvent.click(exportButton);
-
-    expect(onExport).toHaveBeenCalledWith(mockLogs);
-  });
-
-  it('should expand metadata when clicked', async () => {
-    const { getByText, queryByText } = render(
-      <LogViewer logs={mockLogs} />
-    );
-
-    const logWithMetadata = getByText('Database connection failed').parentElement;
-    
-    // Metadata should not be visible initially
-    expect(queryByText('Connection timeout')).not.toBeInTheDocument();
-    
-    // Click to expand
-    fireEvent.click(logWithMetadata!);
-
-    // Metadata should now be visible
-    await waitFor(() => {
-      expect(screen.getByText(/"error": "Connection timeout"/)).toBeInTheDocument();
-    });
-  });
-
-  it('should fetch logs from API', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: async () => ({ logs: mockLogs })
-    });
-
-    const { getByText } = render(
-      <LogViewer apiUrl="/api/logs" />
-    );
-
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith('/api/logs');
-      expect(getByText('Application started')).toBeInTheDocument();
-    });
-  });
-
-  it('should poll for new logs', async () => {
-    jest.useFakeTimers();
-    
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: async () => ({ logs: mockLogs })
-    });
-
-    render(
-      <LogViewer apiUrl="/api/logs" pollInterval={1000} />
-    );
-
-    // Initial fetch
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-
-    // Advance time
-    jest.advanceTimersByTime(1000);
-
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(2);
-    });
-
-    jest.advanceTimersByTime(1000);
-
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(3);
-    });
-  });
-
-  it('should limit number of logs displayed', () => {
-    const manyLogs = Array.from({ length: 100 }, (_, i) => ({
-      id: `${i}`,
-      timestamp: new Date().toISOString(),
-      level: 'INFO',
-      message: `Log message ${i}`
-    }));
-
-    const { container } = render(
-      <LogViewer logs={manyLogs} maxEntries={10} />
-    );
-
-    const logEntries = container.querySelectorAll('[class*="gap-2"]');
-    expect(logEntries.length).toBeLessThanOrEqual(10);
-  });
-
-  it('should use custom date formatter', () => {
-    const customDateFormat = (date: string | Date) => 'Custom Date';
-    
-    const { getAllByText } = render(
-      <LogViewer logs={mockLogs} dateFormat={customDateFormat} />
-    );
-
-    expect(getAllByText('Custom Date')).toHaveLength(4);
-  });
-
-  it('should use custom level colors', () => {
-    const customColors = {
-      'ERROR': 'text-purple-500'
-    };
-
-    const { getByText } = render(
-      <LogViewer logs={mockLogs} levelColors={customColors} />
-    );
-
-    const errorBadge = getByText('ERROR');
-    expect(errorBadge).toHaveClass('text-purple-500');
-  });
-
-  it('should render custom entry renderer', () => {
-    const renderEntry = (entry: LogEntry, defaultRender: React.ReactNode) => (
-      <div data-testid="custom-entry">
-        Custom: {entry.message}
-      </div>
-    );
-
-    const { getAllByTestId } = render(
-      <LogViewer logs={mockLogs} renderEntry={renderEntry} />
-    );
-
-    expect(getAllByTestId('custom-entry')).toHaveLength(4);
-  });
-
-  it('should render custom metadata', () => {
-    const renderMetadata = (metadata: any) => (
-      <div data-testid="custom-metadata">
-        Custom Metadata
-      </div>
-    );
-
-    const { getByText, getByTestId } = render(
-      <LogViewer logs={mockLogs} renderMetadata={renderMetadata} />
-    );
-
-    const logWithMetadata = getByText('Database connection failed').parentElement;
-    fireEvent.click(logWithMetadata!);
-
-    expect(getByTestId('custom-metadata')).toBeInTheDocument();
-  });
-
-  it('should handle empty logs gracefully', () => {
-    const { getByText } = render(
-      <LogViewer logs={[]} emptyMessage="No logs available" />
-    );
-
-    expect(getByText('No logs available')).toBeInTheDocument();
-  });
-
-  it('should handle API errors gracefully', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-    
-    (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
-
-    render(
-      <LogViewer apiUrl="/api/logs" />
-    );
-
-    await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith('Error fetching logs:', expect.any(Error));
-    });
-
-    consoleSpy.mockRestore();
-  });
-
-  it('should support different log level names', () => {
-    const customLogs: LogEntry[] = [
-      {
-        id: '1',
-        timestamp: new Date().toISOString(),
-        level: 'CRITICAL',
-        message: 'Critical error'
-      },
-      {
-        id: '2',
-        timestamp: new Date().toISOString(),
-        level: 'TRACE',
-        message: 'Trace log'
-      }
-    ];
-
-    const { getByText } = render(
-      <LogViewer 
-        logs={customLogs}
-        levels={['CRITICAL', 'TRACE', 'INFO', 'DEBUG']}
-      />
-    );
-
-    expect(getByText('CRITICAL')).toBeInTheDocument();
-    expect(getByText('TRACE')).toBeInTheDocument();
-  });
-
-  it('should handle logs without IDs', () => {
-    const logsWithoutIds: LogEntry[] = [
-      {
-        timestamp: new Date().toISOString(),
-        level: 'INFO',
-        message: 'Log 1'
-      },
-      {
-        timestamp: new Date().toISOString(),
-        level: 'INFO',
-        message: 'Log 2'
-      }
-    ];
-
-    const { getByText } = render(
-      <LogViewer logs={logsWithoutIds} />
-    );
-
-    expect(getByText('Log 1')).toBeInTheDocument();
-    expect(getByText('Log 2')).toBeInTheDocument();
-  });
-
-  it('should scroll to bottom when auto-scroll is enabled', async () => {
-    const scrollContainer = {
-      scrollTop: 0,
-      scrollHeight: 1000
-    };
-
-    const { container } = render(
-      <LogViewer logs={mockLogs} enableAutoScroll={true} />
-    );
-
-    const logContainer = container.querySelector('[class*="overflow-auto"]');
-    
-    if (logContainer) {
-      Object.defineProperty(logContainer, 'scrollHeight', {
-        value: 1000,
-        writable: true
+      await waitFor(() => {
+        expect(screen.getByText('Database connection failed')).toBeInTheDocument();
+        expect(screen.queryByText('Application started')).not.toBeInTheDocument();
       });
-      
-      Object.defineProperty(logContainer, 'scrollTop', {
-        value: 0,
-        writable: true
+    });
+
+    it('filters logs by level when enabled', async () => {
+      render(<LogViewer logs={mockLogs} enableFilter={true} />);
+
+      // Find and click the level filter dropdown
+      const levelSelect = screen.getAllByRole('combobox')[0];
+      fireEvent.click(levelSelect);
+
+      // Select ERROR level
+      await waitFor(() => {
+        const errorOption = screen.getByText('Error');
+        fireEvent.click(errorOption);
       });
 
-      // Add new logs to trigger scroll
-      const { rerender } = render(
-        <LogViewer logs={[...mockLogs, {
-          id: '5',
-          timestamp: new Date().toISOString(),
-          level: 'INFO',
-          message: 'New log'
-        }]} enableAutoScroll={true} />
+      await waitFor(() => {
+        expect(screen.getByText('Database connection failed')).toBeInTheDocument();
+        expect(screen.queryByText('Application started')).not.toBeInTheDocument();
+      });
+    });
+
+    it('filters logs by category when available', async () => {
+      render(<LogViewer logs={mockLogs} enableFilter={true} />);
+
+      await waitFor(() => {
+        expect(screen.queryByText('All Categories')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Data Fetching', () => {
+    it('calls onFetchLogs on mount', async () => {
+      const mockFetch = vi.fn().mockResolvedValue(mockLogs);
+
+      render(<LogViewer onFetchLogs={mockFetch} />);
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalled();
+      });
+    });
+
+    it('displays fetched logs', async () => {
+      const mockFetch = vi.fn().mockResolvedValue(mockLogs);
+
+      render(<LogViewer onFetchLogs={mockFetch} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Application started')).toBeInTheDocument();
+      });
+    });
+
+    it('calls onFetchArchives when switching to archives category', async () => {
+      const mockFetchArchives = vi.fn().mockResolvedValue(mockArchives);
+
+      render(
+        <LogViewer
+          logs={mockLogs}
+          onFetchArchives={mockFetchArchives}
+          showArchives={true}
+        />
       );
 
-      // scrollTop should be updated (in real implementation)
-      // This is a simplified test as JSDOM doesn't fully support scrolling
-    }
+      // Click archives category
+      const archivesButton = screen.getByText('Archives');
+      fireEvent.click(archivesButton);
+
+      await waitFor(() => {
+        expect(mockFetchArchives).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('Log Management Actions', () => {
+    it('calls onClearLogs when clear button is clicked', async () => {
+      const mockClear = vi.fn().mockResolvedValue(undefined);
+
+      // Mock window.confirm
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+      render(
+        <LogViewer
+          logs={mockLogs}
+          onClearLogs={mockClear}
+          enableClear={true}
+        />
+      );
+
+      const clearButton = screen.getByText('Clear');
+      fireEvent.click(clearButton);
+
+      await waitFor(() => {
+        expect(mockClear).toHaveBeenCalled();
+      });
+    });
+
+    it('exports logs to file when export button clicked', async () => {
+      const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:url');
+      const revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL');
+
+      render(<LogViewer logs={mockLogs} enableExport={true} />);
+
+      const exportButton = screen.getByText('Export');
+      fireEvent.click(exportButton);
+
+      expect(createObjectURLSpy).toHaveBeenCalled();
+    });
+
+    it('copies logs to clipboard when copy button clicked', async () => {
+      const mockClipboard = {
+        writeText: vi.fn().mockResolvedValue(undefined)
+      };
+      Object.assign(navigator, { clipboard: mockClipboard });
+
+      render(<LogViewer logs={mockLogs} enableCopy={true} />);
+
+      const copyButton = screen.getByText('Copy');
+      fireEvent.click(copyButton);
+
+      expect(mockClipboard.writeText).toHaveBeenCalled();
+    });
+  });
+
+  describe('Pause and Resume', () => {
+    it('shows pause button when enabled', () => {
+      render(<LogViewer logs={mockLogs} enablePause={true} />);
+
+      expect(screen.getByText('Pause')).toBeInTheDocument();
+    });
+
+    it('toggles to Resume when paused', async () => {
+      render(<LogViewer logs={mockLogs} enablePause={true} />);
+
+      const pauseButton = screen.getByText('Pause');
+      fireEvent.click(pauseButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Resume')).toBeInTheDocument();
+      });
+    });
+
+    it('does not fetch when paused', async () => {
+      const mockFetch = vi.fn().mockResolvedValue(mockLogs);
+
+      render(
+        <LogViewer
+          onFetchLogs={mockFetch}
+          enablePause={true}
+          pausedDefault={true}
+        />
+      );
+
+      // Should not have fetched because started paused
+      await waitFor(() => {
+        // When paused, the initial fetch is skipped
+        expect(mockFetch).not.toHaveBeenCalled();
+      }, { timeout: 1000 });
+    });
+  });
+
+  describe('Auto-scroll', () => {
+    it('shows auto-scroll button when enabled', () => {
+      render(<LogViewer logs={mockLogs} enableAutoScroll={true} />);
+
+      expect(screen.getByText(/Auto-scroll/)).toBeInTheDocument();
+    });
+
+    it('toggles auto-scroll state', async () => {
+      render(
+        <LogViewer
+          logs={mockLogs}
+          enableAutoScroll={true}
+          autoScrollDefault={true}
+        />
+      );
+
+      const autoScrollButton = screen.getByText('Auto-scroll On');
+      fireEvent.click(autoScrollButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Auto-scroll Off')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Archives View', () => {
+    it('shows archives when switching category', async () => {
+      const mockFetchArchives = vi.fn().mockResolvedValue(mockArchives);
+
+      render(
+        <LogViewer
+          logs={mockLogs}
+          onFetchArchives={mockFetchArchives}
+          showArchives={true}
+          showCategories={true}
+        />
+      );
+
+      const archivesButton = screen.getByText('Archives');
+      fireEvent.click(archivesButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Log Archives')).toBeInTheDocument();
+      });
+    });
+
+    it('calls onDownloadArchive when download clicked', async () => {
+      const mockDownload = vi.fn();
+      const mockFetchArchives = vi.fn().mockResolvedValue(mockArchives);
+
+      render(
+        <LogViewer
+          logs={mockLogs}
+          onFetchArchives={mockFetchArchives}
+          onDownloadArchive={mockDownload}
+          showArchives={true}
+          showCategories={true}
+        />
+      );
+
+      // Switch to archives
+      const archivesButton = screen.getByText('Archives');
+      fireEvent.click(archivesButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('app-2024-01-01.log')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Max Entries', () => {
+    it('limits displayed logs to maxEntries', async () => {
+      const manyLogs: LogEntry[] = Array.from({ length: 100 }, (_, i) => ({
+        id: `${i}`,
+        timestamp: new Date(Date.now() + i * 1000).toISOString(),
+        level: 'info',
+        message: `Log message ${i}`
+      }));
+
+      const mockFetch = vi.fn().mockResolvedValue(manyLogs);
+
+      render(<LogViewer onFetchLogs={mockFetch} maxEntries={10} />);
+
+      await waitFor(() => {
+        // Should only have 10 logs after max enforcement
+        expect(screen.getByText(/10 lines/)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Live Updates', () => {
+    it('handles incoming log events when enabled', async () => {
+      let logHandler: ((log: LogEntry) => void) | null = null;
+
+      const mockOnLogReceived = vi.fn((handler) => {
+        logHandler = handler;
+        return () => { logHandler = null; };
+      });
+
+      render(
+        <LogViewer
+          logs={[]}
+          onLogReceived={mockOnLogReceived}
+          enableLiveUpdates={true}
+        />
+      );
+
+      expect(mockOnLogReceived).toHaveBeenCalled();
+
+      // Simulate receiving a log
+      if (logHandler) {
+        logHandler({
+          id: 'new-log',
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          message: 'New live log'
+        });
+      }
+
+      await waitFor(() => {
+        expect(screen.getByText('New live log')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Log Normalization', () => {
+    it('extracts embedded timestamp from message', async () => {
+      const logsWithEmbeddedTimestamp: LogEntry[] = [{
+        id: '1',
+        timestamp: '2024-01-13T10:00:00Z',
+        level: 'info',
+        message: '2024-01-13 10:30:00.123 ERROR [Server] Actual message here'
+      }];
+
+      const mockFetch = vi.fn().mockResolvedValue(logsWithEmbeddedTimestamp);
+
+      render(<LogViewer onFetchLogs={mockFetch} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Actual message here')).toBeInTheDocument();
+        expect(screen.getByText('ERROR')).toBeInTheDocument();
+      });
+    });
+
+    it('coalesces stack traces into single entry', async () => {
+      const logsWithStackTrace: LogEntry[] = [
+        {
+          id: '1',
+          timestamp: '2024-01-13T10:00:00Z',
+          level: 'error',
+          message: 'Error occurred'
+        },
+        {
+          id: '2',
+          timestamp: '2024-01-13T10:00:00Z',
+          level: 'error',
+          message: '    at Function.run (/app/server.js:10:5)'
+        },
+        {
+          id: '3',
+          timestamp: '2024-01-13T10:00:00Z',
+          level: 'error',
+          message: '    at main (/app/index.js:5:1)'
+        }
+      ];
+
+      const mockFetch = vi.fn().mockResolvedValue(logsWithStackTrace);
+
+      render(<LogViewer onFetchLogs={mockFetch} />);
+
+      await waitFor(() => {
+        // The main error message should be visible
+        expect(screen.getByText('Error occurred')).toBeInTheDocument();
+        // Stack trace lines should be coalesced into metadata
+        expect(screen.queryByText('    at Function.run (/app/server.js:10:5)')).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Metadata Display', () => {
+    it('displays metadata when log has it', () => {
+      render(<LogViewer logs={mockLogs} />);
+
+      // The log with metadata should show metadata fields
+      expect(screen.getByText(/error:/)).toBeInTheDocument();
+    });
+  });
+
+  describe('Custom Configuration', () => {
+    it('uses custom level badge colors', () => {
+      const customColors = {
+        error: 'bg-purple-500 text-white',
+        warn: 'bg-orange-500 text-white',
+        info: 'bg-green-500 text-white',
+        debug: 'bg-gray-500 text-white'
+      };
+
+      render(<LogViewer logs={mockLogs} levelBadgeColors={customColors} />);
+
+      const errorBadge = screen.getByText('ERROR');
+      expect(errorBadge.className).toContain('bg-purple-500');
+    });
+
+    it('uses custom height', () => {
+      const { container } = render(
+        <LogViewer logs={mockLogs} height="500px" />
+      );
+
+      const scrollContainer = container.querySelector('[style*="height"]');
+      expect(scrollContainer).toBeTruthy();
+    });
+
+    it('shows/hides categories based on prop', () => {
+      const { rerender } = render(
+        <LogViewer logs={mockLogs} showCategories={true} />
+      );
+
+      expect(screen.getByText('Categories')).toBeInTheDocument();
+
+      rerender(<LogViewer logs={mockLogs} showCategories={false} />);
+
+      expect(screen.queryByText('Categories')).not.toBeInTheDocument();
+    });
   });
 });

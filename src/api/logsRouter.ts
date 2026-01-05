@@ -1,6 +1,9 @@
 /**
  * Standardized Logging API Router
  * Provides consistent logging endpoints for all EpiSensor applications
+ *
+ * SECURITY WARNING: This router exposes sensitive log files without authentication.
+ * Before production use, implement proper authentication middleware.
  */
 
 import express, { Request, Response } from "express";
@@ -27,12 +30,88 @@ export interface LogFile {
 }
 
 /**
+ * Validate and sanitize file path to prevent directory traversal
+ */
+function validateFilePath(filename: string, baseDir: string): string | null {
+  if (!filename || typeof filename !== 'string') {
+    return null;
+  }
+
+  // Normalize the filename and resolve path
+  const safeName = path.normalize(filename).replace(/^(\.\.[\/\\])+/, '');
+  const resolvedPath = path.resolve(baseDir, safeName);
+  const resolvedBase = path.resolve(baseDir);
+
+  // Ensure the resolved path is within the base directory
+  if (!resolvedPath.startsWith(resolvedBase + path.sep) && resolvedPath !== resolvedBase) {
+    return null;
+  }
+
+  return resolvedPath;
+}
+
+/**
+ * Safely parse integer with fallback
+ */
+function parseIntSafe(value: any, defaultValue: number): number {
+  if (typeof value === 'number') return Math.floor(value);
+  if (typeof value === 'string') {
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? defaultValue : parsed;
+  }
+  return defaultValue;
+}
+
+// Helper function to format bytes
+function formatBytes(bytes: number, decimals = 2): string {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
+}
+
+/**
+ * Helper to get log files from a directory
+ */
+async function getLogFilesFromDir(logsDir: string, includeFullPath = false): Promise<LogFile[]> {
+  if (!existsSync(logsDir)) {
+    return [];
+  }
+
+  const files = await fs.readdir(logsDir);
+  const logFiles: LogFile[] = [];
+
+  for (const file of files) {
+    if (file.endsWith(".log") || file.endsWith(".txt") || file.endsWith(".gz")) {
+      const filePath = path.join(logsDir, file);
+      const stats = await fs.stat(filePath);
+
+      logFiles.push({
+        name: file,
+        size: stats.size,
+        modified: stats.mtime.toISOString(),
+        ...(includeFullPath && { path: filePath })
+      });
+    }
+  }
+
+  // Sort by modified date, newest first
+  logFiles.sort(
+    (a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime(),
+  );
+
+  return logFiles;
+}
+
+/**
  * Get recent log entries
  * GET /api/logs/entries?limit=100&level=info
  */
 router.get("/entries", async (req: Request, res: Response) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 100;
+    const limit = parseIntSafe(req.query.limit, 100);
     const level = (req.query.level as string) || "all";
 
     const logger = getLogger;
@@ -59,36 +138,7 @@ router.get("/entries", async (req: Request, res: Response) => {
 router.get("/files", async (_req: Request, res: Response) => {
   try {
     const logsDir = path.join(process.cwd(), "data", "logs");
-
-    if (!existsSync(logsDir)) {
-      res.json({
-        success: true,
-        files: [],
-      });
-      return;
-    }
-
-    const files = await fs.readdir(logsDir);
-    const logFiles: LogFile[] = [];
-
-    for (const file of files) {
-      if (file.endsWith(".log") || file.endsWith(".txt")) {
-        const filePath = path.join(logsDir, file);
-        const stats = await fs.stat(filePath);
-
-        logFiles.push({
-          name: file,
-          size: stats.size,
-          modified: stats.mtime.toISOString(),
-          path: filePath,
-        });
-      }
-    }
-
-    // Sort by modified date, newest first
-    logFiles.sort(
-      (a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime(),
-    );
+    const logFiles = await getLogFilesFromDir(logsDir, true);
 
     res.json({
       success: true,
@@ -112,10 +162,10 @@ router.get("/download/:filename", async (req: Request, res: Response) => {
   try {
     const { filename } = req.params;
     const logsDir = path.join(process.cwd(), "data", "logs");
-    const filePath = path.join(logsDir, filename);
 
     // Security check - prevent directory traversal
-    if (!filePath.startsWith(logsDir)) {
+    const filePath = validateFilePath(filename, logsDir);
+    if (!filePath) {
       res.status(403).json({
         success: false,
         error: "Access denied",
@@ -149,10 +199,10 @@ router.get("/stream/:filename", async (req: Request, res: Response) => {
   try {
     const { filename } = req.params;
     const logsDir = path.join(process.cwd(), "data", "logs");
-    const filePath = path.join(logsDir, filename);
 
-    // Security check
-    if (!filePath.startsWith(logsDir)) {
+    // Security check - prevent directory traversal
+    const filePath = validateFilePath(filename, logsDir);
+    if (!filePath) {
       res.status(403).json({
         success: false,
         error: "Access denied",
@@ -203,47 +253,21 @@ router.post("/clear", async (_req: Request, res: Response) => {
 });
 
 /**
- * Get archived log files
+ * Get archived log files (alias for /files for backward compatibility)
  * GET /api/logs/archives
  */
 router.get("/archives", async (_req: Request, res: Response) => {
   try {
     const logsDir = path.join(process.cwd(), "data", "logs");
+    const archives = await getLogFilesFromDir(logsDir);
 
-    if (!existsSync(logsDir)) {
-      return res.json({
-        success: true,
-        archives: [],
-      });
-    }
-
-    const files = await fs.readdir(logsDir);
-    const archives: LogFile[] = [];
-
-    for (const file of files) {
-      if (file.endsWith(".log") || file.endsWith(".txt")) {
-        const filePath = path.join(logsDir, file);
-        const stats = await fs.stat(filePath);
-        archives.push({
-          name: file,
-          size: stats.size,
-          modified: stats.mtime.toISOString(),
-        });
-      }
-    }
-
-    // Sort by modified date, newest first
-    archives.sort(
-      (a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime(),
-    );
-
-    return res.json({
+    res.json({
       success: true,
       archives,
     });
   } catch (_error) {
     console.error("Failed to fetch archives:", _error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       error: "Failed to fetch archives",
       archives: [],
@@ -259,10 +283,10 @@ router.delete("/archive/:filename", async (req: Request, res: Response) => {
   try {
     const { filename } = req.params;
     const logsDir = path.join(process.cwd(), "data", "logs");
-    const filePath = path.join(logsDir, filename);
 
-    // Security check
-    if (!filePath.startsWith(logsDir) || filename.includes("..")) {
+    // Security check - prevent directory traversal
+    const filePath = validateFilePath(filename, logsDir);
+    if (!filePath) {
       return res.status(403).json({
         success: false,
         error: "Access denied",
@@ -338,52 +362,14 @@ router.get("/export", async (req: Request, res: Response) => {
  */
 router.get("/stats", async (_req: Request, res: Response) => {
   try {
-    const logsDir = path.join(process.cwd(), "data", "logs");
-
-    if (!existsSync(logsDir)) {
-      res.json({
-        success: true,
-        stats: {
-          totalSize: 0,
-          fileCount: 0,
-          oldestLog: null,
-          newestLog: null,
-        },
-      });
-      return;
-    }
-
-    const files = await fs.readdir(logsDir);
-    let totalSize = 0;
-    let oldestTime: Date | null = null;
-    let newestTime: Date | null = null;
-    let fileCount = 0;
-
-    for (const file of files) {
-      if (file.endsWith(".log") || file.endsWith(".txt")) {
-        const filePath = path.join(logsDir, file);
-        const stats = await fs.stat(filePath);
-
-        totalSize += stats.size;
-        fileCount++;
-
-        if (!oldestTime || stats.birthtime < oldestTime) {
-          oldestTime = stats.birthtime;
-        }
-        if (!newestTime || stats.mtime > newestTime) {
-          newestTime = stats.mtime;
-        }
-      }
-    }
+    const logger = getLogger;
+    const stats = await logger.getLogStats();
 
     res.json({
       success: true,
       stats: {
-        totalSize,
-        totalSizeFormatted: formatBytes(totalSize),
-        fileCount,
-        oldestLog: oldestTime?.toISOString() || null,
-        newestLog: newestTime?.toISOString() || null,
+        ...stats,
+        totalSizeFormatted: formatBytes(stats.totalSize || 0),
       },
     });
   } catch (_error) {
@@ -506,26 +492,21 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const { filename } = req.params;
-
-      // Security: prevent directory traversal
-      const safeName = path.basename(filename);
-
-      // Check in logs directory first
       const logsDir = path.join(process.cwd(), "data", "logs");
-      let filePath = path.join(logsDir, safeName);
 
-      // If not found, check in archive directory
-      if (!existsSync(filePath)) {
-        filePath = path.join(logsDir, "archive", safeName);
+      // Security: prevent directory traversal using proper validation
+      let filePath = validateFilePath(filename, logsDir);
+
+      // If not found in main logs, try archive directory
+      if (!filePath || !existsSync(filePath)) {
+        const archiveDir = path.join(logsDir, "archive");
+        const archiveFilename = filename.startsWith("archive/")
+          ? filename.substring("archive/".length)
+          : filename;
+        filePath = validateFilePath(archiveFilename, archiveDir);
       }
 
-      // If still not found and filename includes 'archive/', handle that case
-      if (!existsSync(filePath) && filename.startsWith("archive/")) {
-        const archiveName = filename.replace("archive/", "");
-        filePath = path.join(logsDir, "archive", archiveName);
-      }
-
-      if (!existsSync(filePath)) {
+      if (!filePath || !existsSync(filePath)) {
         return res.status(404).json({
           success: false,
           error: "File not found",
@@ -540,7 +521,7 @@ router.get(
         res.setHeader("Content-Type", "text/plain");
       }
 
-      return res.download(filePath, safeName);
+      return res.download(filePath, path.basename(filePath));
     } catch (_error) {
       return res.status(500).json({
         success: false,
@@ -586,15 +567,5 @@ router.post("/rotate", async (_req: Request, res: Response) => {
     });
   }
 });
-
-// Helper function to format bytes
-function formatBytes(bytes: number, decimals = 2): string {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
-}
 
 export default router;

@@ -6,18 +6,16 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import { SettingsProvider } from './src/contexts/SettingsContext';
-import { LogProvider } from './src/contexts/LogContext';
 import HomePage from './src/pages/HomePage';
 import { SettingsPage } from './src/pages/SettingsPage';
-import { LogsPage } from './src/pages/LogsPage';
+import { LogsPage } from './components/logs/LogsPage';
 import { ThemeToggle } from './components/settings/ThemeToggle';
 import './styles/globals.css';
 
 export default function App() {
   return (
     <SettingsProvider>
-      <LogProvider>
-        <Router>
+      <Router>
           <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
             {/* Navigation Header */}
             <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
@@ -135,7 +133,6 @@ export default function App() {
             </main>
           </div>
         </Router>
-      </LogProvider>
     </SettingsProvider>
   );
 }
