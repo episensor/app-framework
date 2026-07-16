@@ -15,7 +15,7 @@ export interface FieldValidationError {
  * Supports both legacy string errors and new structured errors
  * @template T - The type of the data payload
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?:
@@ -23,7 +23,7 @@ export interface ApiResponse<T = any> {
     | {
         code: string;
         message: string;
-        details?: any;
+        details?: unknown;
         stack?: string; // Only in development
       };
   message?: string; // Optional success message

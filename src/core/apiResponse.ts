@@ -3,44 +3,50 @@
  * Provides consistent response format across all applications
  */
 
-import { Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 import { createLogger } from "../core/logger.js";
+import { ApiResponse, FieldValidationError } from "../types/index.js";
 
 const logger = createLogger("api-error");
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-  timestamp?: string;
-  metadata?: Record<string, any>;
-}
+// Re-export ApiResponse from types for backward compatibility
+export type { ApiResponse };
 
-export interface ApiErrorResponse extends ApiResponse {
+/**
+ * Error response with required error field
+ */
+export interface ApiErrorResponse {
   success: false;
   error: string;
   code?: string;
-  details?: any;
+  details?: unknown;
   stack?: string;
+  timestamp?: string;
+  metadata?: { requestId?: string };
 }
 
-export interface ApiSuccessResponse<T = any> extends ApiResponse<T> {
+/**
+ * Success response with required data field
+ */
+export interface ApiSuccessResponse<T = unknown> {
   success: true;
   data: T;
+  message?: string;
+  timestamp?: string;
+  metadata?: { requestId?: string };
 }
 
 /**
  * Send a successful response
  */
-export function sendSuccess<T = any>(
+export function sendSuccess<T = unknown>(
   res: Response,
   data: T,
   message?: string,
   statusCode = 200,
 ): Response<ApiSuccessResponse<T>> {
-  const requestId = res.locals?.requestId;
+  const requestId = res.locals?.requestId as string | undefined;
   return res.status(statusCode).json({
     success: true,
     data,
@@ -57,9 +63,9 @@ export function sendError(
   res: Response,
   error: string | Error,
   statusCode = 500,
-  details?: any,
+  details?: unknown,
 ): Response<ApiErrorResponse> {
-  const requestId = res.locals?.requestId;
+  const requestId = res.locals?.requestId as string | undefined;
   const errorMessage = typeof error === "string" ? error : error.message;
   const response: ApiErrorResponse = {
     success: false,
@@ -85,7 +91,7 @@ export function sendError(
  */
 export function sendValidationError(
   res: Response,
-  errors: any,
+  errors: FieldValidationError[] | unknown,
   message = "Validation failed",
 ): Response<ApiErrorResponse> {
   return sendError(res, message, 400, errors);
@@ -134,7 +140,7 @@ export function sendBadRequest(
 /**
  * Send a created response
  */
-export function sendCreated<T = any>(
+export function sendCreated<T = unknown>(
   res: Response,
   data: T,
   message = "Resource created successfully",
@@ -150,39 +156,69 @@ export function sendNoContent(res: Response): Response {
 }
 
 /**
- * Wrap async route handlers to catch errors
+ * Async request handler function type
  */
-export function asyncHandler(fn: (req: any, res: any, next: any) => any) {
-  return (req: any, res: any, next: any) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+type AsyncRequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => Promise<unknown> | unknown;
+
+/**
+ * Wrap async route handlers to catch errors
+ * Handles both synchronous throws and async rejections
+ */
+export function asyncHandler(fn: AsyncRequestHandler) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    // Use Promise.resolve().then() to catch synchronous errors too
+    Promise.resolve()
+      .then(() => fn(req, res, next))
+      .catch(next);
   };
+}
+
+/**
+ * HTTP error with status code
+ */
+interface HttpError extends Error {
+  statusCode?: number;
+  status?: number;
+  errors?: unknown;
+  issues?: unknown;
 }
 
 /**
  * Standard error handler middleware
  */
-export function apiErrorHandler(err: any, _req: any, res: any, next: any) {
+export function apiErrorHandler(
+  err: HttpError | ZodError | Error,
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Response<ApiErrorResponse> | void {
   // If response was already sent, delegate to default Express error handler
   if (res.headersSent) {
     return next(err);
   }
+
+  const httpErr = err as HttpError;
 
   // Log the error using the framework's enhanced logger
   logger.error("API Error:", {
     error: err.message,
     stack: err.stack,
     name: err.name,
-    statusCode: err.statusCode || err.status || 500,
+    statusCode: httpErr.statusCode || httpErr.status || 500,
   });
 
   // Handle different error types
-  if (err instanceof ZodError || err?.name === "ZodError") {
-    const issues = err instanceof ZodError ? err.issues : err?.issues;
-    return sendValidationError(res, issues || err.message);
+  if (err instanceof ZodError || err.name === "ZodError") {
+    const zodErr = err as ZodError;
+    return sendValidationError(res, zodErr.issues || err.message);
   }
 
   if (err.name === "ValidationError") {
-    return sendValidationError(res, err.errors || err.message);
+    return sendValidationError(res, httpErr.errors || err.message);
   }
 
   if (err.name === "UnauthorizedError") {
@@ -193,8 +229,8 @@ export function apiErrorHandler(err: any, _req: any, res: any, next: any) {
     return sendBadRequest(res, "Invalid request parameters");
   }
 
-  if (err.statusCode || err.status) {
-    return sendError(res, err.message, err.statusCode || err.status);
+  if (httpErr.statusCode || httpErr.status) {
+    return sendError(res, err.message, httpErr.statusCode || httpErr.status);
   }
 
   // Default to internal server error
